@@ -1,0 +1,66 @@
+x
+u
+
+### CANGATE ### 04/20/2018
+
+BAUDRATE is FIXED AT: 2000000 baud
+argc 3
+0 cangate
+1 127.0.0.1
+2 32123
+Socket opened OK.  IP: 127.0.0.1 PORT: 32123
+CANID sql file did not open: ../../../../../svn_common/trunk/db/CANID_INSERT.sql
+Control C to break & exit
+a - ascii monitor of a CAN unit
+d - list raw msgs
+f - display fix: (e.g. f<enter>, or f E2600000<enter>
+h - Photodetector level histogram from sensor
+l - list unix time/date in heartbeat time msgs (l e1000000)
+n - list msg id's and msg ct during 1 sec (coarse computer timing)
+u - list msg id's and msg ct between CAN 1 sec time mgs (e.g. u 00600000)
+m - list msgs for id entered 'm xxxxxxxx (CAN ID as 8 hex digits)'
+q - Identify received msgs from CANID.sql file
+r - send high priority RESET
+s - Toggle sending of test msg file to CAN bus on/off
+c - request & display launch parameters
+w - list msgs float (wf) or integer (wi) payload with payload byte offset (wi1 E1800000)
+x - cancel command
+Control C to quit program
+Hello?
+NO
+a - ascii monitor of a CAN unit
+d - list raw msgs
+f - display fix: (e.g. f<enter>, or f E2600000<enter>
+h - Photodetector level histogram from sensor
+l - list unix time/date in heartbeat time msgs (l e1000000)
+n - list msg id's and msg ct during 1 sec (coarse computer timing)
+u - list msg id's and msg ct between CAN 1 sec time mgs (e.g. u 00600000)
+m - list msgs for id entered 'm xxxxxxxx (CAN ID as 8 hex digits)'
+q - Identify received msgs from CANID.sql file
+r - send high priority RESET
+s - Toggle sending of test msg file to CAN bus on/off
+c - request & display launch parameters
+w - list msgs float (wf) or integer (wi) payload with payload byte offset (wi1 E1800000)
+x - cancel command
+Control C to quit program
+Time sync CAN address being used for 1 sec timing: 0X00400000
+
+13:CA0 40|47C 40|474 40|476 40|004 51|380 51|382 51|464 20|466 20|468 20|05683004  8|CA2  1|E12  1|383 10752  5.4
+13:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|478 13056  6.5
+13:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|479 13312  6.7
+13:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|478 13056  6.5
+13:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|479 13056  6.5
+13:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|478 13312  6.7
+14:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  1|480 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  1|E18  1|480 13312  6.7
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  1|E18  0|480 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  0|E18  0|478 13312  6.7
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  0|E18  0|479 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  0|E18  0|478 13312  6.7
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  0|E18  0|479 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  0|E18  0|478 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  0|E18  0|479 13312  6.7
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  0|E18  1|479 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  0|E18  0|479 13312  6.7
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  0|E1C  0|E18  0|478 13056  6.5
+15:CA0 50|47C 50|474 50|476 50|004 64|380 64|382 64|464 25|466 25|468 25|05683004 10|CA2  1|E12  1|E1C  1|E18  0|x

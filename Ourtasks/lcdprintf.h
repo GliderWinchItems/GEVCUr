@@ -1,0 +1,32 @@
+/******************************************************************************
+* File Name          : lcdprintf.h
+* Date First Issued  : 10/01/2019
+* Description        : LCD display printf
+*******************************************************************************/
+
+#ifndef __LCDPRINTF
+#define __LCDPRINTF
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
+#include "SerialTaskSend.h"
+
+/* *************************************************************************/
+void lcdprintf_init(struct SERIALSENDTASKBCB** ppbcb);
+/* @brief	: Initialize display
+ * @param	: ppbcb = pointer to pointer to serial buffer control block
+ * *************************************************************************/
+int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fmt, ...);
+/* @brief	: 'printf' for uarts
+ * @param	: pbcb = pointer to pointer to stuct with uart pointers and buffer parameters
+ * @param	: row = row (line) number (0-3)
+ * @param	: col = column number (0-19)
+ * @param	: format = usual printf format
+ * @param	: ... = usual printf arguments
+ * @return	: Number of chars "printed"
+ * ************************************************************************************** */
+
+#endif
+

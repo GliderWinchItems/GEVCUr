@@ -1,0 +1,1 @@
+<!-- var redirectTo=encodeURIComponent(window.location.href);$.ajax({type:"GET",url:"/contentgating",data:{redirectTo:redirectTo},success:function(e){void 0!==e&&null!=e&&void 0!==e.redirectTo&&null!=e.redirectTo&&(window.location=e.redirectTo)},dataType:"json",async:!1,cache:!1});-->

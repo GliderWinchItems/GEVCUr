@@ -1,0 +1,8 @@
+README.iir2
+
+04/19/2019
+
+Experimenting with second order IIR filtering for use in 'adcparams.c'
+handling of ADC readings.
+
+

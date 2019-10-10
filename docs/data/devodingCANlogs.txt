@@ -1,0 +1,61 @@
+CA200000      0X651  
+
+	case 0x651: //Temperature status
+		RotorTemp = frame->data.bytes[0];
+		invTemp = frame->data.bytes[1];
+		StatorTemp = frame->data.bytes[2];
+		temperatureInverter = ((invTemp-40) * 10);
+		//now pick highest of motor temps and report it
+		if (RotorTemp > StatorTemp) {
+			temperatureMotor = ((RotorTemp-40) * 10);
+		}
+		else {
+			temperatureMotor = ((StatorTemp-40) * 10);
+		}
+
+log190504.txt
+0xCA200000  99 :dlc 8: 3C 3C 3C 05 3F 00 00 00 [beginning]
+          RotorTemp =  0x3C = 60   (60 - 40) = 20 [deg C?]
+temperatureInverter =  0x3C = 60   (60 - 40) = 20
+         StatorTemp =  0x3C = 60   (60 - 40) = 20
+ 
+0xCA200000  99 :dlc 8: 77 3B 3C 05 3F 00 00 00 [end]
+          RotorTemp =  0x77 = 119 (119 - 40) = 79
+temperatureInverter =  0x3B = 59  ( 59 - 40) = 19
+         StatorTemp =  0x3C = 60  ( 60 - 40) = 20
+
+First reports vary, then it becomes constant--
+0xCA200000  99 :dlc 8: 77 3B 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 60 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 52 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 49 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 44 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 41 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3F 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3E 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3D 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3D 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3D 3C 3C 05 3F 00 00 00
+0xCA200000  99 :dlc 8: 3C 3C 3C 05 3F 00 00 00
+
+
+
+
+CA000000      0X650
+
+	case 0x650: //HV bus status
+		dcVoltage = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]);
+		dcCurrent = ((frame->data.bytes[2] * 256) + frame->data.bytes[3]) - 5000; //offset is 500A, unit = .1A
+		activityCount++;
+		break;
+
+log190428.txt 0xCA000000  99 00 09 13 88 00 00 00 FC
+ dcVoltage = 0x0009 = 9
+ dcCurrent = 0x1388 - 5000 = 0
+
+log190504.txt 0xCA000000  99 0A 71 13 88 00 64 00 FC
+ dcVoltage =  0x0A71 = 2673 = 267.3v(?)
+ dcCurrent =  0x1288 - 5000 = 0
+
+
+

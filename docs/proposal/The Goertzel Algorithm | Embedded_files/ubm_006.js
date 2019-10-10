@@ -1,0 +1,1 @@
+function UBMService(a){"undefined"!=typeof _siteUrl?this.url=_siteUrl+a:this.url=a}UBMService.prototype.AjaxCall=function(a){$.ajax({type:a.type?a.type:"POST",url:this.url+a.method,dataType:"json",data:a.params?a.params:[],cache:!1,success:function(e,t,c){a.callback&&a.callback(e)}})};
