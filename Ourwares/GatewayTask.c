@@ -36,6 +36,7 @@ as 29b address. [04/06/2019--not implemented]
 #include "SerialTaskReceive.h"
 #include "gateway_PCtoCAN.h"
 #include "gateway_CANtoPC.h"
+#include "main.h"
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -61,8 +62,8 @@ uint32_t GatewayTask_noteval = 0;    // Receives notification word upon an API n
 osThreadId xGatewayTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-  osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 384);
-  GatewayTaskHandle = osThreadCreate(osThread(GatewayTask), NULL);
+   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 384);
+   GatewayTaskHandle = osThreadCreate(osThread(GatewayTask), NULL);
 	vTaskPrioritySet( GatewayTaskHandle, taskpriority );
 
 	return GatewayTaskHandle;
@@ -112,9 +113,9 @@ void StartGatewayTask(void const * argument)
 	pccan1.bits       = 0; // /NART
 
 	/* Setup serial output buffers for uarts. */
-	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&huart3,128);
-	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&huart2,128);
-	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&huart2,128);
+	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTMON, 128); // PC monitor uart
+	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&HUARTGATE,128); // Gateway uart
+	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTGATE,128); // Gateway uart
 
 	/* Pointers into the CAN  msg circular buffer for each CAN module. */
 	struct CANTAKEPTR* ptake[STM32MAXCANNUM] = {NULL};
@@ -124,7 +125,7 @@ void StartGatewayTask(void const * argument)
      //   ptr notification word, number line buffers, size of lines, 
      //   dma buffer size);
 	/* PC-to-CAN ascii/hex incoming "lines" directly converts to CAN msgs. */
-	prbcb2 = xSerialTaskRxAdduart(&huart2,1,TSKGATEWAYBITc1,\
+	prbcb2 = xSerialTaskRxAdduart(&HUARTGATE,1,TSKGATEWAYBITc1,\
 		&noteval,12,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, /CAN mode
 	if (prbcb2 == NULL) morse_trap(41);
 
@@ -169,12 +170,15 @@ void StartGatewayTask(void const * argument)
 					/* === CAN1 -> PC === */			
 						vSerialTaskSendQueueBuf(&pbuf3); // Place on queue for usart2 sending
 
+#ifdef CONFIGCAN2 // CAN2 setup
 					/* === CAN1 -> CAN2 === */
 						xQueueSendToBack(CanTxQHandle,&canqtx2,portMAX_DELAY);
+#endif
 					}
 				} while (pncan != NULL);	// Drain the buffer
 			}
 		}
+#ifdef CONFIGCAN2 // CAN2 setup
 		/* CAN2 incoming msg: Check notification bit */
 		i = 1;	// CAN2 index
 		{
@@ -201,7 +205,7 @@ void StartGatewayTask(void const * argument)
 				} while (pncan != NULL);	// Drain the buffer
 			}
 		}
-
+#endif
 		/* PC incoming msg: Handle incoming usart2 carrying ascii/hex CAN msgs */
 		if ((GatewayTask_noteval & TSKGATEWAYBITc1) != 0)
 		{ // Here, one or more PC->CAN msgs have been received

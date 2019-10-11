@@ -12,6 +12,7 @@
 #include "DTW_counter.h"
 #include "payload_extract.h"
 #include "GatewayTask.h"
+#include "main.h"
 
 extern osThreadId GatewayTaskHandle;
 
@@ -279,7 +280,7 @@ void StartMailboxTask(void const * argument)
 	struct CANRCVBUFN* pncan;
 	struct CANTAKEPTR* ptake[STM32MAXCANNUM];
 	int i;
-//	int8_t flag;
+	int8_t flag;
 
 //while(1==1) osDelay(10); // Debug: make task do nothing
 
@@ -310,7 +311,7 @@ void StartMailboxTask(void const * argument)
 		/* Step through possible notification bits */
 		for (i = 0; i < STM32MAXCANNUM; i++)
 		{
-//			flag = 0;
+			flag = 0;
 			if ((noteval & (1 << i)) != 0)
 			{	
 				noteused |= (1 << i);
@@ -323,7 +324,7 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
 
 					if (pncan != NULL)
 					{ // Here, CAN msg is available
-//						flag = 1;
+						flag = 1;
 						loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
 					}
 				} while (pncan != NULL);

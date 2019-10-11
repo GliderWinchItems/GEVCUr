@@ -86,7 +86,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//#define CONFIGCAN2	// Do initializations for CAN2
 
 void* verr[8];
 uint32_t verrx = 0;
@@ -271,7 +270,7 @@ DiscoveryF4 LEDs --
 
 	/* Add bcb circular buffer to SerialTaskSend for uart6 -- LCD */
 	#define NUMCIRBCB6  16 // Size of circular buffer of BCB for uart6
-	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 0); // char-by-char
+	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 1); // char-by-char
 	if (ret < 0) morse_trap(1); // Panic LED flashing
 
 	/* Add bcb circular buffer to SerialTaskSend for usart2 -- gateway */
@@ -828,17 +827,17 @@ void StartDefaultTask(void const * argument)
 	/* notification bits processed after a 'Wait. */
 	uint32_t noteused = 0;
 
-	struct SERIALSENDTASKBCB* pbuf1 = getserialbuf(&HUARTLCD,96);
+	struct SERIALSENDTASKBCB* pbuf1 = getserialbuf(&HUARTMON,96);
 	if (pbuf1 == NULL) morse_trap(11);
 
-	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&HUARTLCD,96);
-	if (pbuf1 == NULL) morse_trap(13);
+	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&HUARTMON,96);
+	if (pbuf3 == NULL) morse_trap(13);
 
-	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTLCD,96);
-	if (pbuf1 == NULL) morse_trap(12);
+	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTMON,96);
+	if (pbuf2 == NULL) morse_trap(12);
 
-	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTLCD,96);
-	if (pbuf1 == NULL) morse_trap(12);
+	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
+	if (pbuf4 == NULL) morse_trap(19);
 
 	int ctr = 0; // Running count
 	uint32_t heapsize;

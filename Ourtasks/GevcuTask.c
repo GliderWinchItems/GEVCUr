@@ -95,7 +95,7 @@ void StartGevcuTask(void const * argument)
 	gevcu_func_init_init(pcf, &adc1);
 
 	/* CAN hardware filter: restrict incoming to necessary CAN msgs. */
-	gevcu_func_init_canfilter(pcf);
+//$	gevcu_func_init_canfilter(pcf);
       
 	/* Create timer for keep-alive.  Auto-reload/periodic */
 	pcf->swtimer1 = xTimerCreate("swtim1",pcf->ka_k,pdTRUE,\

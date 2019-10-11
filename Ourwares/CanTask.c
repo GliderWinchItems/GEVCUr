@@ -70,7 +70,7 @@ void StartCanTxTask(void const * argument)
 	struct CANTXQMSG txq;
 	int ret;
 
-//osDelay(512*4); // Debug delay
+osDelay(512*10); // Debug delay
 
   /* Infinite RTOS Task loop */
   for(;;)

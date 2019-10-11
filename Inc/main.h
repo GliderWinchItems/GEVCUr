@@ -97,9 +97,17 @@ void Error_Handler(void);
 #define Spare_Pin GPIO_PIN_5
 #define Spare_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
+// ===============================================================================
+// USART/UART assignments
+#define HUARTMON  huart3 // uart for PC monitoring
+#define HUARTLCD  huart6 // uart for LCD
+#define HUARTGATE huart2 // usart for gateway
 
-#define HUARTMON huart3 // uart for PC monitoring
-#define HUARTLCD huart6 // uart for LCD
+// Gateway task (for Mailbox use)
+#define GATEWAYTASKINCLUDED // Include gateway
+
+//#define CONFIGCAN2	// Configure for CAN2
+// ===============================================================================
 
 /* USER CODE END Private defines */
 
