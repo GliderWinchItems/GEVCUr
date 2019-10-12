@@ -8,14 +8,15 @@
 #define __ADCFASTSUM16
 
 #include <stdint.h>
+#include "adcparams.h"
 
 #define ADCFASTSUM16SIZE 16 // Number of seqs hard-coded. Use for checks
 
 /* *************************************************************************/
-void adcfastsum16(uint16_t* psum, uint16_t* pdma);
+void adcfastsum16(struct ADCCHANNEL* pchan, uint16_t* pdma);
 /*	@brief	: Inline fast summation: ASSUMES 16 ADC sequences: channels: ADC1IDX_ADCSCANSIZE
- * @param	: psum = pointer to sum
- * @param	: pdma = pointer to dma buffer
+ * @param	: pchan = pointer to stuct array for adc1 channels
+ * @param	: pdma  = pointer to dma buffer
  * *************************************************************************/
 
 #endif

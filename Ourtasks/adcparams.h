@@ -140,9 +140,9 @@ struct ADCRATIOMETRIC
 struct ADCCHANNEL	
 {
 	struct FILTERIIRF1 iir_f1;	// iir_f1 (float) filter
-	float fscale;    // Scale factor
-	uint32_t xsum[2];    // Extended sum
-	uint16_t sum;        // Sum of 1/2 DMA buffer
+	float    fscale;  // Scale factor
+	uint32_t xsum[2]; // Extended sum
+	uint16_t sum;     // Sum of 1/2 DMA buffer
 };
 
 /* struct allows pointer to access raw and calibrated ADC1 data. */

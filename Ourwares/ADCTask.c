@@ -35,7 +35,7 @@ osThreadId ADCTaskHandle;
  * *************************************************************************/
 osThreadId xADCTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 384);
+ 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 128);
 	ADCTaskHandle = osThreadCreate(osThread(ADCTask), NULL);
 	vTaskPrioritySet( ADCTaskHandle, taskpriority );
 	return ADCTaskHandle;
@@ -81,10 +81,6 @@ void StartADCTask(void const * argument)
 			pdma = adc1dmatskblk[0].pdma2;
 		}
 
-
-		/* Calibrate and filter ADC readings. */
-		adcparams_cal();
-
 		/* Notify GevcuTask that new readings are ready. */
 		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
 		
@@ -92,7 +88,7 @@ void StartADCTask(void const * argument)
 
 
 		/* Sum the readings 1/2 of DMA buffer to an array. */
-		adcfastsum16(&adc1.chan[0].sum, pdma); // Fast in-line addition
+		adcfastsum16(&adc1.chan[0], pdma); // Fast in-line addition
 		adc1.ctr += 1; // Update count
 
 #define DEBUGGINGADCREADINGS

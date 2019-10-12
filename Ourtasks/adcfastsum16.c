@@ -3,22 +3,19 @@
 * Date First Issued  : 03/16/2019
 * Description        : Fast sum: ADC DMA buffering--16 sequences, 'N' channels
 *******************************************************************************/
-
 #include "adcfastsum16.h"
-#include "adcparams.h"
-
 /* *************************************************************************
- * void adcfastsum16(uint16_t* psum, uint16_t* pdma);
+ * void adcfastsum16(struct ADCCHANNEL* pchan, uint16_t* pdma);
  *	@brief	: Inline fast summation: ASSUMES 16 ADC sequences: channels: ADC1IDX_ADCSCANSIZE
- * @param	: psum = pointer to sum
- * @param	: pdma = pointer to dma buffer
+ * @param	: pchan = pointer to stuct array for adc1 channels
+ * @param	: pdma  = pointer to dma buffer
  * *************************************************************************/
-void adcfastsum16(uint16_t* psum, uint16_t* pdma)
+void adcfastsum16(struct ADCCHANNEL* pchan, uint16_t* pdma)
 {
-	uint16_t* pend = psum + ADC1IDX_ADCSCANSIZE;
+	struct ADCCHANNEL* pend = pchan + ADC1IDX_ADCSCANSIZE;
 	do
 	{
-		*psum = *pdma
+		pchan->sum = *pdma
 		 + *(pdma + ADC1IDX_ADCSCANSIZE * 1)
 		 + *(pdma + ADC1IDX_ADCSCANSIZE * 2)
 		 + *(pdma + ADC1IDX_ADCSCANSIZE * 3)
@@ -35,8 +32,8 @@ void adcfastsum16(uint16_t* psum, uint16_t* pdma)
 		 + *(pdma + ADC1IDX_ADCSCANSIZE *14)
 		 + *(pdma + ADC1IDX_ADCSCANSIZE *15);
 
-		psum += 1;
-		pdma += 1;
-	} while (psum != pend);
+		pchan += 1;
+		pdma  += 1;
+	} while (pchan != pend);
 	return;
 }

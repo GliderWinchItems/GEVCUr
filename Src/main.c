@@ -252,7 +252,7 @@ DiscoveryF4 LEDs --
 	/* defaultTask timer for pacing display of stack usages. */
 	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(5000),0);
 	/* defaultTask timer for pacing ADC monitoring. */
-	ret = xTimerChangePeriod( defautTaskTimer01Handle,pdMS_TO_TICKS(1000),0);
+	ret = xTimerChangePeriod( defautTaskTimer01Handle,pdMS_TO_TICKS(100),0);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -839,8 +839,11 @@ void StartDefaultTask(void const * argument)
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
 	if (pbuf4 == NULL) morse_trap(19);
 
+//#define DISPLAYSTACKUSAGEFORTASKS
+#ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
 	uint32_t heapsize;
+#endif
 
 	/* Test CAN msg */
 	struct CANTXQMSG testtx;
@@ -854,9 +857,33 @@ void StartDefaultTask(void const * argument)
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
-	uint32_t dmact_prev = adcommon.dmact;
+//#define SHOWSUMSOFADCRAWREADINGS
+#ifdef SHOWSUMSOFADCRAWREADINGS
+extern uint32_t adcsumdb[ADC1IDX_ADCSCANSIZE]; // debug
+extern uint32_t adcdbctr;    // debug
+uint32_t adcdbctr_prev = adcdbctr;
+uint16_t hdrctr = 16;
+#endif
 
-extern volatile uint32_t adcdbg2;
+//#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
+#ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
+uint16_t idx_xsum_prev = 0;
+uint16_t hdrctr2 = 0;
+#endif
+
+#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+#ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+float  fxxsum[ADC1IDX_ADCSCANSIZE];
+float ftmp;
+uint64_t xxsum[ADC1IDX_ADCSCANSIZE];
+uint32_t ravectr = 0;
+float frecip;
+uint16_t idx_xxsum_prev = 0;
+uint16_t hdrctr3 = 16;
+uint8_t ix;
+for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
+
+#endif
 
 
 	for ( ;; )
@@ -867,6 +894,7 @@ extern volatile uint32_t adcdbg2;
 		{
 			noteused |= DEFAULTTSKBIT00;
 
+#ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
 			yprintf(&pbuf2,"\n\r%4i Unused Task stack space--", ctr++);
 			stackwatermark_show(defaultTaskHandle,&pbuf2,"defaultTask--");
@@ -882,6 +910,7 @@ extern volatile uint32_t adcdbg2;
 			heapsize = xPortGetFreeHeapSize();
 			yprintf(&pbuf3,"\n\rGetFreeHeapSize: total: %i used %i %3.1f%% free: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize));
+#endif
 
 			/* ==== CAN MSG sending test ===== */
 			/* Place test CAN msg to send on queue in a burst. */
@@ -889,10 +918,16 @@ extern volatile uint32_t adcdbg2;
 			for (i = 0; i < 7; i++)
 				xQueueSendToBack(CanTxQHandle,&testtx,portMAX_DELAY);
 		}
+
+/* Faster timeout */
 		if ((noteval & DEFAULTTSKBIT01) != 0)
 		{
 			noteused |= DEFAULTTSKBIT01;
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
+
+#ifdef SHOWADCCOMMONCOMPUTATIONS
+uint32_t dmact_prev = adcommon.dmact;
+extern volatile uint32_t adcdbg2;
 			yprintf(&pbuf2,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f %i",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt,(adcommon.dmact-dmact_prev));
 			dmact_prev = adcommon.dmact;
 
@@ -901,6 +936,62 @@ extern volatile uint32_t adcdbg2;
 			yprintf(&pbuf3,"\n\rR4: %d %7.2f %7.2f",	adc1data.chan[ADC1IDX_CONTROL_LEVER].sum/ADC1DMANUMSEQ, adc1data.adc1calreading[ADC1IDX_CONTROL_LEVER].f,\
                  adc1data.adc1calreadingfilt[ADC1IDX_CONTROL_LEVER].f);
 */
+#endif
+
+#ifdef SHOWSUMSOFADCRAWREADINGS
+			hdrctr += 1;
+			if (hdrctr >= 16) // Periodic print header
+			{
+				hdrctr = 0;
+				yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+			}
+			yprintf(&pbuf3,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
+			adcdbctr_prev = adcdbctr;
+#endif
+
+#ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
+			if (adc1.idx_xsum != idx_xsum_prev)
+			{
+				hdrctr2 += 1;
+				if (hdrctr2 >= 16) // Periodic print header
+				{
+					hdrctr2 = 0;
+					yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+				}
+				idx_xsum_prev = adc1.idx_xsum;
+				yprintf(&pbuf3,"\n\rctr: %5d  exsum: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",hdrctr2,
+					(float)adc1.chan[0].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
+					(float)adc1.chan[1].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
+					(float)adc1.chan[2].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
+					(float)adc1.chan[3].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
+					(float)adc1.chan[4].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
+					(float)adc1.chan[5].xsum[1]*(1.0/(float)ADCEXTENDSUMCT)	);
+			}
+#endif
+
+#ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+			if (adc1.idx_xsum != idx_xxsum_prev)
+			{
+				hdrctr3 += 1;
+				if (hdrctr3 >= 16) // Periodic print header
+				{
+					hdrctr3 = 0;
+					yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+				}
+				idx_xxsum_prev = adc1.idx_xsum;
+				ravectr += 1;
+				frecip =  (1.0/((float)ADCEXTENDSUMCT * (float)ravectr));
+	
+				for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++)
+				{
+					xxsum[ix] += adc1.chan[ix].xsum[1];	
+					ftmp = xxsum[ix];
+					fxxsum[ix] = ftmp * frecip;
+				}
+				yprintf(&pbuf3,"\n\rctr: %5d  exsum: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
+					ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
+			}
+#endif
 		}	
 	}
   /* USER CODE END 5 */ 

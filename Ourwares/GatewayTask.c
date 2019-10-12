@@ -62,7 +62,7 @@ uint32_t GatewayTask_noteval = 0;    // Receives notification word upon an API n
 osThreadId xGatewayTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 384);
+   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 256);
    GatewayTaskHandle = osThreadCreate(osThread(GatewayTask), NULL);
 	vTaskPrioritySet( GatewayTaskHandle, taskpriority );
 
