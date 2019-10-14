@@ -20,7 +20,7 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
    p->version    = 1;   // 
 
 	/* Timings in milliseconds. Converted later to timer ticks. */
-	p->ka_t       = 1500; // Command/Keep-alive CAN msg timeout duration.
+	p->ka_t       = 2; // Gevcu polling timer (ms) 
 	p->keepalive_t= 2555; // keep-alive timeout (timeout delay ms)
 	p->hbct1_t    = 1000; // Heartbeat ct: ticks between sending msgs hv1:cur1
 	p->hbct2_t    = 1000; // Heartbeat ct: ticks between sending msgs hv2:cur2

@@ -51,11 +51,11 @@ struct ADC1CALINTERNAL
 	p->calintern.iiradctemp.scale = 4;
 
 	// Internal voltage ref: ADC1IDX_INTERNALVREF  5   // IN18     - Internal voltage reference
-	p->calintern.fvdd   = 3.29;	// Vdd for following Vref ADC reading
-	p->calintern.adcvdd = 23928;  //(16*1495.5) ADC reading (DMA sum) for above Vdd
+	p->calintern.fvdd   = 2.936;	// Vdd for following Vref ADC reading
+	p->calintern.adcvdd = 27093;  //(16*1495.5) ADC reading (DMA sum) for above Vdd
 
 	// Internal temperature: ADC1IDX_INTERNALTEMP  4   // IN17     - Internal temperature sensor
-	p->calintern.adcrmtmp  = 26990; // Room temp ADC (DMA sum) reading
+	p->calintern.adcrmtmp  = 17838; // Room temp ADC (DMA sum) reading
 	p->calintern.frmtemp   = 25.0;  // Room temp for ADC reading     
 	p->calintern.fslope    = 4.3;   // mv/degC slope of temperature sensor
 	p->calintern.fvreftmpco= 15;    // Vref temp coefficient (15 is based on similar parts)

@@ -81,6 +81,7 @@
 #include "MailboxTask.h"
 #include "GatewayTask.h"
 #include "iir_f2.h"
+#include "spiserialparallel.h"
 
 /* USER CODE END Includes */
 
@@ -258,7 +259,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -380,6 +381,9 @@ DiscoveryF4 LEDs --
 
 	/* ADC summing, calibration, etc. */
 	xADCTaskCreate(3); // (arg) = priority
+
+	/* Start SPI with interrupts restarting transfer. */
+	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
 /* =================================================== */
 
@@ -600,7 +604,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -811,10 +815,9 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
-
 
 	int i;
 
@@ -839,7 +842,7 @@ void StartDefaultTask(void const * argument)
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
 	if (pbuf4 == NULL) morse_trap(19);
 
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
 	uint32_t heapsize;
@@ -862,16 +865,16 @@ HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 extern uint32_t adcsumdb[ADC1IDX_ADCSCANSIZE]; // debug
 extern uint32_t adcdbctr;    // debug
 uint32_t adcdbctr_prev = adcdbctr;
-uint16_t hdrctr = 16;
+uint16_t hdrctr = 999;
 #endif
 
-//#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
+#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 #ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
 uint16_t idx_xsum_prev = 0;
-uint16_t hdrctr2 = 0;
+uint16_t hdrctr2 = 999;
 #endif
 
-#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+//#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 #ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 float  fxxsum[ADC1IDX_ADCSCANSIZE];
 float ftmp;
@@ -879,10 +882,15 @@ uint64_t xxsum[ADC1IDX_ADCSCANSIZE];
 uint32_t ravectr = 0;
 float frecip;
 uint16_t idx_xxsum_prev = 0;
-uint16_t hdrctr3 = 16;
+uint16_t hdrctr3 = 999;
 uint8_t ix;
 for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 
+#endif
+
+#define SHOWSERIALPARALLELSTUFF
+#ifdef  SHOWSERIALPARALLELSTUFF
+uint32_t spispctr_prev = 0;
 #endif
 
 
@@ -893,6 +901,12 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
+
+			/* SPI serial-parallel hw testing. */
+#ifdef SHOWSERIALPARALLELSTUFF
+			yprintf(&pbuf1,"\n\rspi ctr: %d wr: %08X rd: %08X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
+			spispctr_prev = spispctr;
+#endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
@@ -925,17 +939,16 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 			noteused |= DEFAULTTSKBIT01;
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
+//#define SHOWADCCOMMONCOMPUTATIONS
 #ifdef SHOWADCCOMMONCOMPUTATIONS
 uint32_t dmact_prev = adcommon.dmact;
 extern volatile uint32_t adcdbg2;
 			yprintf(&pbuf2,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f %i",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt,(adcommon.dmact-dmact_prev));
 			dmact_prev = adcommon.dmact;
 
-			yprintf(&pbuf4,"\n\rInternal ref:   %d %d %d\n\r",adc1.chan[ADC1IDX_INTERNALVREF].sum/ADC1DMANUMSEQ, adcommon.ivdd, adcdbg2);
-/*
-			yprintf(&pbuf3,"\n\rR4: %d %7.2f %7.2f",	adc1data.chan[ADC1IDX_CONTROL_LEVER].sum/ADC1DMANUMSEQ, adc1data.adc1calreading[ADC1IDX_CONTROL_LEVER].f,\
-                 adc1data.adc1calreadingfilt[ADC1IDX_CONTROL_LEVER].f);
-*/
+//			yprintf(&pbuf4,"\n\rInternal ref:   %d %d %d\n\r",adc1.chan[ADC1IDX_INTERNALVREF].sum/ADC1DMANUMSEQ, adcommon.ivdd, adcdbg2);
+
+			yprintf(&pbuf1,"\n\rCalibrated: vref: %6.4f",adc1.common.fvref);
 #endif
 
 #ifdef SHOWSUMSOFADCRAWREADINGS
@@ -988,10 +1001,13 @@ extern volatile uint32_t adcdbg2;
 					ftmp = xxsum[ix];
 					fxxsum[ix] = ftmp * frecip;
 				}
-				yprintf(&pbuf3,"\n\rctr: %5d  exsum: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
+				yprintf(&pbuf3,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
 					ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
 			}
 #endif
+
+
+
 		}	
 	}
   /* USER CODE END 5 */ 

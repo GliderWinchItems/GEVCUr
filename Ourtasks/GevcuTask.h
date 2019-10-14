@@ -262,7 +262,7 @@ struct GEVCUFUNCTION
 
 	uint32_t idiffafter; //  Scaled int of lc.diffafter
 
-	uint32_t ka_k;       // Command/Keep-alive CAN msg timeout duration.
+	uint32_t ka_k;       // GevcuTask polling timer.
 	uint32_t prechgmax_k;// allowable delay for diffafter to reach closure point (timeout delay ticks)
 	uint32_t close1_k;   // contactor #1 coil energize-closure (timeout delay ticks)
 	uint32_t close2_k;   // contactor #2 coil energize-closure (timeout delay ticks)

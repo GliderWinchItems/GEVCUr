@@ -68,6 +68,7 @@ void GevcuEvents_04(struct GEVCUFUNCTION* pcf)
 dbgev04 += 1;
 	pcf->evstat |= CNCTEVTIMER1;	// Set to show that TIMER1 timed out
 
+
 	/* Send with CAN id for heartbeat. */
 
 	return;

@@ -6,22 +6,9 @@
 *******************************************************************************/
 
 #include "calib_control_lever.h"
-#include "etmc0.h"
-#include "mc_msgs.h"
-#include "adc_mc.h"
-#include "libopencm3/stm32/f4/gpio.h"
-#include "bsp_uart.h"
-#include "init_hardware_mc.h"
-#include "clockspecifysetup.h"
-#include "xprintf.h"
 #include <string.h>
 #include <stdio.h>
-#include "spi2rw.h"
 #include "4x20lcd.h"
-#include "beep_n_lcd.h"
-
-
-
 
 /* ***********************************************************************************************************
  * void calib_control_lever(void);
@@ -33,7 +20,7 @@
 //#define FSCL	((1 << 12) - 1)	// full scale control lever (CL) output
 #define CLREST (1 << 11) 	// SPI bit position for CL rest position switch
 #define CLFS  (1 << 8) 		// SPI bit position for CL full scale position
-#define CL_ADC_CHANNEL 	0
+
 #define FLASHCOUNT (sysclk_freq/8);	// Orange LED flash increment
 
 // Min and maximum values observed for control lever
@@ -41,10 +28,10 @@ static int cloffset = 0;
 static int clmax = 0;	
 static float fpclscale;		//	CL conversion scale factor 
 
-void calib_control_lever(struct ETMCVAR* petmcvar)
+void calib_control_lever(struct GEVCUFUNCTION* p)
 {
-	int clcalstate = 0;		// state for control lever intial calibration
-	int i;					// loop counter
+	int clcalstate = 0; // state for control lever intial calibration
+	int i;              // loop counter
 	int adc_tmp;
 	unsigned int t_led = DTWTIME + FLASHCOUNT;	//	initial t_led
 	char vv[128];
@@ -106,7 +93,7 @@ void calib_control_lever(struct ETMCVAR* petmcvar)
 			if (((int)(DTWTIME - t_led)) > 0) // Has the time expired?
 			{ //	Time expired
 				//	read filtered control lever adc last value and update min and max values
-				adc_tmp = adc_last_filtered[CL_ADC_CHANNEL];
+				adc_tmp = adc_last_filtered[ADC1IDX_CONTROL_LEVER];
 				cloffset = (cloffset < adc_tmp) ? cloffset : adc_tmp;
 				clmax = (clmax > adc_tmp) ? clmax : adc_tmp;
 				//	Read SPI switches
@@ -278,7 +265,7 @@ void calib_control_lever(struct ETMCVAR* petmcvar)
 float calib_control_lever_get(void)
 {
 	float x;
-	x = (adc_last_filtered[CL_ADC_CHANNEL] - cloffset) * fpclscale;
+	x = (adc_last_filtered[ADC1IDX_CONTROL_LEVER] - cloffset) * fpclscale;
 	/* for now do not limit
 	x = x > 1.0 ? 1.0 : x;
 	x = x < 0.0 ? 0.0 : x;

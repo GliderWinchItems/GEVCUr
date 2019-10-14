@@ -38,11 +38,11 @@ static void adcparamsinit_init_common(struct ADCFUNCTION* p)
 
 	/* Reassign float pt iir filter constants. */
 	p->chan[ADC1IDX_INTERNALTEMP].iir_f1.skipctr  = 8;    // Initial readings skip count
-	p->chan[ADC1IDX_INTERNALTEMP].iir_f1.coef     = 0.999;  // Filter coefficient (< 1.0)
+	p->chan[ADC1IDX_INTERNALTEMP].iir_f1.coef     = 0.99;  // Filter coefficient (< 1.0)
 	p->chan[ADC1IDX_INTERNALTEMP].iir_f1.onemcoef = (1 - p->chan[ADC1IDX_INTERNALTEMP].iir_f1.coef); // Pre-computed
 
 	p->chan[ADC1IDX_INTERNALVREF].iir_f1.skipctr  = 8;    // Initial readings skip count
-	p->chan[ADC1IDX_INTERNALVREF].iir_f1.coef     = 0.999;  // Filter coefficient (< 1.0)
+	p->chan[ADC1IDX_INTERNALVREF].iir_f1.coef     = 0.99;  // Filter coefficient (< 1.0)
 	p->chan[ADC1IDX_INTERNALVREF].iir_f1.onemcoef = (1 - p->chan[ADC1IDX_INTERNALVREF].iir_f1.coef); // Pre-computed
 
 	padccommon->ts_vref      = *PVREFINT_CAL; // Factory calibration
