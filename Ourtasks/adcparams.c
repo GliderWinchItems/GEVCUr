@@ -217,7 +217,5 @@ void adcparams_cal(void)
 
 //	ratiometric5v(p, ADC1IDX_SPARE); // Possible current sensor
 
-
-
 	return;
 }

@@ -17,8 +17,6 @@
 #include "morse.h"
 #include "adcparamsinit.h"
 
-int dbgstmp;
-
 static void new_state(struct GEVCUFUNCTION* pcf, uint32_t newstate);
 
 
@@ -31,11 +29,6 @@ void GevcuStates_otosettling_init(struct GEVCUFUNCTION* pcf)
 	return;
 }
 
-/* ==== xDISCONNECTED ======================================= */
-void static transition_disconnected(struct GEVCUFUNCTION* pcf)
-{ // Intialize disconnected state
-	return;
-}
 /* ==== DISCONNECTED ======================================== */
 void GevcuStates_disconnected(struct GEVCUFUNCTION* pcf)
 {

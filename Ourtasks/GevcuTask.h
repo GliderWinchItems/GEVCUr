@@ -105,17 +105,24 @@ NOTES:
 */
 
 
-/* Task notification bit assignments. */
-#define CNCTBIT00	(1 << 0)  // ADCTask has new readings
-#define CNCTBIT01	(1 << 1)  // HV sensors usart RX line ready
-#define CNCTBIT02	(1 << 2)  // spare
-#define CNCTBIT03	(1 << 3)  // TIMER 3: uart RX keep-alive
-#define CNCTBIT04	(1 << 4)  // TIMER 1: Command Keep Alive
-#define CNCTBIT05	(1 << 5)  // TIMER 2: Multiple use delays
+/* Task notification bit assignments for GevcuTask. */
+#define GEVCUBIT00	(1 << 0)  // ADCTask has new readings
+#define GEVCUBIT01	(1 << 1)  // spare
+#define GEVCUBIT02	(1 << 2)  // spare
+#define GEVCUBIT03	(1 << 3)  // Software timer 3 timeout callback
+#define GEVCUBIT04	(1 << 4)  // Software timer 1 timeout callback
+#define GEVCUBIT05	(1 << 5)  // Software timer 2 timeout callback
 // MailboxTask notification bits for CAN msg mailboxes
-#define CNCTBIT06	(1 << 6)  // CANID_CMD: incoming command:        cid_cmd_i 
-#define CNCTBIT07	(1 << 7)  // CANID-keepalive connect command:    cid_keepalive_i
-#define CNCTBIT08	(1 << 8)  // CANID-GPS time sync msg (poll msg): cid_gps_sync
+#define GEVCUBIT06 ( 1 <<  6) // cid_gps_sync
+#define GEVCUBIT07 ( 1 <<  7) // cid_cntctr_keepalive_r
+#define GEVCUBIT08 ( 1 <<  8) // cid_dmoc_actualtorq
+#define GEVCUBIT09 ( 1 <<  9) // cid_dmoc_speed
+#define GEVCUBIT10 ( 1 << 10) // cid_dmoc_dqvoltamp
+#define GEVCUBIT11 ( 1 << 11) // cid_dmoc_torque
+#define GEVCUBIT12 ( 1 << 12) // cid_dmoc_critical_f
+#define GEVCUBIT13 ( 1 << 13) // cid_dmoc_hv_status
+#define GEVCUBIT14 ( 1 << 14) // cid_dmoc_hv_temps
+
 
 /* Event status bit assignments (CoNtaCTor EVent ....) */
 #define CNCTEVTIMER1 (1 << 0) // 1 = timer1 timed out: command/keep-alive
@@ -195,10 +202,10 @@ enum GEVCU_FAULTCODE
 /* Function command response payload codes. */
 enum GEVCU_CMD_CODES
 {
-	ADCRAW5V,         // PA0 IN0  - 5V sensor supply
-	ADCRAWCUR1,       // PA5 IN5  - Current sensor: total battery current
-	ADCRAWCUR2,       // PA6 IN6  - Current sensor: motor
-	ADCRAW12V,        // PA7 IN7  - +12 Raw power to board
+	ADCCTLLEVER,		// PC1 IN11 - CL reading
+	ADCRAW5V,         // PC4 IN14 - 5V 
+	ADCRAW12V,        // PC2 IN12 - +12 Raw
+	ADCSPARE,			// PC5 IN15 - 5V ratiometric spare
 	ADCINTERNALTEMP,  // IN17     - Internal temperature sensor
 	ADCINTERNALVREF,  // IN18     - Internal voltage reference
 	UARTWHV1,
@@ -206,6 +213,9 @@ enum GEVCU_CMD_CODES
 	UARTWHV3,
 	CAL5V,
 	CAL12V,
+	ADCRAWCUR1,       
+	ADCRAWCUR2,       
+
 };
 
 /* CAN msg array index names. */
@@ -240,37 +250,10 @@ struct GEVCUFUNCTION
 	enum GEVCU_FAULTCODE faultcode;
 	enum GEVCU_FAULTCODE faultcode_prev;
 
-	/* OTO settling */
-	uint32_t otosw;
-
-/* In the disconnect state the battery string voltage must be above the following. */
-	uint32_t ibattlow;   // Minimum battery volts required to connect
-
-/* Battery string current above which disconnecting is prevented. */
-	int32_t icurrentdisconnect; // Scale integer representation
-
-/* With two contactor config, (hv1-hv2) max when contactor #1 closes */
-/* In one contactor config, (hv1-hv2) max when contactor #2 closes */
-	uint32_t ihv1mhv2max;
-
-	uint32_t iprechgendv;  // Prep-charge end volts threshold: two contactor mode
-	uint32_t iprechgendvb; // Prep-charge end volts threshold: one contactor mode (b)
-
-
-/* Mininum pre-charge delay (before monitoring voltage) */
-   uint32_t prechgmin_k; // Minimum pre-charge duration
-
-	uint32_t idiffafter; //  Scaled int of lc.diffafter
 
 	uint32_t ka_k;       // GevcuTask polling timer.
-	uint32_t prechgmax_k;// allowable delay for diffafter to reach closure point (timeout delay ticks)
-	uint32_t close1_k;   // contactor #1 coil energize-closure (timeout delay ticks)
-	uint32_t close2_k;   // contactor #2 coil energize-closure (timeout delay ticks)
-	uint32_t open1_k;    // contactor #1 coil de-energize-open (timeout delay ticks)
-	uint32_t open2_k;    // contactor #2 coil de-energize-open (timeout delay ticks)
 	uint32_t keepalive_k;// keep-alive timeout (timeout delay ticks)
-	uint32_t hbct1_k;		// Heartbeat ct: ticks between sending msgs hv1:cur1
-	uint32_t hbct2_k;		// Heartbeat ct: ticks between sending msgs hv2:cur2
+	uint32_t hbct_k;		// Heartbeat ct: ticks between sending msgs hv1:cur1
 
 	uint32_t ihv1;       // Latest reading: battery string at contactor #1
 	uint32_t ihv2;       // Latest reading: DMOC side of contactor #1
@@ -289,16 +272,16 @@ struct GEVCUFUNCTION
 
 
 	/* Pointers to incoming CAN msg mailboxes. */
-	struct MAILBOXCAN* pmbx_cid_cmd_i;      //
-	struct MAILBOXCAN* pmbx_cid_keepalive_i; //
-	struct MAILBOXCAN* pmbx_cid_gps_sync;   //
+	struct MAILBOXCAN* pmbx_cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to poll
+	struct MAILBOXCAN* pmbx_cid_dmoc_actualtorq; // CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000
+	struct MAILBOXCAN* pmbx_cid_dmoc_speed;      // CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?)
+	struct MAILBOXCAN* pmbx_cid_dmoc_dqvoltamp;  // CANID_DMOC_DQVOLTAMP: I16_I16_I16_I16','DMOC: D volt:amp, Q volt:amp
+	struct MAILBOXCAN* pmbx_cid_dmoc_torque;     // CANID_DMOC_TORQUE:    I16_I16,'DMOC: Torque,-(Torque-30000)
+	struct MAILBOXCAN* pmbx_cid_dmoc_critical_f; // CANID_DMOC_TORQUE:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
+	struct MAILBOXCAN* pmbx_cid_dmoc_hv_status;  // CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
+	struct MAILBOXCAN* pmbx_cid_dmoc_hv_temps;   // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
+	struct MAILBOXCAN* pmbx_cid_gps_sync; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 
-	uint32_t ipwmpct1;     // Period ct PWM after closure delay at 100% coil #1
-	uint32_t ipwmpct2;     // Period ct PWM after closure delay at 100% coil #2
-
-	/* PWM struct */
-	TIM_OC_InitTypeDef sConfigOCn; // 'n' - serves ch3 and ch4
-	
 	uint8_t state;      // Gevcu main state
 	uint8_t substateC;  // State within CONNECTING (0-15)
 	uint8_t substateX;  // spare substate (0-15)

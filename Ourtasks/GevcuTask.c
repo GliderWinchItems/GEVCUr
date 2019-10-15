@@ -34,7 +34,7 @@ struct GEVCUFUNCTION gevcufunction;
  * *************************************************************************/
 static void swtim1_callback(TimerHandle_t tm)
 {
-	xTaskNotify(GevcuTaskHandle, CNCTBIT04, eSetBits);
+	xTaskNotify(GevcuTaskHandle, GEVCUBIT04, eSetBits);
 	return;
 }
 /* *************************************************************************
@@ -43,7 +43,7 @@ static void swtim1_callback(TimerHandle_t tm)
  * *************************************************************************/
 static void swtim2_callback(TimerHandle_t tm)
 {
-	xTaskNotify(GevcuTaskHandle, CNCTBIT05, eSetBits);
+	xTaskNotify(GevcuTaskHandle, GEVCUBIT05, eSetBits);
 	return;
 }
 /* *************************************************************************
@@ -52,7 +52,7 @@ static void swtim2_callback(TimerHandle_t tm)
  * *************************************************************************/
 static void swtim3_callback(TimerHandle_t tm)
 {
-	xTaskNotify(GevcuTaskHandle, CNCTBIT03, eSetBits);
+	xTaskNotify(GevcuTaskHandle, GEVCUBIT03, eSetBits);
 	return;
 }
 /* *************************************************************************
@@ -84,7 +84,7 @@ void StartGevcuTask(void const * argument)
 	/* Setup serial receive for uart */
 	/* Get buffer control block for incoming uart lines. */
 	// 2 line buffers of 48 chars, no dma buff, char-by-char line mode
-	pcf->prbcb3  = xSerialTaskRxAdduart(&huart3,0,CNCTBIT01,&noteval,2,48,0,0);
+	pcf->prbcb3  = xSerialTaskRxAdduart(&huart3,0,GEVCUBIT01,&noteval,2,48,0,0);
 	if (pcf->prbcb3 == NULL) morse_trap(47);
 
 	/* Init struct with working params */
@@ -134,49 +134,80 @@ if (pcf->evstat != 0) morse_trap(46); // Debugging check
 // no bits left could end the testing early.
 		// Check notification and deal with it if set.
 		noteuse = 0;
-		if ((noteval & CNCTBIT00) != 0)
+		if ((noteval & GEVCUBIT00) != 0)
 		{ // ADC readings ready
 			GevcuEvents_00(pcf);
-			noteuse |= CNCTBIT00;
+			noteuse |= GEVCUBIT00;
 		}
-		if ((noteval & CNCTBIT01) != 0)
-		{ // uart RX line ready
+		if ((noteval & GEVCUBIT01) != 0)
+		{ // spare
 			GevcuEvents_01(pcf);
-			noteuse |= CNCTBIT01;
+			noteuse |= GEVCUBIT01;
 		}
-		if ((noteval & CNCTBIT02) != 0)
+		if ((noteval & GEVCUBIT02) != 0)
 		{ // (spare)
-			noteuse |= CNCTBIT02;
+			GevcuEvents_02(pcf);
+			noteuse |= GEVCUBIT02;
 		}
-		if ((noteval & CNCTBIT03) != 0)
-		{ // TIMER3: uart RX keep alive timed out
+		if ((noteval & GEVCUBIT03) != 0)
+		{ // TIMER3: (one shot)
 			GevcuEvents_03(pcf);			
-			noteuse |= CNCTBIT03;
+			noteuse |= GEVCUBIT03;
 		}
-		if ((noteval & CNCTBIT04) != 0)
-		{ // TIMER1: Command Keep Alive time out (periodic)
+		if ((noteval & GEVCUBIT04) != 0)
+		{ // TIMER1:  (periodic)
 			GevcuEvents_04(pcf);
-			noteuse |= CNCTBIT04;
+			noteuse |= GEVCUBIT04;
 		}
-		if ((noteval & CNCTBIT05) != 0)
-		{ // TIMER2: Multiple use Delay timed out
+		if ((noteval & GEVCUBIT05) != 0)
+		{ // TIMER2: (one shot)
 			GevcuEvents_05(pcf);
-			noteuse |= CNCTBIT05;
+			noteuse |= GEVCUBIT05;
 		}
-		if ((noteval & CNCTBIT06) != 0) 
-		{ // CAN: cid_cmd_i 
+		if ((noteval & GEVCUBIT06) != 0) 
+		{ // CAN:  
 			GevcuEvents_06(pcf);
-			noteuse |= CNCTBIT06;
+			noteuse |= GEVCUBIT06;
 		}
-		if ((noteval & CNCTBIT07) != 0) 
-		{ // CAN: cid_keepalive_i received
+		if ((noteval & GEVCUBIT07) != 0) 
+		{ // CAN: 
 			GevcuEvents_07(pcf);
-			noteuse |= CNCTBIT07;
+			noteuse |= GEVCUBIT07;
 		}
-		if ((noteval & CNCTBIT08) != 0) 
-		{ // CAN: cid_gps_sync 
+		if ((noteval & GEVCUBIT08) != 0) 
+		{ // CAN:  
 			GevcuEvents_08(pcf);
-			noteuse |= CNCTBIT08;
+			noteuse |= GEVCUBIT08;
+		}
+		if ((noteval & GEVCUBIT09) != 0) 
+		{ // CAN:  
+			GevcuEvents_09(pcf);
+			noteuse |= GEVCUBIT09;
+		}
+		if ((noteval & GEVCUBIT10) != 0) 
+		{ // CAN:  
+			GevcuEvents_10(pcf);
+			noteuse |= GEVCUBIT10;
+		}
+		if ((noteval & GEVCUBIT11) != 0) 
+		{ // CAN:  
+			GevcuEvents_11(pcf);
+			noteuse |= GEVCUBIT11;
+		}
+		if ((noteval & GEVCUBIT12) != 0) 
+		{ // CAN:  
+			GevcuEvents_12(pcf);
+			noteuse |= GEVCUBIT12;
+		}
+		if ((noteval & GEVCUBIT13) != 0) 
+		{ // CAN:  
+			GevcuEvents_13(pcf);
+			noteuse |= GEVCUBIT13;
+		}
+		if ((noteval & GEVCUBIT14) != 0) 
+		{ // CAN:  
+			GevcuEvents_14(pcf);
+			noteuse |= GEVCUBIT14;
 		}
   /* ========= States =============================== */
 

@@ -31,15 +31,12 @@ void GevcuEvents_00(struct GEVCUFUNCTION* pcf)
 	pcf->evstat |= CNCTEVADC; // Show new readings ready
 	return;
 }
-
 /* *************************************************************************
  * void GevcuEvents_01(struct GEVCUFUNCTION* pcf);
- * @brief	: usart RX line ready
+ * @brief	: (spare)
  * *************************************************************************/
-uint32_t dbgCE1;
 void GevcuEvents_01(struct GEVCUFUNCTION* pcf)
 {
-dbgCE1 += 1;
 	return;
 }
 /* *************************************************************************
@@ -48,10 +45,11 @@ dbgCE1 += 1;
  * *************************************************************************/
 void GevcuEvents_02(struct GEVCUFUNCTION* pcf)
 {
+	return;
 }
 /* *************************************************************************
  * void GevcuEvents_03(struct GEVCUFUNCTION* pcf);
- * @brief	: TIMER3: uart RX keep alive failed
+ * @brief	: TIMER3: Software timer 3 timeout
  * *************************************************************************/
 void GevcuEvents_03(struct GEVCUFUNCTION* pcf)
 {  // Readings failed to come in before timer timed out.
@@ -59,23 +57,17 @@ void GevcuEvents_03(struct GEVCUFUNCTION* pcf)
 }
 /* *************************************************************************
  * void GevcuEvents_04(struct GEVCUFUNCTION* pcf);
- * @brief	: TIMER1: Command Keep Alive failed (loss of command control)
+ * @brief	: TIMER1: Software timer 1
  * *************************************************************************/
 uint32_t dbgev04;
 
 void GevcuEvents_04(struct GEVCUFUNCTION* pcf)
 {
-dbgev04 += 1;
-	pcf->evstat |= CNCTEVTIMER1;	// Set to show that TIMER1 timed out
-
-
-	/* Send with CAN id for heartbeat. */
-
 	return;
 }
 /* *************************************************************************
  * void GevcuEvents_05(struct GEVCUFUNCTION* pcf);
- * @brief	: TIMER2: delay ended
+ * @brief	: TIMER2: Software timer 2
  * *************************************************************************/
 void GevcuEvents_05(struct GEVCUFUNCTION* pcf)
 {
@@ -84,7 +76,7 @@ void GevcuEvents_05(struct GEVCUFUNCTION* pcf)
 }
 /* *************************************************************************
  * void GevcuEvents_06(struct GEVCUFUNCTION* pcf);
- * @brief	: CAN: cid_cmd_i (function/diagnostic command/poll)
+ * @brief	: CAN: cid_gps_sync
  * *************************************************************************/
 void GevcuEvents_06(struct GEVCUFUNCTION* pcf)
 {
@@ -93,59 +85,66 @@ void GevcuEvents_06(struct GEVCUFUNCTION* pcf)
 }
 /* *************************************************************************
  * void GevcuEvents_07(struct GEVCUFUNCTION* pcf);
- * @brief	: CAN: cid_keepalive_i 
+ * @brief	: CAN: cid_cntctr_keepalive_r
  * *************************************************************************/
-uint8_t dbgevcmd;
-
 void GevcuEvents_07(struct GEVCUFUNCTION* pcf)
 {
-	BaseType_t bret = xTimerReset(pcf->swtimer1, 10);
-	if (bret != pdPASS) {morse_trap(44);}
-
-	pcf->outstat |=  CNCTOUT05KA;  // Output status bit: Show keep-alive
-	pcf->evstat  &= ~CNCTEVTIMER1; // Reset timer1 keep-alive timed-out bit
-
-	/* Incoming command byte with command bits */
-	uint8_t cmd = pcf->pmbx_cid_keepalive_i->ncan.can.cd.uc[0];
-dbgevcmd = cmd;
-
-	/* Update connect request status bits */
-	if ( (cmd & CMDCONNECT) != 0) // Command to connect
-	{ // Here, request to connect
-		pcf->evstat |= CNCTEVCMDCN;		
-	}
-	else
-	{
-		pcf->evstat &= ~CNCTEVCMDCN;		
-	}
-	/* Update reset status */
-	if ( (cmd & CMDRESET ) != 0) // Command to reset
-	{ // Here, request to reset
-		pcf->evstat |= CNCTEVCMDRS;		
-	}
-	else
-	{
-		pcf->evstat &= ~CNCTEVCMDRS;		
-	}
 	return;
 }	
 /* *************************************************************************
  * void GevcuEvents_08(struct GEVCUFUNCTION* pcf);
- * @brief	: CAN: cid_gps_sync: send response CAN msgs
+ * @brief	: CAN: cid_dmoc_actualtorq
  * *************************************************************************/
-uint32_t dbggpsflag;
-
 void GevcuEvents_08(struct GEVCUFUNCTION* pcf)
 {
-
-/* Testing: use incoming gps msg to time defaultTask loop. */
-struct CANRCVBUF* pcan = &pcf->pmbx_cid_gps_sync->ncan.can;
-if (pcan->id == 0x00400000)
-{
-	if (pcan->cd.uc[0] == 0)
-      dbggpsflag += 1;
-}
-	/* Send with regular polled CAN ID */
 	return;
 }
-	
+/* *************************************************************************
+ * void GevcuEvents_09(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_speed
+ * *************************************************************************/
+void GevcuEvents_09(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_10(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_dqvoltamp
+ * *************************************************************************/
+void GevcuEvents_10(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_11(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_torque
+ * *************************************************************************/
+void GevcuEvents_11(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_12(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_critical_f
+ * *************************************************************************/
+void GevcuEvents_12(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_13(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_hv_status
+ * *************************************************************************/
+void GevcuEvents_13(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_14(struct GEVCUFUNCTION* pcf);
+ * @brief	: CAN: cid_dmoc_hv_temps
+ * *************************************************************************/
+void GevcuEvents_14(struct GEVCUFUNCTION* pcf)
+{
+	return;
+}
+

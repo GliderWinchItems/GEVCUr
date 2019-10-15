@@ -377,7 +377,7 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 {
 	struct CANNOTIFYLIST* pnotetmp;	
 	struct CANNOTIFYLIST* pnotex;
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+//	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 	/* Check if received CAN id is in the mailbox CAN id list. */
 	// 'lookup' is a straight loop; use 'lookupq' for binary search (when implemented)

@@ -23,6 +23,12 @@ void GevcuEvents_05(struct GEVCUFUNCTION* pcf);
 void GevcuEvents_06(struct GEVCUFUNCTION* pcf);
 void GevcuEvents_07(struct GEVCUFUNCTION* pcf);
 void GevcuEvents_08(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_09(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_10(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_11(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_12(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_13(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_14(struct GEVCUFUNCTION* pcf);
 
 #endif
 

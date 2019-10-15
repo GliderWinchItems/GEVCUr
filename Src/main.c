@@ -58,7 +58,7 @@
 #include <string.h>
 #include "SerialTaskSend.h"
 #include "stm32f4xx_hal_pcd.h"
-#include "usbd_cdc_if.h"
+//#include "usbd_cdc_if.h"
 #include "cdc_txbuff.h"
 #include "CanTask.h"
 #include "can_iface.h"
@@ -259,7 +259,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -815,7 +815,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//  MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
 

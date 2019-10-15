@@ -16,42 +16,42 @@
 /* Parameters gevcu instance */
 struct GEVCULC
  {
-	uint32_t size;			// Number of items in struct
- 	uint32_t crc;			// crc-32 placed by loader
-	uint32_t version;		// struct version number
 
-/* NOTE: 
-   - all suffix _t parameters are times in milliseconds
-   - all voltages are in volts; prefix 'f' designates float */
-	
+/* NOTE: all suffix _t parameters are times in milliseconds */
 
-/* Command/Keep-alive CAN msg timeout duration. */
-	uint32_t ka_t;       // (e.g. 1000 ms)
+	uint32_t size;
+	uint32_t crc;   // TBD
+   uint32_t version;   // 
 
-/* uart RX keep-alive timeout duration. */
-   uint32_t ksRX_t;     // (e.g. 10 ms)
+	/* Timings in milliseconds. Converted later to timer ticks. */
+	uint32_t ka_t; // Gevcu polling timer (ms) 
+	uint32_t keepalive_t; // keep-alive timeout (timeout delay ms)
+	uint32_t hbct_t; // Heartbeat ct: ticks between sending 
 
+ // CAN ids we send
+   //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION
+   // Contactor receives; we send
+	uint32_t cid_cntctr_keepalive_i; // CANID_CMD_CNTCTRKAI:U8',    Contactor1: I KeepAlive and connect command
+  // DMOC receives these commands
+	uint32_t cid_dmoc_cmd_speed;    // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
+	uint32_t cid_dmoc_cmd_torq;     // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
+	uint32_t cid_dmoc_cmd_regen;    // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
 
-/* Message timings. */
-	uint32_t keepalive_t;// keep-alive timeout (timeout delay ms)
-	uint32_t hbct1_t;		// Heartbeat ct: ticks between sending msgs hv1:cur1
-	uint32_t hbct2_t;		// Heartbeat ct: ticks between sending msgs hv2:cur2
-	uint32_t hbct3_t;		// Heartbeat ct: ticks between sending msgs hv3 (if two gevcus)
+ // List of CAN ID's for setting up hw filter for incoming msgs
 
+   // Contactor sends; we receive
+	uint32_t cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to poll
+   // DMOC sends; we receive
+	uint32_t cid_dmoc_actualtorq; // CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000
+	uint32_t cid_dmoc_speed;      // CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?)
+	uint32_t cid_dmoc_dqvoltamp;  // CANID_DMOC_DQVOLTAMP: I16_I16_I16_I16','DMOC: D volt:amp, Q volt:amp
+	uint32_t cid_dmoc_torque;     // CANID_DMOC_TORQUE:    I16_I16,'DMOC: Torque,-(Torque-30000)
+	uint32_t cid_dmoc_critical_f; // CANID_DMOC_TORQUE:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
+	uint32_t cid_dmoc_hv_status;  // CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
+	uint32_t cid_dmoc_hv_temps;   // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
+   // Others send; we receive
+	uint32_t cid_gps_sync; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 
-/* Send CAN ids  */
-	uint32_t cid_hb1;    // CANID-Heartbeat msg volt1:cur1 (volts:amps)
-	uint32_t cid_hb2;    // CANID-Heartbeat msg volt2:cur2 (volts:amps)
-   uint32_t cid_msg1;   // CANID-gevcu poll response msg: volt1:cur1 (volts:amps)
-   uint32_t cid_msg2;   // CANID-gevcu poll response msg: volt2:cur2 (volts:amps)
-	uint32_t cid_cmd_r;  // CANID_CMD_CNTCTR1R
-	uint32_t cid_keepalive_r; // CANID-keepalive response (status)
-
-/* Receive CAN ids List of CAN ID's for setting up hw filter */
-	uint32_t cid_cmd_i;       // CANID_CMD: incoming command
-	uint32_t cid_keepalive_i;// CANID-keepalive connect command
-	uint32_t cid_gps_sync;    // CANID-GPS time sync msg (poll msg)
-	uint32_t code_CAN_filt[5];// Spare
  };
 
 /* *************************************************************************/
