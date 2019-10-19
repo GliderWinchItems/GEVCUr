@@ -82,6 +82,7 @@
 #include "GatewayTask.h"
 #include "iir_f2.h"
 #include "spiserialparallel.h"
+#include "cdc_txbuff.h"
 
 /* USER CODE END Includes */
 
@@ -298,7 +299,7 @@ DiscoveryF4 LEDs --
 	if (pret == NULL) morse_trap(3);
 	
 	/* USB-CDC queue and task creation */
-	Qidret = xCdcTxTaskSendCreate(3);
+	Qidret = xCdcTxTaskSendCreate(3); // arg = Priority level
 	if (Qidret < 0) morse_trap(4); // Panic LED flashing
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
@@ -306,6 +307,7 @@ DiscoveryF4 LEDs --
 	if (Qidret < 0) morse_trap(5); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
+  /* The MailboxTask takes care of the CANRx                         */
 //  Qidret = xCanRxTaskCreate(1, 32); // CanTask priority, Number of msgs in queue
 //	if (Qidret < 0) morse_trap(6); // Panic LED flashing
 
@@ -383,7 +385,7 @@ DiscoveryF4 LEDs --
 	xADCTaskCreate(3); // (arg) = priority
 
 	/* Start SPI with interrupts restarting transfer. */
-	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
+//	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
 /* =================================================== */
 
@@ -918,11 +920,12 @@ uint32_t spispctr_prev = 0;
 			stackwatermark_show(MailboxTaskHandle,&pbuf2,"MailboxTask--");
 			stackwatermark_show(ADCTaskHandle    ,&pbuf2,"ADCTask------");
 			stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");
-			stackwatermark_show(GatewayTaskHandle,&pbuf2,"GatewayTask--");
+			stackwatermark_show(GatewayTaskHandle,&pbuf2,  "GatewayTask--");
+			stackwatermark_show(CdcTxTaskSendHandle,&pbuf2,"CdcTxTask----");
 
 			/* Heap usage (and test fp woking. */
 			heapsize = xPortGetFreeHeapSize();
-			yprintf(&pbuf3,"\n\rGetFreeHeapSize: total: %i used %i %3.1f%% free: %i",configTOTAL_HEAP_SIZE, heapsize,\
+			yprintf(&pbuf3,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize));
 #endif
 

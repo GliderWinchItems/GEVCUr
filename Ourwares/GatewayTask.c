@@ -22,6 +22,7 @@ CAN->PC direction CAN1 and CAN2 msgs are mixed together, except for the cases wh
 the CANIDs are identical such as DMOC msgs, in which case the CAN2 msgs are tagged 
 as 29b address. [04/06/2019--not implemented]
 */
+#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "stm32f4xx_hal.h"
@@ -37,6 +38,7 @@ as 29b address. [04/06/2019--not implemented]
 #include "gateway_PCtoCAN.h"
 #include "gateway_CANtoPC.h"
 #include "main.h"
+#include "cdc_txbuff.h"
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -94,11 +96,13 @@ void StartGatewayTask(void const * argument)
 	/* PC, or other CAN, to CAN msg */
 	// Pre-load fixed elements for queue to CAN 'put' 
 
+#ifdef CONFIGCAN2 // CAN2 implemented
 	// CAN1
 	struct CANTXQMSG canqtx1;
 	canqtx1.pctl       = pctl0;
 	canqtx1.maxretryct = 8;
 	canqtx1.bits       = 0; // /NART
+#endif
 
    // CAN2
 	struct CANTXQMSG canqtx2;
@@ -113,9 +117,28 @@ void StartGatewayTask(void const * argument)
 	pccan1.bits       = 0; // /NART
 
 	/* Setup serial output buffers for uarts. */
-	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTMON, 128); // PC monitor uart
-	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&HUARTGATE,128); // Gateway uart
-	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTGATE,128); // Gateway uart
+	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTMON,  96); // PC monitor uart
+	struct SERIALSENDTASKBCB* pbuf3 = getserialbuf(&HUARTGATE,128); // Gateway uart, CAN1
+
+#ifdef CONFIGCAN2 // CAN2 implemented
+	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTGATE,128); // Gateway uart, CAN2
+#endif
+
+	/* Use usb-cdc for gateway data. */
+#ifdef  USEUSBFORCANMSGS
+	// CAN1
+	struct SERIALSENDTASKBCB* pbuf5 = getserialbuf(&HUARTGATE,128); // Gateway cdc, CAN1
+	if (pbuf5 == NULL) morse_trap(70);
+	struct CDCTXTASKBCB cdc2;
+	cdc2.pbuf = pbuf5->pbuf;
+	// CAN2
+	#ifdef CONFIGCAN2 // CAN2 implemented
+		struct SERIALSENDTASKBCB* pbuf6 = getserialbuf(&HUARTGATE,128); // Gateway cdc, CAN2
+		if (pbuf6 == NULL) morse_trap(71);
+		struct CDCTXTASKBCB cdc3;
+		cdc3.pbuf = pbuf6->pbuf;
+	#endif
+#endif
 
 	/* Pointers into the CAN  msg circular buffer for each CAN module. */
 	struct CANTAKEPTR* ptake[STM32MAXCANNUM] = {NULL};
@@ -170,6 +193,14 @@ void StartGatewayTask(void const * argument)
 					/* === CAN1 -> PC === */			
 						vSerialTaskSendQueueBuf(&pbuf3); // Place on queue for usart2 sending
 
+#ifdef USEUSBFORCANMSGS
+						// Buffers are independent, so copy it
+						memcpy(pbuf5->pbuf,pbuf3->pbuf,pbuf3->size);
+						pbuf5->size = pbuf3->size;
+						cdc2.size = pbuf5->size;
+						xQueueSendToBack(CdcTxTaskSendQHandle,&cdc2,1500);
+#endif
+
 #ifdef CONFIGCAN2 // CAN2 setup
 					/* === CAN1 -> CAN2 === */
 						xQueueSendToBack(CanTxQHandle,&canqtx2,portMAX_DELAY);
@@ -178,7 +209,7 @@ void StartGatewayTask(void const * argument)
 				} while (pncan != NULL);	// Drain the buffer
 			}
 		}
-#ifdef CONFIGCAN2 // CAN2 setup
+#ifdef CONFIGCAN2 // CAN2 implemented
 		/* CAN2 incoming msg: Check notification bit */
 		i = 1;	// CAN2 index
 		{
@@ -198,6 +229,15 @@ void StartGatewayTask(void const * argument)
 
 					/* === CAN2 -> PC === */			
 						vSerialTaskSendQueueBuf(&pbuf4); // Place on queue for usart2 sending
+
+   #ifdef USEUSBFORCANMSGS
+						// Buffers are independent, so copy it
+						memcpy(pbuf6->pbuf,pbuf4->pbuf,pbuf4->size);
+						pbuf6->size = pbuf4->size;
+						cdc3.size = pbuf6->size;
+						xQueueSendToBack(CdcTxTaskSendQHandle,&cdc3,1500);
+   #endif
+
 
 					/* === CAN1 -> CAN2 === */
 						xQueueSendToBack(CanTxQHandle,&canqtx1,portMAX_DELAY);

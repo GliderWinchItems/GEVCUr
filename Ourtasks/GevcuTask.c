@@ -63,7 +63,7 @@ static void swtim3_callback(TimerHandle_t tm)
  * *************************************************************************/
 osThreadId xGevcuTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, 128);
+ 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, 256);
 	GevcuTaskHandle = osThreadCreate(osThread(GevcuTask), NULL);
 	vTaskPrioritySet( GevcuTaskHandle, taskpriority );
 	return GevcuTaskHandle;

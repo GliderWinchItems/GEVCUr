@@ -49,8 +49,8 @@ static struct CDCBUFFPTR* pbuff_i;	// Pointer to buffer that 'interrupt' (or pol
 /* Task */
 #define SSPRIORITY 1	// Priority for this task (0 = Normal, -3 = Idle)
 
-static uint32_t CdcTxTaskSendBuffer[ 64 ];
-static osStaticThreadDef_t CdcTxTaskSendControlBlock;
+//static uint32_t CdcTxTaskSendBuffer[ 64 ];
+//static osStaticThreadDef_t CdcTxTaskSendControlBlock;
 osThreadId CdcTxTaskSendHandle = NULL;
 void StartCdcTxTaskSend(void const * argument);
 osTimerId CdcTxTimerHandle;
@@ -71,7 +71,7 @@ static osStaticMessageQDef_t CdcTxTaskSendQCB;
 osThreadId xCdcTxTaskSendCreate(uint32_t taskpriority)
 {
 	/* definition and creation of task: CdcTxTaskSend */
-	osThreadStaticDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0, 64, CdcTxTaskSendBuffer, &CdcTxTaskSendControlBlock);
+   osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,128);
    CdcTxTaskSendHandle = osThreadCreate(osThread(CdcTxTaskSend), NULL);
 	vTaskPrioritySet( CdcTxTaskSendHandle, taskpriority );
 	if (CdcTxTaskSendHandle == NULL) return NULL;
@@ -85,7 +85,7 @@ osThreadId xCdcTxTaskSendCreate(uint32_t taskpriority)
   CdcTxTimerHandle = osTimerCreate(osTimer(CdcTxTim), osTimerPeriodic, NULL);
 
 	/* Start timer callback polling */
-	osTimerStart (CdcTxTimerHandle, CDCTIMEDURATION);	
+	osTimerStart (CdcTxTimerHandle, pdMS_TO_TICKS(CDCTIMEDURATION));	
 
 	return CdcTxTaskSendQHandle;
 }
@@ -193,7 +193,7 @@ cdcct5 +=1;	// DEBUG: Count number of buffer "sends"
 	return 0;	
 }
 /* *************************************************************************
- * void StartSerialTaskSend(void const * argument);
+ * void StartCdcTxTaskSend(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
 void StartCdcTxTaskSend(void const * argument)
@@ -250,7 +250,8 @@ static uint32_t cdc_txbuff_add(struct CDCTXTASKBCB* p)
 cdcct4 += 1;	// DEBUG: Count number of instances
 #include "DTW_counter.h"
 cdcT0 = DTWTIME;	// DEBUG: Time wasted in loop
-				while(poll() == 0)	// Loop until buffer is free   
+//$				while(poll() == 0)	// Loop until buffer is free   
+					poll();
 				{
 cdcct3+=1;	// DEBUG: count loops
 					
@@ -298,6 +299,4 @@ cdcct1 += 1;
 	poll();	// Send next buffer, if available
 	return;
 }
-
-
 

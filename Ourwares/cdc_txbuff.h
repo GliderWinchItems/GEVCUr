@@ -48,38 +48,13 @@ struct CDCTXTASKBCB
  /* @brief	: Start USBD sending if it is not busy
   * @return	: 0 = busy; 1 = new buffer started sending
   ******************************************************************************/
-void StartSerialTaskSend(void);
+void StartCdcTxTaskSend(void const * argument);
 /*	@brief	: Task startup
  * *****************************************************************************/
 
 extern osMessageQId CdcTxTaskSendQHandle;
+extern osThreadId CdcTxTaskSendHandle;
 
-/* Macro to simplify Tasks loading queue */
-#define mCdcTxQueueBuf(cdc) xQueueSendToBack(CdcTxTaskSendQHandle,cdc,5000);
-#define mSerialTaskSendWait( noteval, bit){while((noteval & bit) == 0){xTaskNotifyWait(bit, 0, &noteval, 5000);}}
 
-#ifdef THE_MACROS_ABOVE_ARE_THE_FOLLOWING_CODE_CONSOLIDATED
-/* *************************************************************
- * void vSerialTaskSendWait(uint32_t* pnoteval, uint32_t bit);
- * @param	: pnoteval = pointer to task notification returned
- * @param	: bit = bit within notification for buffer
- ***************************************************************/
-void vSerialTaskSendWait(uint32_t* pnoteval, uint32_t bit){
-  while((*pnoteval&bit) == 0){
-    xTaskNotifyWait(bit, 0, pnoteval, 3000);
-  }
-}
-/* *************************************************************
- * void vSerialTaskSendQueueBuf(struct SERIALSENDTASKBCB* pbcb);
- * @param	: pbcb = pointer Buffer Control Block
- ***************************************************************/
-void vSerialTaskSendQueueBuf(struct SERIALSENDTASKBCB* pbcb){
-	uint32_t qret;
-	do
-	{
-		qret = xQueueSendToBack(SerialTaskSendQHandle,pbcb,portMAX_DELAY);
-	} while (qret == errQUEUE_FULL);
-}
-#endif
 
 #endif
