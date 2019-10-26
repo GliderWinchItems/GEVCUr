@@ -52,6 +52,10 @@
 
 /* USER CODE BEGIN INCLUDE */
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cdc_rxbuff.h"
+
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -291,9 +295,31 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+
+	pcdcbuf_add->len = *Len; // Save number of bytes
+
+	/* Advance to next cdc buffer. */
+	pcdcbuf_add += 1;
+	if (pcdcbuf_add >= &cdcbuf[CDCOUTNUMBUF])
+		pcdcbuf_add = &cdcbuf[0];
+
+	/* Notify cdc_rxbuff.c that there is new data. */
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	if (CdcRxTaskReceiveHandle != NULL) // JIC startup timing problem
+	{
+		vTaskNotifyGiveFromISR(CdcRxTaskReceiveHandle,
+				&xHigherPriorityTaskWoken);
+	}
+	
+	/* Don't request more reads until buffers get unloaded. */
+//	if (pcdcbuf_add == cdcbuf_ptake) // About to overrun?
+//	  return (USBD_OK);
+
+  /* Start next read request. */
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &pcdcbuf_add->u8[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
+
   /* USER CODE END 6 */
 }
 

@@ -11,7 +11,7 @@ A circular array of local buffers are created during initialization.  Tasks that
 have data to send via cdc tx place a block holding a pointer to the data plus the
 number of bytes on a queue.
 
-The serial task send routine waits for blocks to be added tot he queue.  When it receives
+The cdc serial task send routine waits for blocks to be added to the queue.  When it receives
 the notification it checks for NULL pointer and zero size and calls the 'add' routine
 that copies the data into the local buffer(s).  It starts the cdc tx sending if it
 is not busy.  
@@ -71,7 +71,7 @@ static osStaticMessageQDef_t CdcTxTaskSendQCB;
 osThreadId xCdcTxTaskSendCreate(uint32_t taskpriority)
 {
 	/* definition and creation of task: CdcTxTaskSend */
-   osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,128);
+   osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,256);
    CdcTxTaskSendHandle = osThreadCreate(osThread(CdcTxTaskSend), NULL);
 	vTaskPrioritySet( CdcTxTaskSendHandle, taskpriority );
 	if (CdcTxTaskSendHandle == NULL) return NULL;

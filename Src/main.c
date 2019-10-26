@@ -272,7 +272,7 @@ DiscoveryF4 LEDs --
 
 	/* Add bcb circular buffer to SerialTaskSend for uart6 -- LCD */
 	#define NUMCIRBCB6  16 // Size of circular buffer of BCB for uart6
-	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 1); // char-by-char
+	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 1); // dma
 	if (ret < 0) morse_trap(1); // Panic LED flashing
 
 	/* Add bcb circular buffer to SerialTaskSend for usart2 -- gateway */
@@ -743,7 +743,7 @@ static void MX_DMA_Init(void)
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 11, 0);
@@ -913,15 +913,15 @@ uint32_t spispctr_prev = 0;
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
 			yprintf(&pbuf2,"\n\r%4i Unused Task stack space--", ctr++);
-			stackwatermark_show(defaultTaskHandle,&pbuf2,"defaultTask--");
+			stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");
 			stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");
-			stackwatermark_show(CanTxTaskHandle  ,&pbuf2,"CanTxTask----");
+			stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");
 	//		stackwatermark_show(CanRxTaskHandle  ,&pbuf2,"CanRxTask----");
-			stackwatermark_show(MailboxTaskHandle,&pbuf2,"MailboxTask--");
-			stackwatermark_show(ADCTaskHandle    ,&pbuf2,"ADCTask------");
+			stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");
+			stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");
 			stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");
-			stackwatermark_show(GatewayTaskHandle,&pbuf2,  "GatewayTask--");
-			stackwatermark_show(CdcTxTaskSendHandle,&pbuf2,"CdcTxTask----");
+			stackwatermark_show(GatewayTaskHandle,&pbuf3,  "GatewayTask--");
+			stackwatermark_show(CdcTxTaskSendHandle,&pbuf4,"CdcTxTask----");
 
 			/* Heap usage (and test fp woking. */
 			heapsize = xPortGetFreeHeapSize();
@@ -929,11 +929,21 @@ uint32_t spispctr_prev = 0;
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize));
 #endif
 
+//#define SENDCANTESTMSGSINABURST
+#ifdef  SENDCANTESTMSGSINABURST
 			/* ==== CAN MSG sending test ===== */
 			/* Place test CAN msg to send on queue in a burst. */
 			/* Note: an odd makes the LED flash since it toggles on each msg. */
-			for (i = 0; i < 7; i++)
+uint16_t ib;
+			for (ib = 0; ib < 7; ib++)
 				xQueueSendToBack(CanTxQHandle,&testtx,portMAX_DELAY);
+#endif
+
+/* Debugging CDC reading from PC */
+extern uint32_t dbuggateway1;
+extern uint32_t dbcdcrx;
+yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d", dbuggateway1,dbcdcrx);
+
 		}
 
 /* Faster timeout */
@@ -1008,8 +1018,6 @@ extern volatile uint32_t adcdbg2;
 					ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
 			}
 #endif
-
-
 
 		}	
 	}

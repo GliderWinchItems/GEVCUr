@@ -39,6 +39,9 @@ as 29b address. [04/06/2019--not implemented]
 #include "gateway_CANtoPC.h"
 #include "main.h"
 #include "cdc_txbuff.h"
+#include "cdc_rxbuff.h"
+
+uint32_t dbuggateway1;
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -77,17 +80,18 @@ osThreadId xGatewayTaskCreate(uint32_t taskpriority)
 void StartGatewayTask(void const * argument)
 {
 //while(1==1) osDelay(10);
-
+osDelay(1000);
 	int i;
 
 	/* The lower order bits are reserved for incoming CAN module msg notifications. */
-	#define TSKGATEWAYBITc1	(1 << (STM32MAXCANNUM + 2))  // Task notification bit for huart2 incoming ascii CAN
+	#define TSKGATEWAYBITc1	 (1 << (STM32MAXCANNUM + 2))  // Task notification bit for huart2 incoming ascii CAN
+	#define TSKGATEWAYBITCDC (1 << (STM32MAXCANNUM + 3))  // Task notification bit for CDC_OUT (read via usb)
 
 	/* notification bits processed after a 'Wait. */
 	uint32_t noteused = 0;
 
 	/* A notification copies the internal notification word to this. */
-	uint32_t noteval = 0;    // Receives notification word upon an API notify
+//	uint32_t noteval = 0;    // Receives notification word upon an API notify
 
 	struct SERIALRCVBCB* prbcb2;	// usart2 (PC->CAN msgs)
 	struct CANRCVBUFPLUS* pcanp;  // Basic CAN msg Plus error and seq number
@@ -138,6 +142,11 @@ void StartGatewayTask(void const * argument)
 		struct CDCTXTASKBCB cdc3;
 		cdc3.pbuf = pbuf6->pbuf;
 	#endif
+
+	// CDC receiving 
+	osThreadId ret = xCdcRxTaskReceiveCreate(2, TSKGATEWAYBITCDC);
+	if (ret == NULL) morse_trap(84);
+
 #endif
 
 	/* Pointers into the CAN  msg circular buffer for each CAN module. */
@@ -149,7 +158,7 @@ void StartGatewayTask(void const * argument)
      //   dma buffer size);
 	/* PC-to-CAN ascii/hex incoming "lines" directly converts to CAN msgs. */
 	prbcb2 = xSerialTaskRxAdduart(&HUARTGATE,1,TSKGATEWAYBITc1,\
-		&noteval,12,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, /CAN mode
+		&GatewayTask_noteval,12,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, /CAN mode
 	if (prbcb2 == NULL) morse_trap(41);
 
 	/* Get pointers to circular buffer pointers for each CAN module in list. */	
@@ -250,7 +259,8 @@ void StartGatewayTask(void const * argument)
 		if ((GatewayTask_noteval & TSKGATEWAYBITc1) != 0)
 		{ // Here, one or more PC->CAN msgs have been received
 			noteused |= TSKGATEWAYBITc1; // We handled the bit
-
+#define TESTHANGUPWITHCANBUFFEROVERFLOW 
+#ifdef TESTHANGUPWITHCANBUFFEROVERFLOW
 			/* Get incoming CAN msgs from PC and queue for output to CAN1 bus. */
 			do
 			{
@@ -275,7 +285,16 @@ void StartGatewayTask(void const * argument)
 					}
 				}
 			} while ( pcanp != NULL);
+#endif
 		}
+#ifdef USEUSBFORCANMSGS_X
+		if ((GatewayTask_noteval & TSKGATEWAYBITCDC) != 0)
+		{ // Here, one or more PC->CAN msgs have been received
+			noteused |= TSKGATEWAYBITCDC; // We handled the bit
+
+dbuggateway1 += 1;
+		}
+#endif
   }
 }
 

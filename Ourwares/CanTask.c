@@ -52,7 +52,7 @@ void canmsg_expand(CAN_TxHeaderTypeDef *phal, uint8_t *pdat, struct CANRCVBUF *p
 QueueHandle_t  xCanTxTaskCreate(uint32_t taskpriority, int32_t queuesize)
 {
  /* definition and creation of CanTask */
-  osThreadDef(CanTxTask, StartCanTxTask, osPriorityNormal, 0, 128);
+  osThreadDef(CanTxTask, StartCanTxTask, osPriorityNormal, 0, 256);
   CanTxTaskHandle = osThreadCreate(osThread(CanTxTask), NULL);
 	vTaskPrioritySet( CanTxTaskHandle, taskpriority );
 
