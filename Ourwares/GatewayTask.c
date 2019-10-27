@@ -90,9 +90,6 @@ osDelay(1000);
 	/* notification bits processed after a 'Wait. */
 	uint32_t noteused = 0;
 
-	/* A notification copies the internal notification word to this. */
-//	uint32_t noteval = 0;    // Receives notification word upon an API notify
-
 	struct SERIALRCVBCB* prbcb2;	// usart2 (PC->CAN msgs)
 	struct CANRCVBUFPLUS* pcanp;  // Basic CAN msg Plus error and seq number
 	struct CANRCVBUFN* pncan;
@@ -143,7 +140,7 @@ osDelay(1000);
 		cdc3.pbuf = pbuf6->pbuf;
 	#endif
 
-	// CDC receiving 
+	// CDC receiving (priority, our notification bit)
 	osThreadId ret = xCdcRxTaskReceiveCreate(2, TSKGATEWAYBITCDC);
 	if (ret == NULL) morse_trap(84);
 
@@ -259,8 +256,6 @@ osDelay(1000);
 		if ((GatewayTask_noteval & TSKGATEWAYBITc1) != 0)
 		{ // Here, one or more PC->CAN msgs have been received
 			noteused |= TSKGATEWAYBITc1; // We handled the bit
-#define TESTHANGUPWITHCANBUFFEROVERFLOW 
-#ifdef TESTHANGUPWITHCANBUFFEROVERFLOW
 			/* Get incoming CAN msgs from PC and queue for output to CAN1 bus. */
 			do
 			{
@@ -285,9 +280,8 @@ osDelay(1000);
 					}
 				}
 			} while ( pcanp != NULL);
-#endif
 		}
-#ifdef USEUSBFORCANMSGS_X
+#ifdef USEUSBFORCANMSGS
 		if ((GatewayTask_noteval & TSKGATEWAYBITCDC) != 0)
 		{ // Here, one or more PC->CAN msgs have been received
 			noteused |= TSKGATEWAYBITCDC; // We handled the bit

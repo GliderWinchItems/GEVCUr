@@ -942,7 +942,8 @@ uint16_t ib;
 /* Debugging CDC reading from PC */
 extern uint32_t dbuggateway1;
 extern uint32_t dbcdcrx;
-yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d", dbuggateway1,dbcdcrx);
+extern uint32_t dblen;
+yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d", dbuggateway1,dbcdcrx,dblen);
 
 		}
 
