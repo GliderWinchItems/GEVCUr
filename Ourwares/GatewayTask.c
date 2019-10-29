@@ -39,7 +39,8 @@ as 29b address. [04/06/2019--not implemented]
 #include "gateway_CANtoPC.h"
 #include "main.h"
 #include "cdc_txbuff.h"
-#include "cdc_rxbuff.h"
+//#include "cdc_rxbuff.h"
+#include "cdc_rxbuffTaskCAN.h"
 
 uint32_t dbuggateway1;
 
@@ -132,6 +133,15 @@ osDelay(1000);
 	if (pbuf5 == NULL) morse_trap(70);
 	struct CDCTXTASKBCB cdc2;
 	cdc2.pbuf = pbuf5->pbuf;
+
+	// PC-cdc -> CAN1 (no PC->CAN2)
+	struct CANTXQMSG pccanc;
+	pccanc.pctl = pctl0;
+	pccanc.maxretryct = 8;
+	pccanc.bits       = 0; // /NART
+
+	struct CDCRXCANMSG* prxcanmsg;
+
 	// CAN2
 	#ifdef CONFIGCAN2 // CAN2 implemented
 		struct SERIALSENDTASKBCB* pbuf6 = getserialbuf(&HUARTGATE,128); // Gateway cdc, CAN2
@@ -141,7 +151,7 @@ osDelay(1000);
 	#endif
 
 	// CDC receiving (priority, our notification bit)
-	osThreadId ret = xCdcRxTaskReceiveCreate(2, TSKGATEWAYBITCDC);
+	osThreadId ret = xCdcRxTaskReceiveCANCreate(1, TSKGATEWAYBITCDC);
 	if (ret == NULL) morse_trap(84);
 
 #endif
@@ -234,7 +244,7 @@ osDelay(1000);
 						gateway_CANtoPC(&pbuf4, &canqtx1.can);
 
 					/* === CAN2 -> PC === */			
-						vSerialTaskSendQueueBuf(&pbuf4); // Place on queue for usart2 sending
+						vSerialTaskSendQueueBuf(&pbuf4); // Place on queue for usart2 sendingpctocanc
 
    #ifdef USEUSBFORCANMSGS
 						// Buffers are independent, so copy it
@@ -286,7 +296,30 @@ osDelay(1000);
 		{ // Here, one or more PC->CAN msgs have been received
 			noteused |= TSKGATEWAYBITCDC; // We handled the bit
 
+			/* Convert and queue CAN msgs until CDC lines comsumed. */
+			while ( (prxcanmsg = cdc_rxbuffCAN_getCAN()) != NULL )
+			{
 dbuggateway1 += 1;
+
+				/* Check for errors */
+				if (prxcanmsg->error == 0)
+				{ // Here, no errors.
+					/* Place CAN msg on queue for sending to CAN bus */
+					pccanc.can = prxcanmsg->can; // Copy CAN msg to preloaded local struct
+yprintf(&pbuf2,"\n\r 0X%08X",prxcanmsg->can.id);
+					xQueueSendToBack(CanTxQHandle,&pccanc,portMAX_DELAY);
+				}
+				else
+				{ // Here, one or more errors. List for the hapless Op to ponder
+					yprintf(&pbuf2,"\n\r@@@@@ PC CDC CAN ERROR: %i 0X%04X, 0X%08X 0X%02X 0X%08X %i 0X%02X 0X%02X %s",prxcanmsg->binseq, prxcanmsg->error,\
+						prxcanmsg->can.id,prxcanmsg->can.dlc,prxcanmsg->can.cd.ui[0]);
+
+					/* For test purposes: Place CAN msg on queue for sending to CAN bus */
+					pccanc.can = prxcanmsg->can;
+
+					xQueueSendToBack(CanTxQHandle,&pccanc,portMAX_DELAY);
+				}
+			}
 		}
 #endif
   }

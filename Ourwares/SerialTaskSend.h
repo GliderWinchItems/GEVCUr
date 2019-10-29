@@ -37,7 +37,7 @@ struct SERIALSENDTASKBCB
 {
 	UART_HandleTypeDef* phuart; // Pointer to 'MX uart handle
 	osThreadId tskhandle;       // Task handle of originating task
-	SemaphoreHandle_t semaphore;// Semaphore hanlde
+	SemaphoreHandle_t semaphore;// Semaphore handle
 	uint8_t	*pbuf;             // Pointer to byte buffer to be sent
 	uint16_t size;              // Number of bytes to be sent
 	uint16_t maxsize;           // Buffer size 		

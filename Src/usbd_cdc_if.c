@@ -54,7 +54,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "cdc_rxbuff.h"
+#include "cdc_rxbuffTaskCAN.h"
 
 /* USER CODE END INCLUDE */
 
@@ -305,9 +305,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 
 	/* Notify cdc_rxbuff.c that there is new data. */
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	if (CdcRxTaskReceiveHandle != NULL) // JIC startup timing problem
+	if (CdcRxTaskReceiveCANHandle != NULL) // JIC startup timing problem
 	{
-		vTaskNotifyGiveFromISR(CdcRxTaskReceiveHandle,
+		vTaskNotifyGiveFromISR(CdcRxTaskReceiveCANHandle,
 				&xHigherPriorityTaskWoken);
 	}
 	

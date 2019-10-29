@@ -86,7 +86,8 @@ Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
 
 C_SOURCES += Ourwares/SerialTaskSend.c 
 C_SOURCES += Ourwares/cdc_txbuff.c
-C_SOURCES += Ourwares/cdc_rxbuff.c
+#C_SOURCES += Ourwares/cdc_rxbuff.c
+C_SOURCES += Ourwares/cdc_rxbuffTaskCAN.c
 C_SOURCES += Ourwares/DTW_counter.c
 C_SOURCES += Ourwares/CanTask.c
 C_SOURCES += Ourwares/can_iface.c
