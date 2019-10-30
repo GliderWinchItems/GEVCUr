@@ -80,8 +80,10 @@ osThreadId xGatewayTaskCreate(uint32_t taskpriority)
  * *************************************************************************/
 void StartGatewayTask(void const * argument)
 {
-//while(1==1) osDelay(10);
-osDelay(1000);
+	/* Wait for defaultTask to show USB is ready. */
+extern uint8_t usbdeviceflag;
+	while (usbdeviceflag == 0)osDelay(500);
+
 	int i;
 
 	/* The lower order bits are reserved for incoming CAN module msg notifications. */
@@ -114,7 +116,7 @@ osDelay(1000);
 
 	// PC -> CAN1 (no PC->CAN2)
 	struct CANTXQMSG pccan1;
-	pccan1.pctl = pctl0;
+	pccan1.pctl       = pctl0;
 	pccan1.maxretryct = 8;
 	pccan1.bits       = 0; // /NART
 
@@ -136,7 +138,7 @@ osDelay(1000);
 
 	// PC-cdc -> CAN1 (no PC->CAN2)
 	struct CANTXQMSG pccanc;
-	pccanc.pctl = pctl0;
+	pccanc.pctl       = pctl0;
 	pccanc.maxretryct = 8;
 	pccanc.bits       = 0; // /NART
 
@@ -296,17 +298,19 @@ osDelay(1000);
 		{ // Here, one or more PC->CAN msgs have been received
 			noteused |= TSKGATEWAYBITCDC; // We handled the bit
 
+dbuggateway1 += 1;
+
 			/* Convert and queue CAN msgs until CDC lines comsumed. */
 			while ( (prxcanmsg = cdc_rxbuffCAN_getCAN()) != NULL )
 			{
-dbuggateway1 += 1;
 
 				/* Check for errors */
 				if (prxcanmsg->error == 0)
 				{ // Here, no errors.
-					/* Place CAN msg on queue for sending to CAN bus */
+					/* Copy to preloaded local buffer. */
 					pccanc.can = prxcanmsg->can; // Copy CAN msg to preloaded local struct
-yprintf(&pbuf2,"\n\r 0X%08X",prxcanmsg->can.id);
+
+					/* Place CAN msg on queue for sending to CAN bus */
 					xQueueSendToBack(CanTxQHandle,&pccanc,portMAX_DELAY);
 				}
 				else

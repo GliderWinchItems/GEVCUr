@@ -41,7 +41,7 @@ struct CDCRXCANMSG
 	uint8_t error;          // Error code: 0 = no errors
 };
 */
-#define CDCNUMCANBUF	8	// Number of CAN msgs buffered
+#define CDCNUMCANBUF	12	// Number of CAN msgs buffered
 static struct GATEWAYPCTOCAN pctocan;
 static struct CDCRXCANMSG  cdccan[CDCNUMCANBUF];
 static struct CDCRXCANMSG* pcan_add;
@@ -170,6 +170,7 @@ void StartCdcRxTaskReceiveCAN(void const * argument)
 		while (pcdcbuf_add != pcdcbuf_take)
 		{ // Here, one or more CDC buffers to unload.
 dblen = pcdcbuf_take->len; // Save for debugging
+
 			/* Build CAN msgs until newline encountered. */
 			if (pcdcbuf_take->len != 0)
 			{ // Here, we have CDC data copy to line buffer(s). */
@@ -200,6 +201,8 @@ if (pcdcbuf_take->len <= CDCOUTBUFFSIZE) // Bogus length?
 						pcan_add += 1;
 						if (pcan_add >= &cdccan[CDCOUTNUMBUF])
 								pcan_add = &cdccan[0];
+
+dbrxbuff += 1;
 
 						/* Notify originating task that a CAN msg is ready. */
 						xTaskNotify(tskhandle, notebit,eSetBits);
@@ -292,12 +295,11 @@ if (pcdcbuf_take->len <= CDCOUTBUFFSIZE) // Bogus length?
 							} // End: switch(p->state)	
 						} // End: Low order nibble completes byte
 					} // End: if ((c == 0XD) || (c == LINETERMINATOR))
-
 				} // End: while (pcdcbuf_take->len > 0)
 }
 else
 { // if (pcdcbuf_take->len <= CDCOUTBUFFSIZE) // Bogus length?
-	dbrxbuff += 1;
+	
 }
 			} // End: if (pcdcbuf_take->len != 0)
 

@@ -122,6 +122,8 @@ uint8_t canflag;
 uint8_t canflag1;
 uint8_t canflag2;
 
+uint8_t usbdeviceflag = 0; // USB DEVICE INIT complete = 1;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -820,6 +822,7 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
+	usbdeviceflag = 1;
 
 	int i;
 
@@ -943,7 +946,9 @@ uint16_t ib;
 extern uint32_t dbuggateway1;
 extern uint32_t dbcdcrx;
 extern uint32_t dblen;
-yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d", dbuggateway1,dbcdcrx,dblen);
+extern uint32_t cdcifctr;
+extern uint32_t dbrxbuff;
+yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
 
 		}
 
