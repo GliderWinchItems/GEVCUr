@@ -84,8 +84,8 @@ void StartGevcuTask(void const * argument)
 	/* Setup serial receive for uart */
 	/* Get buffer control block for incoming uart lines. */
 	// 2 line buffers of 48 chars, no dma buff, char-by-char line mode
-	pcf->prbcb3  = xSerialTaskRxAdduart(&huart3,0,GEVCUBIT01,&noteval,2,48,0,0);
-	if (pcf->prbcb3 == NULL) morse_trap(47);
+//	pcf->prbcb3  = xSerialTaskRxAdduart(&huart3,0,GEVCUBIT01,&noteval,2,48,0,0);
+//	if (pcf->prbcb3 == NULL) morse_trap(47);
 
 	/* Init struct with working params */
 	gevcu_idx_v_struct_hardcode_params(&gevcufunction.lc);

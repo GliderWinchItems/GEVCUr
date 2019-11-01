@@ -263,7 +263,7 @@ taskEXIT_CRITICAL();
 osThreadId xMailboxTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-  osThreadDef(MailboxTask, StartMailboxTask, osPriorityNormal, 0,384);
+  osThreadDef(MailboxTask, StartMailboxTask, osPriorityNormal, 0,256);
 
   MailboxTaskHandle = osThreadCreate(osThread(MailboxTask), NULL);
 

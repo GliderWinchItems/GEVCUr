@@ -536,6 +536,11 @@ debug1 += 1;
 
 	struct CAN_CTLBLOCK* pctl = getpctl(phcan); // Lookup pctl given phcan
 
+/* This is placed here as part of the debugging of the USB startup
+   producing a Hard_Fault. The stack dump showed that R0 was loaded
+   with an addresses above the sram limit. */
+if (pctl == NULL) morse_trap (557);
+
 	do /* Unload hardware RX FIFO */
 	{
 // NOTE: this could be done directly and avoid the expand/compress overhead
@@ -561,6 +566,7 @@ debug1 += 1;
 		}
 	} while (ret == HAL_OK); //JIC there is more than one in the hw fifo
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken ); // Trigger scheduler
+	return;
 }
 /* Rx FIFO 0 message pending callback. */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *phcan)

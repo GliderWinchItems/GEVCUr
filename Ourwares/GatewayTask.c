@@ -68,7 +68,7 @@ uint32_t GatewayTask_noteval = 0;    // Receives notification word upon an API n
 osThreadId xGatewayTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 256);
+   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 384);
    GatewayTaskHandle = osThreadCreate(osThread(GatewayTask), NULL);
 	vTaskPrioritySet( GatewayTaskHandle, taskpriority );
 
@@ -78,11 +78,13 @@ osThreadId xGatewayTaskCreate(uint32_t taskpriority)
  * void StartGatewayTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+uint8_t gatercvflag = 0;
+
 void StartGatewayTask(void const * argument)
 {
 	/* Wait for defaultTask to show USB is ready. */
-extern uint8_t usbdeviceflag;
-	while (usbdeviceflag == 0)osDelay(500);
+//extern uint8_t usbdeviceflag;
+	osDelay(1500);
 
 	int i;
 
@@ -166,9 +168,15 @@ extern uint8_t usbdeviceflag;
      //   ptr notification word, number line buffers, size of lines, 
      //   dma buffer size);
 	/* PC-to-CAN ascii/hex incoming "lines" directly converts to CAN msgs. */
+
+	/* WARNING: For the CAN mode, the number of bytes in the ASCII CAN msg size
+      must be result in an alignment for double word copying, or else a Hard Fault
+      will be thrown. */
 	prbcb2 = xSerialTaskRxAdduart(&HUARTGATE,1,TSKGATEWAYBITc1,\
-		&GatewayTask_noteval,12,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, /CAN mode
+		&GatewayTask_noteval,16,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, CAN mode
 	if (prbcb2 == NULL) morse_trap(41);
+
+gatercvflag = 1;
 
 	/* Get pointers to circular buffer pointers for each CAN module in list. */	
 	for (i = 0; i < STM32MAXCANNUM; i++)
@@ -279,6 +287,12 @@ extern uint8_t usbdeviceflag;
 					{
 						/* Place CAN msg on queue for sending to CAN bus */
 						pccan1.can = pcanp->can;
+//	pccan1.can.id = pcanp->can.id;
+//	pccan1.can.dlc = pcanp->can.dlc;
+//	pccan1.can.cd.ull = pcanp->can.cd.ull;
+//	pccan1.can.cd.ui[0] = pcanp->can.cd.ui[0];
+//	pccan1.can.cd.ui[1] = pcanp->can.cd.ui[1];
+
 						xQueueSendToBack(CanTxQHandle,&pccan1,portMAX_DELAY);
 					}
 					else

@@ -822,6 +822,7 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
+	osDelay(500);
 	usbdeviceflag = 1;
 
 	int i;

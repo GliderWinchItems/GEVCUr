@@ -16,6 +16,7 @@
 #include "stm32f4xx_hal_uart.h"
 
 #include "gateway_PCtoCAN.h"
+#include "morse.h"
 
 /*
 BaseType_t Rret; // Return value
@@ -272,7 +273,7 @@ UBaseType_t uxPriority,
 TaskHandle_t *pxCreatedTask );
 */
 	return xTaskCreate(StartSerialTaskReceive, "StartSerialTaskReceive",\
-     128, NULL, taskpriority,\
+     256, NULL, taskpriority,\
      &SerialTaskReceiveHandle);
 }
 /* *************************************************************************
@@ -408,8 +409,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *phuart)
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 	/* Look up buffer control block, given uart handle */
+
+extern uint8_t gatercvflag;
+	if (gatercvflag == 0) return;
+
 	struct SERIALRCVBCB* prtmp = prbhd;
-	while (prtmp->phuart != phuart) prtmp++;
+	while (prtmp->phuart != phuart) 
+	{
+		prtmp++;
+		if (prtmp == prtmp->pnext)      morse_trap(553);
+		if (prtmp > 0x2001ff00) morse_trap(554);
+	}
+
 
 	/* Note char-by-char mode from dma mode. */
 	if (prtmp->dmaflag == 0)
