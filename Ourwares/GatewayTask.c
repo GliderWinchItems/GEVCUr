@@ -68,7 +68,7 @@ uint32_t GatewayTask_noteval = 0;    // Receives notification word upon an API n
 osThreadId xGatewayTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 384);
+   osThreadDef(GatewayTask, StartGatewayTask, osPriorityNormal, 0, 240);
    GatewayTaskHandle = osThreadCreate(osThread(GatewayTask), NULL);
 	vTaskPrioritySet( GatewayTaskHandle, taskpriority );
 
@@ -169,11 +169,13 @@ void StartGatewayTask(void const * argument)
      //   dma buffer size);
 	/* PC-to-CAN ascii/hex incoming "lines" directly converts to CAN msgs. */
 
-	/* WARNING: For the CAN mode, the number of bytes in the ASCII CAN msg size
+	/* WARNING: For the CAN mode, the number of bytes for the line buffer
       must be result in an alignment for double word copying, or else a Hard Fault
-      will be thrown. */
+      will be thrown. See struct 'CANRCVBUFPLUS' in 'SerialTaskReceive.h'.
+      struct CANRCVBUF is four words, but the 'PLUS adds two bytes, so rounding
+      up makes 20 the minimum size. */
 	prbcb2 = xSerialTaskRxAdduart(&HUARTGATE,1,TSKGATEWAYBITc1,\
-		&GatewayTask_noteval,16,32,128,1); // buff 12 CAN, of 32 bytes, 192 total dma, CAN mode
+		&GatewayTask_noteval,16,20,128,1); // buff 12 CAN, of 20 bytes, 192 total dma, CAN mode
 	if (prbcb2 == NULL) morse_trap(41);
 
 gatercvflag = 1;

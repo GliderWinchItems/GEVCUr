@@ -273,7 +273,7 @@ UBaseType_t uxPriority,
 TaskHandle_t *pxCreatedTask );
 */
 	return xTaskCreate(StartSerialTaskReceive, "StartSerialTaskReceive",\
-     256, NULL, taskpriority,\
+     96, NULL, taskpriority,\
      &SerialTaskReceiveHandle);
 }
 /* *************************************************************************
@@ -418,7 +418,7 @@ extern uint8_t gatercvflag;
 	{
 		prtmp++;
 		if (prtmp == prtmp->pnext)      morse_trap(553);
-		if (prtmp > 0x2001ff00) morse_trap(554);
+		if (prtmp > (struct SERIALRCVBCB*)0x2001ff00) morse_trap(554);
 	}
 
 

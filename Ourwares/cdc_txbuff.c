@@ -71,7 +71,7 @@ static osStaticMessageQDef_t CdcTxTaskSendQCB;
 osThreadId xCdcTxTaskSendCreate(uint32_t taskpriority)
 {
 	/* definition and creation of task: CdcTxTaskSend */
-   osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,256);
+   osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,128);
    CdcTxTaskSendHandle = osThreadCreate(osThread(CdcTxTaskSend), NULL);
 	vTaskPrioritySet( CdcTxTaskSendHandle, taskpriority );
 	if (CdcTxTaskSendHandle == NULL) return NULL;

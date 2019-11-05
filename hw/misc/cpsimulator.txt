@@ -1,0 +1,55 @@
+cpsimulator.txt - Control Panel simulator for testing programs
+
+LED panel - two 74HC595N shift registers
+
+led: (sixteen)
+  Digikey 732-4971-1-ND Greal Clear 0603 smd
+  Mfg: 150060GS75000
+
+led resistor: 2.7K (shift reg output -> led)
+
+Outputs:
+
+1-15 - O15 j8-18
+1-14 - O14 j8-17
+1-13 - O13
+1-12 - O12
+1-11 - O11
+1-10 - O10
+1-09 - O09
+1-08 - O08
+
+2-15 - O07 j9-9
+2-14 - O06 j9-8
+2-13 - O05 j9-7
+2-12 - O04 j9-6
+2-11 - O03 j9-5
+2-10 - O02 j9-4
+2-09 - O01 j9-3
+2-08 - O00 j9-2
+
+Power
+ +5:
+   1-16
+   1-10
+   2-16
+   2-10
+
+ gnd:
+   1-8
+   2-8
+ sixteen leds
+
+Header: 2x6
+
+1 +5
+2 gnd
+3 MOSI   1-14
+4 LEDPWM 1-13,2-13
+5 NSS    1-12,2-12
+6 SCLK   1-11,2-11
+
+Shift register
+ 1-9 to 2-14
+
+
