@@ -37,6 +37,10 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block
 
+	/* Enable output shift register pins. */
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_6,GPIO_PIN_RESET); // Not OE pins
+
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
 	return HAL_SPI_TransmitReceive_IT(phspi, 
 		&spisp_wr[0].u8[0], 
 		&spisp_rd[0].u8[0], 
@@ -53,9 +57,11 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-		spispctr += 1;
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_SET);
+	spispctr += 1;
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
 
-HAL_SPI_TransmitReceive_IT(pspix, 
+	HAL_SPI_TransmitReceive_IT(pspix, 
 		&spisp_wr[0].u8[0], 
 		&spisp_rd[0].u8[0], 
 		SPISERIALPARALLELSIZE);

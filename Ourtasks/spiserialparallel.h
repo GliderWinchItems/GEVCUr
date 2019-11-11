@@ -12,7 +12,7 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 
-#define SPISERIALPARALLELSIZE 2 // Number of bytes write/read
+#define SPISERIALPARALLELSIZE 2 // Number of bytes write/read (EVEN)
 
 union SPISP
 {

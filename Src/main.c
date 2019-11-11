@@ -144,6 +144,8 @@ CAN_HandleTypeDef hcan1;
 
 SPI_HandleTypeDef hspi2;
 
+TIM_HandleTypeDef htim1;
+
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
@@ -171,6 +173,7 @@ static void MX_CAN1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM1_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
 void CallbackdefaultTaskTimer01(void const * argument);
@@ -222,6 +225,7 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI2_Init();
   MX_USART3_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 /*
 DiscoveryF4 LEDs --
@@ -392,8 +396,7 @@ DiscoveryF4 LEDs --
 	/* ADC summing, calibration, etc. */
 	xADCTaskCreate(3); // (arg) = priority
 
-	/* Start SPI with interrupts restarting transfer. */
-//	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
+
 
 /* =================================================== */
 
@@ -605,9 +608,9 @@ static void MX_SPI2_Init(void)
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -620,6 +623,81 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 35000;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TOGGLE;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -778,10 +856,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PE6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
@@ -790,19 +868,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -846,6 +924,9 @@ void StartDefaultTask(void const * argument)
 	if (pbuf2 == NULL) morse_trap(12);
 
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
+
+	/* Start SPI with interrupts restarting transfer. */
+	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 	if (pbuf4 == NULL) morse_trap(19);
 
 #define DISPLAYSTACKUSAGEFORTASKS
@@ -897,7 +978,14 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 #define SHOWSERIALPARALLELSTUFF
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
+spisp_wr[0].u16 = 0x0080;
 #endif
+
+//#define TESTBEEPER
+#ifdef TESTBEEPER
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
+#endif
+
 
 
 	for ( ;; )
@@ -907,12 +995,6 @@ uint32_t spispctr_prev = 0;
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
-
-			/* SPI serial-parallel hw testing. */
-#ifdef SHOWSERIALPARALLELSTUFF
-			yprintf(&pbuf1,"\n\rspi ctr: %d wr: %08X rd: %08X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
-			spispctr_prev = spispctr;
-#endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
@@ -958,6 +1040,16 @@ yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 		{
 			noteused |= DEFAULTTSKBIT01;
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
+
+			/* SPI serial-parallel hw testing. */
+#ifdef SHOWSERIALPARALLELSTUFF
+			yprintf(&pbuf1,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
+			spispctr_prev = spispctr;
+			spisp_wr[0].u16 = (spisp_wr[0].u16 << 1);
+			if (spisp_wr[0].u16 == 0) spisp_wr[0].u16 = 1;
+
+#endif
+
 
 //#define SHOWADCCOMMONCOMPUTATIONS
 #ifdef SHOWADCCOMMONCOMPUTATIONS

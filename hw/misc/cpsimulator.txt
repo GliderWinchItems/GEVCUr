@@ -1,5 +1,7 @@
 cpsimulator.txt - Control Panel simulator for testing programs
 
+=== Output shift register =====
+
 LED panel - two 74HC595N shift registers
 
 led: (sixteen)
@@ -42,14 +44,60 @@ Power
 
 Header: 2x6
 
-1 +5
-2 gnd
-3 MOSI   1-14
-4 LEDPWM 1-13,2-13
-5 NSS    1-12,2-12
-6 SCLK   1-11,2-11
+1 +5     1-16,2-16
+2 gnd    1-08,2-08  
+3 MOSI   1-14      PB15
+4 LEDPWM 1-13,2-13 PE 6
+5 NSS    1-12,2-12 PB12
+6 SCLK   1-11,2-11 PB13
+7 MISO   ----      PB14
+8 Beep             PA 8
 
-Shift register
+Shift register interconnect
  1-9 to 2-14
+
+=== Input shift register ====
+
+Two 74HC165 
+
+Pullup to 5v resistor on each input - 60.4K
+
+gnd:
+ 1-08
+ 1-10
+ 1-15
+ 2-08
+ 2-10
+
++5
+ 1-16
+ 2-16
+ 16 pullup resistors
+
+ SCLK 1-02, 2-02
+ MISO 2-09          PB14
+ NSS  74HC14-1      Invert NSS
+ 74HC14-2 1-01,2-01 SH/LD
+
+Switch header (w wire colors)
+ 0 2-06 grn
+ 1 2-05 yel
+ 2 2-04 wht
+ 3 2-03 blu
+ 4 2-14 grn
+ 5 2-13 yel
+ 6 2-12 wht
+ 7 2-11 blu
+ 8 1-06 grn
+ 9 1-05 yel
+10 1-04 wht
+11 1-03 blu
+12 1-14 grn
+13 1-13 yel
+14 1-12 wht
+15 1-11 grn 
+
+shift register interconnect
+1-09 to 2-10
 
 

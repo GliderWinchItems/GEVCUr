@@ -83,7 +83,9 @@ uint8_t gatercvflag = 0;
 void StartGatewayTask(void const * argument)
 {
 	/* Wait for defaultTask to show USB is ready. */
-//extern uint8_t usbdeviceflag;
+//extern volatile uint8_t usbdeviceflag;
+//while (usbdeviceflag == 0);
+
 	osDelay(1500);
 
 	int i;
