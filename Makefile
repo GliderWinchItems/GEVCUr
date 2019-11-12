@@ -129,6 +129,7 @@ C_SOURCES += Ourtasks/gevcu_idx_v_struct.c
 C_SOURCES += Ourtasks/gevcu_func_init.c
 C_SOURCES += Ourtasks/iir_filter_lx.c
 C_SOURCES += Ourtasks/spiserialparallel.c
+C_SOURCES += Ourtasks/SpiOutTask.c
 
 # /* USER CODE END */ 
 

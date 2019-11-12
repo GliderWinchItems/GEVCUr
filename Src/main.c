@@ -83,6 +83,7 @@
 #include "iir_f2.h"
 #include "spiserialparallel.h"
 #include "cdc_txbuff.h"
+#include "SpiOutTask.h"
 
 /* USER CODE END Includes */
 
@@ -367,7 +368,7 @@ DiscoveryF4 LEDs --
 
 #ifdef CONFIGCAN2
 	// (CAN2 control block pointer, size of circular buffer)
-	MailboxTask_add_CANlist(pctl1, 48); // Use default buff size
+	pmbxret = MailboxTask_add_CANlist(pctl1, 48); // Use default buff size
 	if (pmbxret == NULL) morse_trap(17);
 #endif
 
@@ -396,6 +397,9 @@ DiscoveryF4 LEDs --
 	/* ADC summing, calibration, etc. */
 	xADCTaskCreate(3); // (arg) = priority
 
+	/* Spi shift register task. */
+	Thrdret = xSpiOutTaskCreate(1);
+	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 
 /* =================================================== */
@@ -978,7 +982,12 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 #define SHOWSERIALPARALLELSTUFF
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
-spisp_wr[0].u16 = 0x0080;
+
+struct SPIOUTREQUEST spioutx;
+spioutx.bitnum = 0;
+struct SPIOUTREQUEST spioutx_prev;
+spioutx_prev.bitnum = 15;
+
 #endif
 
 //#define TESTBEEPER
@@ -1008,6 +1017,7 @@ spisp_wr[0].u16 = 0x0080;
 			stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");
 			stackwatermark_show(GatewayTaskHandle,&pbuf3,  "GatewayTask--");
 			stackwatermark_show(CdcTxTaskSendHandle,&pbuf4,"CdcTxTask----");
+			stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---");
 
 			/* Heap usage (and test fp woking. */
 			heapsize = xPortGetFreeHeapSize();
@@ -1041,13 +1051,20 @@ yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			noteused |= DEFAULTTSKBIT01;
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
-			/* SPI serial-parallel hw testing. */
 #ifdef SHOWSERIALPARALLELSTUFF
+			/* SPI serial-parallel hw testing. */
 			yprintf(&pbuf1,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
-			spispctr_prev = spispctr;
-			spisp_wr[0].u16 = (spisp_wr[0].u16 << 1);
-			if (spisp_wr[0].u16 == 0) spisp_wr[0].u16 = 1;
+			spispctr_prev = spispctr; // Running count of spi interrupts
 
+			spioutx.on = 1; // Turn current LED on
+			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
+
+			spioutx_prev.on = 0; // Turn previous LED off
+			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
+			
+			spioutx_prev = spioutx; // Update previous
+			spioutx.bitnum += 1;    // Advance new
+			if (spioutx.bitnum > 15) spioutx.bitnum = 0;
 #endif
 
 
