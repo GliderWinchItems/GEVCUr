@@ -54,7 +54,6 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
   * @retval None
   */
 // __weak void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_SET);

@@ -17,9 +17,9 @@
 
 struct BEEPQ
 {
-	uint32_t duron;   // Duration (timer ticks) beep is ON
-	uint32_t duroff;  // Duration (timer ticks) beep is OFF (before finished)
-	uint32_t repct;   // Repetition ct of this beep
+	uint16_t duron;   // Duration (timer ticks) beep is ON
+	uint16_t duroff;  // Duration (timer ticks) beep is OFF (before finished)
+	uint16_t repct;   // Repetition ct of this beep
 };
 
 /* *************************************************************************/

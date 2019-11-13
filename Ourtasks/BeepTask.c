@@ -12,11 +12,10 @@
 
 #include "BeepTask.h"
 
-#include "stm32f4xx_hal_usart.h"
-#include "stm32f4xx_hal_uart.h"
+extern TIM_HandleTypeDef htim1;
 
 osThreadId BeepTaskHandle = NULL;
-osMessageQId BeepTaskSendQHandle;
+osMessageQId BeepTaskQHandle;
 
 /* *************************************************************************
  * void StartBeepTask(void const * argument);
@@ -25,8 +24,10 @@ osMessageQId BeepTaskSendQHandle;
 void StartBeepTask(void* argument)
 {
 	BaseType_t Qret;	// queue receive return
-	struct BEEPQ* pbeep;
+	struct BEEPQ beep;
 	int i;
+
+//osDelay(1000);
 
   /* Infinite loop */
   for(;;)
@@ -35,20 +36,20 @@ void StartBeepTask(void* argument)
 		{
 		/* Wait indefinitely for someone to load something into the queue */
 		/* Skip over empty returns, and zero time durations */
-			Qret = xQueueReceive(BeepTaskQHandle,&pbeep,portMAX_DELAY);
+			Qret = xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
 			if (Qret == pdPASS) // Break loop if not empty
 				break;
-		} while ((pbeep->duron == 0) || (pbeep->duroff == 0));
+		} while ((beep.duron == 0) || (beep.duroff == 0));
 
-		for (i = 0; i < pbeep->repct; i++)
+		for (i = 0; i < beep.repct; i++)
 		{
 			/* Turn beeper ON. */
-			HAL_GPIO_WritePin(BEEPPORT, BEEPPIN, GPIO_PIN_SET);
-			osDelay(pbeep->duron); // ON duration of beeper
+			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
+			osDelay(beep.duron); // ON duration of beeper
 
 			/* Turn Beeper off */
-			HAL_GPIO_WritePin(BEEPPORT, BEEPPIN, GPIO_PIN_RESET);
-			osDelay(pbeep->duroff); // ON duration of beeper
+			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);  
+			osDelay(beep.duroff); // ON duration of beeper
 		}
 	}
 }
@@ -61,11 +62,11 @@ void StartBeepTask(void* argument)
 osThreadId xBeepTaskCreate(uint32_t taskpriority, uint32_t beepqsize)
 {
 	BaseType_t ret = xTaskCreate(&StartBeepTask, "BeepTask",\
-     192, NULL, taskpriority, &BeepTaskHandle);
+     128, NULL, taskpriority, &BeepTaskHandle);
 	if (ret != pdPASS) return NULL;
 
-	BeepTaskSendQHandle = xQueueCreate(beepqsize, sizeof(struct BEEPQ) );
-	if (BeepTaskSendQHandle == NULL) return NULL;
+	BeepTaskQHandle = xQueueCreate(beepqsize, sizeof(struct BEEPQ) );
+	if (BeepTaskQHandle == NULL) return NULL;
 
 	return BeepTaskHandle;
 }

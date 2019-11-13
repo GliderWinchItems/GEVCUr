@@ -90,6 +90,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Beeper_Drive_Pin GPIO_PIN_6
+#define Beeper_Drive_GPIO_Port GPIOE
 #define Control_lever_Pin GPIO_PIN_1
 #define Control_lever_GPIO_Port GPIOC
 #define Supply_12v_Pin GPIO_PIN_2
@@ -98,6 +100,16 @@ void Error_Handler(void);
 #define Supply_5v_GPIO_Port GPIOC
 #define Spare_Pin GPIO_PIN_5
 #define Spare_GPIO_Port GPIOC
+#define SPI2_NSS__CK_Pin GPIO_PIN_12
+#define SPI2_NSS__CK_GPIO_Port GPIOB
+#define LED_GREEN_Pin GPIO_PIN_12
+#define LED_GREEN_GPIO_Port GPIOD
+#define LED_RED_Pin GPIO_PIN_13
+#define LED_RED_GPIO_Port GPIOD
+#define LED_ORANGE_Pin GPIO_PIN_14
+#define LED_ORANGE_GPIO_Port GPIOD
+#define LED_BLUE_Pin GPIO_PIN_15
+#define LED_BLUE_GPIO_Port GPIOD
 #define Beeper_Pin GPIO_PIN_8
 #define Beeper_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */

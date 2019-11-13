@@ -84,6 +84,7 @@
 #include "spiserialparallel.h"
 #include "cdc_txbuff.h"
 #include "SpiOutTask.h"
+#include "BeepTask.h"
 
 /* USER CODE END Includes */
 
@@ -273,7 +274,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -398,7 +399,11 @@ DiscoveryF4 LEDs --
 	xADCTaskCreate(3); // (arg) = priority
 
 	/* Spi shift register task. */
-	Thrdret = xSpiOutTaskCreate(1);
+	Thrdret = xSpiOutTaskCreate(0);
+	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+
+	/* Beeper task (taskpriority, beepqsize) */
+	Thrdret = xBeepTaskCreate(0, 12);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 
@@ -651,9 +656,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 4;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 35000;
+  htim1.Init.Period = 17500;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -666,7 +671,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_OC_Init(&htim1) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -676,14 +681,14 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_TOGGLE;
-  sConfigOC.Pulse = 0;
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = htim1.Init.Period/2; // 50-50
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_OC_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -857,30 +862,30 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Beeper_Drive_GPIO_Port, Beeper_Drive_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI2_NSS__CK_GPIO_Port, SPI2_NSS__CK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin|LED_RED_Pin|LED_ORANGE_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PE6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  /*Configure GPIO pin : Beeper_Drive_Pin */
+  GPIO_InitStruct.Pin = Beeper_Drive_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  HAL_GPIO_Init(Beeper_Drive_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  /*Configure GPIO pin : SPI2_NSS__CK_Pin */
+  GPIO_InitStruct.Pin = SPI2_NSS__CK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(SPI2_NSS__CK_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  /*Configure GPIO pins : LED_GREEN_Pin LED_RED_Pin LED_ORANGE_Pin LED_BLUE_Pin */
+  GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_RED_Pin|LED_ORANGE_Pin|LED_BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -937,6 +942,7 @@ void StartDefaultTask(void const * argument)
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
 	uint32_t heapsize;
+	uint32_t showctr = 0;
 #endif
 
 	/* Test CAN msg */
@@ -979,7 +985,7 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 
 #endif
 
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
 
@@ -990,9 +996,13 @@ spioutx_prev.bitnum = 15;
 
 #endif
 
-//#define TESTBEEPER
+#define TESTBEEPER
 #ifdef TESTBEEPER
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
+struct BEEPQ beepqtest;
+beepqtest.duron  = 100;
+beepqtest.duroff = 50;
+beepqtest.repct  = 2;
+//	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
 #endif
 
 
@@ -1007,22 +1017,29 @@ spioutx_prev.bitnum = 15;
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
-			yprintf(&pbuf2,"\n\r%4i Unused Task stack space--", ctr++);
-			stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");
-			stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");
-			stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");
-	//		stackwatermark_show(CanRxTaskHandle  ,&pbuf2,"CanRxTask----");
-			stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");
-			stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");
-			stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");
-			stackwatermark_show(GatewayTaskHandle,&pbuf3,  "GatewayTask--");
-			stackwatermark_show(CdcTxTaskSendHandle,&pbuf4,"CdcTxTask----");
-			stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---");
+			showctr += 1; 
+			switch (showctr)
+			{
+/* Cycle through the tasks. */
+case 0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--"); break;
+case 1: stackwatermark_show(SerialTaskHandle ,&pbuf1,"SerialTask---"); break;
+case 2: stackwatermark_show(CanTxTaskHandle  ,&pbuf1,"CanTxTask----"); break;
+case 3: stackwatermark_show(MailboxTaskHandle,&pbuf1,"MailboxTask--"); break;
+case 4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------"); break;
+case 5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask"); break;
+case 6: stackwatermark_show(GatewayTaskHandle,&pbuf1,  "GatewayTask--"); break;
+case 7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf1,"CdcTxTask----"); break;
+case 8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---"); break;
+case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
+				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
+default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
+			}
+#endif
 
-			/* Heap usage (and test fp woking. */
-			heapsize = xPortGetFreeHeapSize();
-			yprintf(&pbuf3,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
-				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize));
+#ifdef TESTBEEPER
+			xQueueSendToBack(BeepTaskQHandle,&beepqtest,portMAX_DELAY);
+
 #endif
 
 //#define SENDCANTESTMSGSINABURST
@@ -1035,14 +1052,15 @@ uint16_t ib;
 				xQueueSendToBack(CanTxQHandle,&testtx,portMAX_DELAY);
 #endif
 
+#ifdef DEBUGGINGCDCREADINGFROMPC
 /* Debugging CDC reading from PC */
 extern uint32_t dbuggateway1;
 extern uint32_t dbcdcrx;
 extern uint32_t dblen;
 extern uint32_t cdcifctr;
 extern uint32_t dbrxbuff;
-yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
-
+yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
+#endif
 		}
 
 /* Faster timeout */
@@ -1053,7 +1071,7 @@ yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 #ifdef SHOWSERIALPARALLELSTUFF
 			/* SPI serial-parallel hw testing. */
-			yprintf(&pbuf1,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
+			yprintf(&pbuf3,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
 			spioutx.on = 1; // Turn current LED on
@@ -1065,6 +1083,8 @@ yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			spioutx_prev = spioutx; // Update previous
 			spioutx.bitnum += 1;    // Advance new
 			if (spioutx.bitnum > 15) spioutx.bitnum = 0;
+
+//			spisp_wr[0].u16 = (1 << spioutx.bitnum); // Direct set single bit
 #endif
 
 
@@ -1072,7 +1092,7 @@ yprintf(&pbuf1,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 #ifdef SHOWADCCOMMONCOMPUTATIONS
 uint32_t dmact_prev = adcommon.dmact;
 extern volatile uint32_t adcdbg2;
-			yprintf(&pbuf2,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f %i",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt,(adcommon.dmact-dmact_prev));
+			yprintf(&pbuf4,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f %i",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt,(adcommon.dmact-dmact_prev));
 			dmact_prev = adcommon.dmact;
 
 //			yprintf(&pbuf4,"\n\rInternal ref:   %d %d %d\n\r",adc1.chan[ADC1IDX_INTERNALVREF].sum/ADC1DMANUMSEQ, adcommon.ivdd, adcdbg2);
@@ -1085,9 +1105,9 @@ extern volatile uint32_t adcdbg2;
 			if (hdrctr >= 16) // Periodic print header
 			{
 				hdrctr = 0;
-				yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+				yprintf(&pbuf1,"\n\r     count           CL     12V    5V    spare  temp   vref");
 			}
-			yprintf(&pbuf3,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
+			yprintf(&pbuf2,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
 			adcdbctr_prev = adcdbctr;
 #endif
 
@@ -1130,7 +1150,7 @@ extern volatile uint32_t adcdbg2;
 					ftmp = xxsum[ix];
 					fxxsum[ix] = ftmp * frecip;
 				}
-				yprintf(&pbuf3,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
+				yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
 					ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
 			}
 #endif
