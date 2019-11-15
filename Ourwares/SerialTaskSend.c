@@ -189,7 +189,6 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 void StartSerialTaskSend(void* argument1)
 {
-	BaseType_t Qret;	// queue receive return
 	struct SERIALSENDTASKBCB*  pssb; // Copied item from queue
 	struct SSCIRBUF* ptmp;	// Circular buffer pointer block pointer
 
@@ -200,9 +199,7 @@ void StartSerialTaskSend(void* argument1)
 		{
 		/* Wait indefinitely for someone to load something into the queue */
 		/* Skip over empty returns, and NULL pointers that would cause trouble */
-			Qret = xQueueReceive(SerialTaskSendQHandle,&pssb,portMAX_DELAY);
-			if (Qret == pdPASS) // Break loop if not empty
-				break;
+			xQueueReceive(SerialTaskSendQHandle,&pssb,portMAX_DELAY);
 		} while ((pssb->phuart == NULL) || (pssb->tskhandle == NULL));
 
 		/* Add Q item to linked list for this uart/usart */
@@ -254,7 +251,7 @@ TaskHandle_t *pxCreatedTask );
      &SerialTaskHandle);
 	if (ret != pdPASS) return NULL;
 
-	SerialTaskSendQHandle = xQueueCreate(QUEUESIZE, sizeof(struct SERIALSENDTASKBCB) );
+	SerialTaskSendQHandle = xQueueCreate(QUEUESIZE, sizeof(struct SERIALSENDTASKBCB*) );
 	if (SerialTaskSendQHandle == NULL) return NULL;
 	return SerialTaskHandle;
 }

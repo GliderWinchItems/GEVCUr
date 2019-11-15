@@ -274,7 +274,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -403,7 +403,7 @@ DiscoveryF4 LEDs --
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
-	Thrdret = xBeepTaskCreate(0, 12);
+	Thrdret = xBeepTaskCreate(-1, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 
@@ -656,9 +656,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 4;
+  htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 17500;
+  htim1.Init.Period = 35000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -682,7 +682,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = htim1.Init.Period/2; // 50-50
+  sConfigOC.Pulse = 15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -903,12 +903,26 @@ static void MX_GPIO_Init(void)
   * @param  argument: Not used 
   * @retval None
   */
+// ######### DEFAULT TASK #########################################################
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+
+/* Select code for testing/monitoring. */
+#define DISPLAYSTACKUSAGEFORTASKS
+//#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
+//#define SHOWSUMSOFADCRAWREADINGS
+//#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+#define SHOWSERIALPARALLELSTUFF
+//#define TESTBEEPER
+//#define SENDCANTESTMSGSINABURST
+//#define SHOWADCCOMMONCOMPUTATIONS
+
+
+
 	osDelay(500);
 	usbdeviceflag = 1;
 
@@ -938,7 +952,7 @@ void StartDefaultTask(void const * argument)
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 	if (pbuf4 == NULL) morse_trap(19);
 
-#define DISPLAYSTACKUSAGEFORTASKS
+
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
 	uint32_t heapsize;
@@ -957,7 +971,7 @@ void StartDefaultTask(void const * argument)
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
-//#define SHOWSUMSOFADCRAWREADINGS
+
 #ifdef SHOWSUMSOFADCRAWREADINGS
 extern uint32_t adcsumdb[ADC1IDX_ADCSCANSIZE]; // debug
 extern uint32_t adcdbctr;    // debug
@@ -965,13 +979,13 @@ uint32_t adcdbctr_prev = adcdbctr;
 uint16_t hdrctr = 999;
 #endif
 
-#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
+
 #ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
 uint16_t idx_xsum_prev = 0;
 uint16_t hdrctr2 = 999;
 #endif
 
-//#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
+
 #ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 float  fxxsum[ADC1IDX_ADCSCANSIZE];
 float ftmp;
@@ -985,7 +999,7 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 
 #endif
 
-//#define SHOWSERIALPARALLELSTUFF
+
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
 
@@ -996,7 +1010,7 @@ spioutx_prev.bitnum = 15;
 
 #endif
 
-#define TESTBEEPER
+
 #ifdef TESTBEEPER
 struct BEEPQ beepqtest;
 beepqtest.duron  = 100;
@@ -1018,6 +1032,8 @@ beepqtest.repct  = 2;
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
 			showctr += 1; 
+for (showctr = 0; showctr < 10; showctr++)
+{
 			switch (showctr)
 			{
 /* Cycle through the tasks. */
@@ -1035,6 +1051,7 @@ case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
 			}
+}
 #endif
 
 #ifdef TESTBEEPER
@@ -1042,7 +1059,7 @@ default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); 
 
 #endif
 
-//#define SENDCANTESTMSGSINABURST
+
 #ifdef  SENDCANTESTMSGSINABURST
 			/* ==== CAN MSG sending test ===== */
 			/* Place test CAN msg to send on queue in a burst. */
@@ -1074,6 +1091,7 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			yprintf(&pbuf3,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
+			/* Send a lit LED down the row, over and over. */
 			spioutx.on = 1; // Turn current LED on
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
 
@@ -1088,7 +1106,7 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 #endif
 
 
-//#define SHOWADCCOMMONCOMPUTATIONS
+
 #ifdef SHOWADCCOMMONCOMPUTATIONS
 uint32_t dmact_prev = adcommon.dmact;
 extern volatile uint32_t adcdbg2;

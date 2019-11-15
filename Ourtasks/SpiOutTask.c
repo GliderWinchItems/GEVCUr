@@ -43,6 +43,7 @@ void StartSpiOutTask(void* argument)
 			spisp_wr[0].u16 &= ~(1 << spireq.bitnum);		
 		}
 	}
+while(1==1);
 }
 /* *************************************************************************
  * osThreadId xSpiOutTaskCreate(uint32_t taskpriority);

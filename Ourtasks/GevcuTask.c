@@ -220,5 +220,6 @@ if (pcf->evstat != 0) morse_trap(46); // Debugging check
   /* ========= Update outputs ======================= */
 		GevcuUpdates(pcf);
   }
+while(1==1);
 }
 

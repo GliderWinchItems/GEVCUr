@@ -1,48 +1,51 @@
 /******************************************************************************
-* File Name          : yprintf.c
-* Date First Issued  : 01/17/2019
+* File Name          : morseprintf.c
+* Date First Issued  : 11/13/2019
 * Board              : 
-* Description        : Substitute for 'fprintf' for multiple uarts
+* Description        : printf for sending Morse on the beeper
 *******************************************************************************/
+/* 
+This uses the buffer facility from 'SerialTaskSend' and works in conjunction 
+with 'morseprintf' which is 'yprintf' with minor modifications.
+*/
 
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "yprintf.h"
+#include "morseprintf.h"
 
-osSemaphoreId vsnprintfSemaphoreHandle;
-static uint8_t sw = 0;	// OTO initialization switch
+extner osSemaphoreId vsnprintfSemaphoreHandle;
 
 /* **************************************************************************************
- *  int yprintf_init(void);
+ * int morseprintf_init(void);
  * @brief	: Setup semaphore
  * @return	: 0 = init executed; -1 = init already done
  * ************************************************************************************** */
-int yprintf_init(void)
+int morseprintf_init(void)
 {
-	if (sw == 0)
+	if (vsnprintfSemaphoreHandle == NULL)
 	{
-		sw = -1;
 		osSemaphoreDef(vsnprintfSemaphore);
 		vsnprintfSemaphoreHandle = osSemaphoreCreate(osSemaphore(vsnprintfSemaphore), 1);
 	}
 	return sw;
 }
 /* **************************************************************************************
- * int yprintf(struct SERIALSENDTASKCB** ppbcb, const char *fmt, ...);
+ * int morseprintf(struct SERIALSENDTASKCB** ppbcb, const char *fmt, ...);
  * @brief	: 'printf' for uarts
  * @param	: pbcb = pointer to pointer to stuct with uart pointers and buffer parameters
  * @param	: format = usual printf format
  * @param	: ... = usual printf arguments
  * @return	: Number of chars "printed"
  * ************************************************************************************** */
-int yprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
+int morseprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
 {
 	struct SERIALSENDTASKBCB* pbcb = *ppbcb;
 	va_list argp;
 
-	yprintf_init();	// JIC not init'd
+	morseprintf_init();	// JIC not init'd
 
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
@@ -68,17 +71,17 @@ int yprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
 	if (pbcb->size == 0) return 0;
 
 	/* Place Buffer Control Block on queue to SerialTaskSend */
-	vSerialTaskSendQueueBuf(ppbcb); // Place on queue
+	vMorseBeepTaskQueueBuf(ppbcb); // Place on queue
 
 	return pbcb->size;
 }
 /* **************************************************************************************
- * int yputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr);
+ * int morseputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr);
  * @brief	: Send zero terminated string to SerialTaskSend
  * @param	: pbcb = pointer to pointer to stuct with uart pointers and buffer parameters
  * @return	: Number of chars sent
  * ************************************************************************************** */
-int yputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)
+int morseputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)
 {
 	struct SERIALSENDTASKBCB* pbcb = *ppbcb;
 	int sz = strlen(pchr); // Check length of input string
@@ -96,7 +99,23 @@ int yputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)
 	else
 		pbcb->size = sz;	// No
 
-	vSerialTaskSendQueueBuf(ppbcb); // Place on queue
+	BeepTaskQHandle(ppbcb); // Place on MorseBeep queue
 	return pbcb->size; 
+}
+/* *************************************************************************
+ * void vMorseBeepTaskQueueBuf(struct SERIALSENDTASKBCB** ppbcb);
+ *	@brief	: Load buffer control block onto queue for sending
+ * @param	: ppbcb = Pointer to pointer to Buffer Control Block
+ * *************************************************************************/
+void vMorseBeepTaskQueueBuf(struct SERIALSENDTASKBCB** ppbcb)
+{
+	uint32_t qret;
+	do 
+	{
+		qret=xQueueSendToBack(MorseBeepTaskQHandle, ppbcb, portMAX_DELAY);
+		if (qret == errQUEUE_FULL) osDelay(1); // Delay, don't spin.
+
+	} while(qret == errQUEUE_FULL);
+	return;
 }
 

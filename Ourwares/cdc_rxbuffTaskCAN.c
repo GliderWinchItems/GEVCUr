@@ -310,6 +310,7 @@ else
 
 		} // End: while (pcdcbuf_add != pcdcbuf_take)
   } // End: for (;;)
+while(1==1);
   return; // Never get here
 }
 /* *************************************************************************

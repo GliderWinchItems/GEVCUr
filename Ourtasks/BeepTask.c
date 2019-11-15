@@ -32,24 +32,24 @@ void StartBeepTask(void* argument)
   /* Infinite loop */
   for(;;)
   {
-		do
-		{
 		/* Wait indefinitely for someone to load something into the queue */
 		/* Skip over empty returns, and zero time durations */
-			Qret = xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
-			if (Qret == pdPASS) // Break loop if not empty
-				break;
-		} while ((beep.duron == 0) || (beep.duroff == 0));
+		xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
 
 		for (i = 0; i < beep.repct; i++)
 		{
-			/* Turn beeper ON. */
-			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
-			osDelay(beep.duron); // ON duration of beeper
-
-			/* Turn Beeper off */
-			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);  
-			osDelay(beep.duroff); // ON duration of beeper
+			if (beep.duron > 0)
+			{
+				/* Turn beeper ON. */
+				HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
+				osDelay(beep.duron); // ON duration of beeper
+			}
+			if (beep.duroff > 0)
+			{
+				/* Turn Beeper off */
+				HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);  
+				osDelay(beep.duroff); // ON duration of beeper
+			}
 		}
 	}
 }

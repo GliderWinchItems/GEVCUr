@@ -33,6 +33,7 @@ static SPI_HandleTypeDef *pspix;
  *	@brief	: 
  * @return	: success = HAL_OK
  * *************************************************************************/
+static volatile dly;
 HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block
@@ -58,6 +59,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_SET);
 	spispctr += 1;
+dly = 0;
+while (dly++ < 10);
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
 
 	HAL_SPI_TransmitReceive_IT(pspix, 
