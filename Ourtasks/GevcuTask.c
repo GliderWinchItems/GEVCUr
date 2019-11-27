@@ -18,6 +18,7 @@
 #include "GevcuStates.h"
 #include "GevcuUpdates.h"
 #include "gevcu_func_init.h"
+#include "calib_control_lever.h"
 
 /* From 'main.c' */
 extern UART_HandleTypeDef huart3;
@@ -47,15 +48,6 @@ static void swtim2_callback(TimerHandle_t tm)
 	return;
 }
 /* *************************************************************************
- * void swtim3_callback(TimerHandle_t tm);
- * @brief	: Software timer 3 timeout callback
- * *************************************************************************/
-static void swtim3_callback(TimerHandle_t tm)
-{
-	xTaskNotify(GevcuTaskHandle, GEVCUBIT03, eSetBits);
-	return;
-}
-/* *************************************************************************
  * osThreadId xGevcuTaskCreate(uint32_t taskpriority);
  * @brief	: Create task; task handle created is global for all to enjoy!
  * @param	: taskpriority = Task priority (just as it says!)
@@ -74,9 +66,6 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * *************************************************************************/
 void StartGevcuTask(void const * argument)
 {
-	/* Convenience pointer. */
-	struct GEVCUFUNCTION* pcf = &gevcufunction;
-
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 	uint32_t noteuse = 0xffffffff;
@@ -84,42 +73,43 @@ void StartGevcuTask(void const * argument)
 	/* Setup serial receive for uart */
 	/* Get buffer control block for incoming uart lines. */
 	// 2 line buffers of 48 chars, no dma buff, char-by-char line mode
-//	pcf->prbcb3  = xSerialTaskRxAdduart(&huart3,0,GEVCUBIT01,&noteval,2,48,0,0);
-//	if (pcf->prbcb3 == NULL) morse_trap(47);
+//	gevcufunction.prbcb3  = xSerialTaskRxAdduart(&huart3,0,GEVCUBIT01,&noteval,2,48,0,0);
+//	if (gevcufunction.prbcb3 == NULL) morse_trap(47);
 
 	/* Init struct with working params */
 	gevcu_idx_v_struct_hardcode_params(&gevcufunction.lc);
 
 	/* Initialize working struc for GevcuTask. */
 	extern struct ADCFUNCTION adc1;
-	gevcu_func_init_init(pcf, &adc1);
+	gevcu_func_init_init(&gevcufunction, &adc1);
 
 	/* CAN hardware filter: restrict incoming to necessary CAN msgs. */
-//$	gevcu_func_init_canfilter(pcf);
+	// If gateway is included, then all CAN msgs are needed.
+#ifndef GATEWAYTASKINCLUDED
+	gevcu_func_init_canfilter(&gevcufunction);
+#endif
       
-	/* Create timer for keep-alive.  Auto-reload/periodic */
-	pcf->swtimer1 = xTimerCreate("swtim1",pcf->ka_k,pdTRUE,\
+	/* Create timer. Auto-reload/periodic */
+	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
-	if (pcf->swtimer1 == NULL) {morse_trap(41);}
+	if (gevcufunction.swtimer1 == NULL) {morse_trap(40);}
 
-	/* Create timer for other delays. One-shot */
-	pcf->swtimer2 = xTimerCreate("swtim2",10,pdFALSE,\
-		(void *) 0, &swtim2_callback);
-	if (pcf->swtimer2 == NULL) {morse_trap(42);}
-
-	/* Create timer uart RX keep-alive. One-shot */
-	pcf->swtimer3 = xTimerCreate("swtim3",30,pdFALSE,\
-		(void *) 0, &swtim3_callback);
-	if (pcf->swtimer3 == NULL) {morse_trap(43);}
+//	/* Create timer for other delays. One-shot */
+//	gevcufunction.swtimer2 = xTimerCreate("swtim2",10,pdFALSE,\
+//		(void *) 0, &swtim2_callback);
+//	if (gevcufunction.swtimer2 == NULL) {morse_trap(42);}
+	
+	/* Control Lever init. */
+	calib_control_lever();
 
 	/* Start command/keep-alive timer */
-	BaseType_t bret = xTimerReset(pcf->swtimer1, 10);
+	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
 	if (bret != pdPASS) {morse_trap(44);}
 
 	/* Upon startup state */
-	pcf->state = 0;
+	gevcufunction.state = 0;
 
-if (pcf->evstat != 0) morse_trap(46); // Debugging check
+if (gevcufunction.evstat != 0) morse_trap(46); // Debugging check
 
   /* Infinite loop */
   for(;;)
@@ -136,89 +126,89 @@ if (pcf->evstat != 0) morse_trap(46); // Debugging check
 		noteuse = 0;
 		if ((noteval & GEVCUBIT00) != 0)
 		{ // ADC readings ready
-			GevcuEvents_00(pcf);
+			GevcuEvents_00();
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
 		{ // spare
-			GevcuEvents_01(pcf);
+//			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)
 		{ // (spare)
-			GevcuEvents_02(pcf);
+//			GevcuEvents_02();
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)
-		{ // TIMER3: (one shot)
-			GevcuEvents_03(pcf);			
+		{ // (spare)
+//			GevcuEvents_03();			
 			noteuse |= GEVCUBIT03;
 		}
 		if ((noteval & GEVCUBIT04) != 0)
 		{ // TIMER1:  (periodic)
-			GevcuEvents_04(pcf);
+			GevcuEvents_04();
 			noteuse |= GEVCUBIT04;
 		}
 		if ((noteval & GEVCUBIT05) != 0)
-		{ // TIMER2: (one shot)
-			GevcuEvents_05(pcf);
+		{ // (spare)
+//			GevcuEvents_05();
 			noteuse |= GEVCUBIT05;
 		}
 		if ((noteval & GEVCUBIT06) != 0) 
 		{ // CAN:  
-			GevcuEvents_06(pcf);
+			GevcuEvents_06();
 			noteuse |= GEVCUBIT06;
 		}
 		if ((noteval & GEVCUBIT07) != 0) 
 		{ // CAN: 
-			GevcuEvents_07(pcf);
+			GevcuEvents_07();
 			noteuse |= GEVCUBIT07;
 		}
 		if ((noteval & GEVCUBIT08) != 0) 
 		{ // CAN:  
-			GevcuEvents_08(pcf);
+			GevcuEvents_08();
 			noteuse |= GEVCUBIT08;
 		}
 		if ((noteval & GEVCUBIT09) != 0) 
 		{ // CAN:  
-			GevcuEvents_09(pcf);
+			GevcuEvents_09();
 			noteuse |= GEVCUBIT09;
 		}
 		if ((noteval & GEVCUBIT10) != 0) 
 		{ // CAN:  
-			GevcuEvents_10(pcf);
+			GevcuEvents_10();
 			noteuse |= GEVCUBIT10;
 		}
 		if ((noteval & GEVCUBIT11) != 0) 
-		{ // CAN:  
-			GevcuEvents_11(pcf);
+		{ // CAN: 
+			GevcuEvents_11();
 			noteuse |= GEVCUBIT11;
 		}
 		if ((noteval & GEVCUBIT12) != 0) 
 		{ // CAN:  
-			GevcuEvents_12(pcf);
+			GevcuEvents_12();
 			noteuse |= GEVCUBIT12;
 		}
 		if ((noteval & GEVCUBIT13) != 0) 
 		{ // CAN:  
-			GevcuEvents_13(pcf);
+			GevcuEvents_13();
 			noteuse |= GEVCUBIT13;
 		}
 		if ((noteval & GEVCUBIT14) != 0) 
 		{ // CAN:  
-			GevcuEvents_14(pcf);
+			GevcuEvents_14();
 			noteuse |= GEVCUBIT14;
 		}
   /* ========= States =============================== */
 
-		switch (pcf->state)
+		switch (gevcufunction.state)
 		{
 
 		default:
 			break;
 		}
   /* ========= Update outputs ======================= */
-		GevcuUpdates(pcf);
+		GevcuUpdates();
   }
 while(1==1);
 }

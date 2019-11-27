@@ -14,21 +14,21 @@
 #include "stm32f4xx_hal.h"
 #include "adc_idx_v_struct.h"
 
-void GevcuEvents_00(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_01(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_02(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_03(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_04(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_05(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_06(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_07(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_08(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_09(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_10(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_11(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_12(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_13(struct GEVCUFUNCTION* pcf);
-void GevcuEvents_14(struct GEVCUFUNCTION* pcf);
+void GevcuEvents_00(void);
+void GevcuEvents_01(void);
+void GevcuEvents_02(void);
+void GevcuEvents_03(void);
+void GevcuEvents_04(void);
+void GevcuEvents_05(void);
+void GevcuEvents_06(void);
+void GevcuEvents_07(void);
+void GevcuEvents_08(void);
+void GevcuEvents_09(void);
+void GevcuEvents_10(void);
+void GevcuEvents_11(void);
+void GevcuEvents_12(void);
+void GevcuEvents_13(void);
+void GevcuEvents_14(void);
 
 #endif
 

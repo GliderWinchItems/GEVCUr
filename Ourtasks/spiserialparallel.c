@@ -33,7 +33,7 @@ static SPI_HandleTypeDef *pspix;
  *	@brief	: 
  * @return	: success = HAL_OK
  * *************************************************************************/
-static volatile dly;
+static volatile int dly;
 HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block

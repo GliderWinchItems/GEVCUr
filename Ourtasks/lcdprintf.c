@@ -49,6 +49,8 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
  * @param	: ... = usual printf arguments
  * @return	: Number of chars "printed"
  * ************************************************************************************** */
+uint32_t lcddbg;
+
 int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fmt, ...)
 {
 	struct SERIALSENDTASKBCB* pbcb = *ppbcb;
@@ -63,9 +65,11 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 
 	/* Construct line of data.  Stop filling buffer if it is full. */
 	va_start(argp, fmt);
-	va_start(argp, fmt);
 	pbcb->size = vsnprintf((char*)(pbcb->pbuf+2),pbcb->maxsize, fmt, argp);
 	va_end(argp);
+
+	/* Line to send has two leading control/command bytes. */
+	pbcb->size += 2; // Adjust size
 
 	/* Limit byte count in BCB to be put on queue, from vsnprintf to max buffer sizes. */
 	if (pbcb->size > pbcb->maxsize) 
@@ -97,4 +101,32 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 
 	return pbcb->size;
 }
+/* **************************************************************************************
+ * int lcdputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr);
+ * @brief	: Send zero terminated string to SerialTaskSend
+ * @param	: pbcb = pointer to pointer to stuct with uart pointers and buffer parameters
+ * @return	: Number of chars sent
+ * ************************************************************************************** */
+int lcdputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)
+{
+	struct SERIALSENDTASKBCB* pbcb = *ppbcb;
+	int sz = strlen(pchr); // Check length of input string
+	if (sz == 0) return 0;
+
+	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
+      when the buffer has been sent. */
+	xSemaphoreTake(pbcb->semaphore, 6000);
+
+	strncpy((char*)pbcb->pbuf,pchr,pbcb->maxsize);	// Copy and limit size.
+
+	/* Set size serial send will use. */
+	if (sz >= pbcb->maxsize)	// Did strcpy truncate?
+		pbcb->size = pbcb->maxsize;	// Yes
+	else
+		pbcb->size = sz;	// No
+
+	vSerialTaskSendQueueBuf(ppbcb); // Place on queue
+	return pbcb->size; 
+}
+
 

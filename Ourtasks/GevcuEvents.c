@@ -23,127 +23,129 @@
 #include "MailboxTask.h"
 
 /* *************************************************************************
- * void GevcuEvents_00(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_00(void);
  * @brief	: ADC readings available
  * *************************************************************************/
-void GevcuEvents_00(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_00(void)
 {
-	pcf->evstat |= CNCTEVADC; // Show new readings ready
+	gevcufunction.evstat |= CNCTEVADC; // Show new readings ready
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_01(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_01(void);
  * @brief	: (spare)
  * *************************************************************************/
-void GevcuEvents_01(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_01(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_02(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_02(void);
  * @brief	: (spare)
  * *************************************************************************/
-void GevcuEvents_02(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_02(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_03(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_03(void);
  * @brief	: TIMER3: Software timer 3 timeout
  * *************************************************************************/
-void GevcuEvents_03(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_03(void)
 {  // Readings failed to come in before timer timed out.
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_04(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_04(void);
  * @brief	: TIMER1: Software timer 1
  * *************************************************************************/
 uint32_t dbgev04;
 
-void GevcuEvents_04(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_04(void)
 {
+	gevcufunction.swtim1ctr += 1;
+	gevcufunction.evstat |= CNCTEVTIMER1; // Timer tick
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_05(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_05(void);
  * @brief	: TIMER2: Software timer 2
  * *************************************************************************/
-void GevcuEvents_05(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_05(void)
 {
-	pcf->evstat |= CNCTEVTIMER2;	// Set timeout bit 	
+	gevcufunction.evstat |= CNCTEVTIMER2;	// Set timeout bit 	
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_06(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_06(void);
  * @brief	: CAN: cid_gps_sync
  * *************************************************************************/
-void GevcuEvents_06(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_06(void)
 {
 //	gevcu_cmd_msg_i(pcf); // Build and send CAN msg with data requested
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_07(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_07(void);
  * @brief	: CAN: cid_cntctr_keepalive_r
  * *************************************************************************/
-void GevcuEvents_07(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_07(void)
 {
 	return;
 }	
 /* *************************************************************************
- * void GevcuEvents_08(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_08(void);
  * @brief	: CAN: cid_dmoc_actualtorq
  * *************************************************************************/
-void GevcuEvents_08(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_08(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_09(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_09(void);
  * @brief	: CAN: cid_dmoc_speed
  * *************************************************************************/
-void GevcuEvents_09(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_09(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_10(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_10(void);
  * @brief	: CAN: cid_dmoc_dqvoltamp
  * *************************************************************************/
-void GevcuEvents_10(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_10(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_11(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_11(void);
  * @brief	: CAN: cid_dmoc_torque
  * *************************************************************************/
-void GevcuEvents_11(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_11(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_12(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_12(void);
  * @brief	: CAN: cid_dmoc_critical_f
  * *************************************************************************/
-void GevcuEvents_12(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_12(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_13(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_13(void);
  * @brief	: CAN: cid_dmoc_hv_status
  * *************************************************************************/
-void GevcuEvents_13(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_13(void)
 {
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_14(struct GEVCUFUNCTION* pcf);
+ * void GevcuEvents_14(void);
  * @brief	: CAN: cid_dmoc_hv_temps
  * *************************************************************************/
-void GevcuEvents_14(struct GEVCUFUNCTION* pcf)
+void GevcuEvents_14(void)
 {
 	return;
 }

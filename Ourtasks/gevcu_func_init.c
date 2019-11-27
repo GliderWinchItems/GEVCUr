@@ -52,6 +52,7 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 	p->pmbx_cid_dmoc_critical_f =  MailboxTask_add(pctl0,p->lc.cid_dmoc_critical_f,NULL,GEVCUBIT12,0,23);
 	p->pmbx_cid_dmoc_hv_status  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_status, NULL,GEVCUBIT13,0,23);
 	p->pmbx_cid_dmoc_hv_temps   =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,23);
+	p->pmbx_cid_gevcur_keepalive_i = MailboxTask_add(pctl0,p->lc.cid_gevcur_keepalive_i,NULL,GEVCUBIT15,0,23);
 
 	/* Pre-load fixed data in CAN msgs */
 	for (i = 0; i < NUMCANMSGS; i++)

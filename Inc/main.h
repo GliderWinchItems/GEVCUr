@@ -119,6 +119,10 @@ void Error_Handler(void);
 #define HUARTLCD  huart6 // uart for LCD
 #define HUARTGATE huart2 // usart for gateway
 
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart6;
+
 // Gateway task (for Mailbox use)
 #define GATEWAYTASKINCLUDED // Include gateway
 

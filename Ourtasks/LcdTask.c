@@ -132,7 +132,7 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 	/* Construct line of data.  Stop filling buffer if it is full. */
 	va_start(argp, fmt);
 	va_start(argp, fmt);
-	pbcb->size = vsnprintf((char*)(pbcb->pbuf+2),pbcb->maxsize, fmt, argp);
+	pbcb->size = vsnprintf((char*)(pbcb->pbuf),pbcb->maxsize, fmt, argp);
 	va_end(argp);
 
 	/* Release semaphore controlling vsnprintf. */
@@ -141,7 +141,7 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 	/* Limit byte count in BCB to be put on queue, from vsnprintf to max buffer sizes. */
 	if (pbcb->size > pbcb->maxsize) 
 			pbcb->size = pbcb->maxsize;
-
+#ifdef SKIPPINGFORTESTINH
 	/* Set row & column codes */
 	char* p = pcbcb->pbuf;
 	*p++ = (254); // move cursor command
@@ -156,7 +156,7 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 	} else if (row == 3) {
 		*p = (212 + col);
 	}
-
+#endif
 	/* JIC */
 	if (pbcb->size == 0) return 0;
 

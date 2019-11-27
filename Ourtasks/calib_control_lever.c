@@ -7,270 +7,167 @@
 
 #include "calib_control_lever.h"
 #include <string.h>
-#include <stdio.h>
 #include "4x20lcd.h"
+#include "adcparams.h"
+#include "GevcuTask.h"
+#include "shiftregbits.h"
+#include "SpiOutTask.h"
+#include "BeepTask.h"
+#include "lcdprintf.h"
+#include "gevcu_idx_v_struct.h"
+#include "SpiOutTask.h"
+#include "main.h"
+#include "morse.h"
+#include "getserialbuf.h"
+#include "yprintf.h"
+
+enum CLSTATE
+{
+	CLOSE1,
+	CLOSE1WAIT,
+	OPEN1,
+	OPEN1WAIT,
+	CLCREADY   // CL calibration complete
+};
+
+#define CLTIMEOUT (64*15)  // 1.5 seconds
+
+struct CLFUNCTION clfunc;
+
+/* Beeper: { duration on, duration off, repeat count}; */
+static const struct BEEPQ beep1 = {100,50,1}; // Close prompt
+static const struct BEEPQ beep2 = {100,50,2}; // Full open prompt
+static const struct BEEPQ beep3 = {100,50,3}; // Success beeping
+static const struct BEEPQ beepf = {60,40,6};  // We are waiting for you prompt
+
+/* Skip for now
+static const struct SPIOUTREQUEST ledcloseoff = {LED_CL_RST,0};
+static const struct SPIOUTREQUEST ledcloseon  = {LED_CL_RST,1};
+static const struct SPIOUTREQUEST ledopenoff  = {LED_CL_FS ,0};
+static const struct SPIOUTREQUEST ledopenon   = {LED_CL_FS ,1};
+*/
+
+static struct SERIALSENDTASKBCB* pbuflcd;
+
+/* ***********************************************************************************************************
+ * void calib_control_lever_init();
+ * @brief	: Prep for CL calibration
+ ************************************************************************************************************* */
+/*
+This initialization is what would be in a file 'calib_control_lever_idx_v_struct.[ch]' if
+the CL would become a separate function.
+*/
+void calib_control_lever_init()
+{
+	clfunc.state = 0;
+	clfunc.min   = 0;
+   clfunc.max   = 0;
+
+	clfunc.state = 0;
+
+	clfunc.deadr = 1.5; // Deadzone for 0% (closed)
+	clfunc.deadf = 1.0; // Deadzone for 100% (open)
+
+	/* lcdprintf buffer */
+extern uint8_t lcdflag;
+while(lcdflag == 0) osDelay(3);
+yprintf_init();
+
+	pbuflcd = getserialbuf(&HUARTLCD,32);
+	if (pbuflcd == NULL) morse_trap(81);
+
+	return;
+}
 
 /* ***********************************************************************************************************
  * void calib_control_lever(void);
- * @brief	:Setup & initialization functions 
+ * @brief	: Calibrate CL
  ************************************************************************************************************* */
-
-//	code for calibrating scale and offset for the control lever
-//	make function later
-//#define FSCL	((1 << 12) - 1)	// full scale control lever (CL) output
-#define CLREST (1 << 11) 	// SPI bit position for CL rest position switch
-#define CLFS  (1 << 8) 		// SPI bit position for CL full scale position
-
-#define FLASHCOUNT (sysclk_freq/8);	// Orange LED flash increment
-
-// Min and maximum values observed for control lever
-static int cloffset = 0; 
-static int clmax = 0;	
-static float fpclscale;		//	CL conversion scale factor 
-
-void calib_control_lever(struct GEVCUFUNCTION* p)
+void calib_control_lever(void)
 {
-	int clcalstate = 0; // state for control lever intial calibration
-	int i;              // loop counter
-	int adc_tmp;
-	unsigned int t_led = DTWTIME + FLASHCOUNT;	//	initial t_led
-	char vv[128];
+	float fcur;
+	float frange;
 
-	int ledCount = 0;
-	int cycleCount = 1;
-	#define ledPatternLength 32
-	#define ledLag 3
-	//	led test pattern with extension to effect circular behavior
-		u32 ledTestPattern[] = 
-	{
-		0xffff,
-		0xffff,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000,
-		0xffff,
-		0xffff,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000,
-		LED_SAFE,
-		LED_PREP,
-		LED_ARM,
-		LED_STOP,
-		LED_GNDRLRTN,
-		LED_RAMP,
-		LED_CLIMB,
-		LED_ABORT,
-		LED_RECOVERY,
-		LED_PREP,
-		LED_RETRIEVE,
-		LED_SAFE,		
-		LED_ARM_PB,
-		LED_PREP_PB,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000,
-		0xffff,
-		0xffff,
-		0x0000,
-		0x0000,
-		0x0000,
-		0x0000
-	};
+		switch (clfunc.state)
+		{ // The following is a one-time only sequence
+		case CLOSE1:
+//			lcdprintf(&pbuflcd,2,0,"CLOSE LEVER");
+			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
+			clfunc.timx = gevcufunction.tasktim + CLTIMEOUT;
+			clfunc.state = CLOSE1WAIT;
+			break;
 
-	if (GPIOB_IDR & (1 << 1)) //	test for physical or glass CP
-	{	//	physical CP
-		xprintf (UXPRT,"\nBegin control lever calibration\n\r");
-		// dummy read of SPI switches to deal with false 0000 initially returned
-		spi2_rw(petmcvar->spi_ledout, petmcvar->spi_swin, SPI2SIZE);
-		while(clcalstate < 6)
-		{
-			if (((int)(DTWTIME - t_led)) > 0) // Has the time expired?
-			{ //	Time expired
-				//	read filtered control lever adc last value and update min and max values
-				adc_tmp = adc_last_filtered[ADC1IDX_CONTROL_LEVER];
-				cloffset = (cloffset < adc_tmp) ? cloffset : adc_tmp;
-				clmax = (clmax > adc_tmp) ? clmax : adc_tmp;
-				//	Read SPI switches
-				//	get most current switch positions
-				
-				//	Not sure why 
-				/*if (spi2_busy() != 0) // Is SPI2 busy?
-				{ // SPI completed  
-					spi2_rw(petmcvar->spi_ledout, petmcvar->spi_swin, SPI2SIZE); // Send/rcv SPI2SIZE bytes
-					//	convert to a binary word for comparisons (not general for different SPI2SIZE)
-					sw = (((int) petmcvar->spi_swin[0]) << 8) | (int) petmcvar->spi_swin[1];
-					//sw = petmcvar->spi_swin;	*/
-				
-				//	usage of spi2rw() is bad.  Should wait for not busy after starting it.
-
-				if (spi2_busy() != 0) // Is SPI2 busy?
-				{ // Here, no.
-					u32 tmp = petmcvar->cp_outputs;
-	    			for (i = SPI2SIZE - 1; i >= 0; i--)
-	    			{
-	    				petmcvar->spi_ledout[i] = (char) tmp;
-	    				tmp >>= 8;
-	    			}
-	    			petmcvar->cp_inputs = (((int) petmcvar->spi_swin[0]) << 8) | (int) petmcvar->spi_swin[1];
-					spi2_rw(petmcvar->spi_ledout, petmcvar->spi_swin, SPI2SIZE); 
-					xprintf(UXPRT, "%5u %5d %8x \n\r", clcalstate, adc_tmp, petmcvar->cp_inputs);	
-
-					petmcvar->cp_outputs = 0;
-					if ((clcalstate == 1) || (clcalstate == 2))
-					{
-						// LEDs chasing their tails
-						for (i = 0; i < ledLag; i++)
-						{
-							petmcvar->cp_outputs |= ledTestPattern[ledCount + i];
-						}
-					}
-
-					switch(clcalstate)
-					{				
-						case 0:	//	entry state
-						{
-							sprintf(vv, "Cycle control lever");
-							lcd_printToLine(UARTLCD, 0, vv);
-							sprintf(vv, "twice:");
-							lcd_printToLine(UARTLCD, 1, vv);
-							double_beep();
-							clcalstate = 1;
-						}
-						case 1:	// waiting for CL to rest position	
-						{
-							if (petmcvar->cp_inputs & CLREST) break;
-							clcalstate = 2;
-							cloffset = clmax = adc_tmp;	//	reset min and max values
-							sprintf(vv, "twice: 0");
-							lcd_printToLine(UARTLCD, 1, vv);
-							break;
-						}
-						case 2:	//	waiting for full scale position first time
-						{
-							if (petmcvar->cp_inputs & CLFS) break ;
-							clcalstate = 3;
-							sprintf(vv, "twice: 0.5");
-							lcd_printToLine(UARTLCD, 1, vv);
-							break;						
-						}
-						case 3:	//	wating for return to rest first time
-						{
-							if (petmcvar->cp_inputs & CLREST) break; 
-							clcalstate = 4;
-							// clcalstate = 6;		//	only requires 1 cycle
-							sprintf(vv, "twice: 1  ");
-							lcd_printToLine(UARTLCD, 1, vv);
-							single_beep();
-							break;
-						}
-						case 4:	//	waiting for full scale second time
-						{
-							if (petmcvar->cp_inputs & CLFS) break;
-							clcalstate = 5;
-							sprintf(vv, "twice: 1.5");
-							lcd_printToLine(UARTLCD, 1, vv);
-							break;					
-						}
-						case 5:	//	waiting for return to rest second time
-						{
-							if (petmcvar->cp_inputs & CLREST) break;
-							single_beep();
-							clcalstate = 6; 
-						}
-					}			
-				}
-				toggle_4leds(); 	// Advance some LED pattern
-				ledCount++;
-				if (ledCount >= ledPatternLength)
+		case CLOSE1WAIT:
+			if ((spisp_rd[0].u16 & CL_RST_N0) == 0)
+			{ // Here, sw for rest position is not closed
+				if ((int)(clfunc.timx - gevcufunction.tasktim) > 0)
 				{
-					ledCount = 0;
-				} 
-				t_led += FLASHCOUNT; 	// Set next toggle time	
-			}
-		}	
-		fpclscale = 1.0 / (clmax - cloffset);
-		lcd_clear(UARTLCD);
-		xprintf(UXPRT, "  cloffset: %10d clmax: %10d\n\r", cloffset, clmax);
-		xprintf 	(UXPRT, "   Control Lever Initial Calibration Complete\n\r");
-	}
-	else
-	{	
-		xprintf (UXPRT,"\nGlass CP indicated\n\r");
-		spi2_rw(petmcvar->spi_ledout, petmcvar->spi_swin, SPI2SIZE);
-		while(clcalstate < 2)
-		{
-			if (((int)(DTWTIME - t_led)) > 0) // Has the time expired?
-			{ //	Time expired
-				if (spi2_busy() != 0) // Is SPI2 busy?
-				{ // Here, no.
-					u32 tmp = petmcvar->cp_outputs;
-	    			for (i = SPI2SIZE - 1; i >= 0; i--)
-	    			{
-	    				petmcvar->spi_ledout[i] = (char) tmp;
-	    				tmp >>= 8;
-	    			}
-	    			petmcvar->cp_inputs = (((int) petmcvar->spi_swin[0]) << 8) | (int) petmcvar->spi_swin[1];
-					spi2_rw(petmcvar->spi_ledout, petmcvar->spi_swin, SPI2SIZE); 
-					petmcvar->cp_outputs = 0;					
-					// CP LEDs chasing their tails
-					for (i = 0; i < ledLag; i++)
-					{
-						petmcvar->cp_outputs |= ledTestPattern[ledCount + i];
-					}								
+					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+					clfunc.state = CLOSE1; // Timed out--re-beep the Op
+					break;
 				}
-				switch(clcalstate)
-					{				
-						case 0:	//	entry state
-						{
-							sprintf(vv, "Glass CP Indicated");
-							lcd_printToLine(UARTLCD, 0, vv);
-							double_beep();
-							clcalstate = 1;
-						}
-						case 1:	//	flash the lights through several cycles
-						{
-							if (cycleCount <= 0)
-							{
-								single_beep();
-								clcalstate = 2;
-							}
-
-						}
-					}
-				toggle_4leds(); 	// Advance some LED pattern
-				ledCount++;
-				if (ledCount >= ledPatternLength)
-				{
-					ledCount = 0;
-					cycleCount--;
-				} 
-				t_led += FLASHCOUNT; 	// Set next toggle time	
 			}
+			// Here, switch is closed, so save ADC reading
+			clfunc.min = (float)adc1.chan[0].sum;
+
+		case OPEN1:			
+//			lcdprintf(&pbuflcd,2,0,"OPEN LEVER");
+			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
+			clfunc.timx = gevcufunction.tasktim + CLTIMEOUT;
+			clfunc.state = CLOSE1WAIT;
+			break;
+		case OPEN1WAIT:
+			if ((spisp_rd[0].u16 & CL_FS_NO) == 0)
+			{ // Here, sw for rest position is not closed
+				if ((int)(clfunc.timx - gevcufunction.tasktim) > 0)
+				{
+					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+					clfunc.state = OPEN1; // Timed out--re-beep the Op
+					break;
+				}
+				break;
+			}
+			// Here, switch is closed, so save ADC reading
+			clfunc.max = (float)adc1.chan[0].sum;
+		
+			/* Total travel of CL in terms of ADC readings. */
+			frange = (clfunc.max - clfunc.min);
+
+			/* ADC reading below minends will be set to zero. */
+			clfunc.minends   = (clfunc.min + frange*(float)0.01*clfunc.deadr);
+
+			/* ADC readings above maxbegins will be set to 100.0 */
+			clfunc.maxbegins = (clfunc.max - frange*(float)0.01*clfunc.deadf);
+
+			/* This scales the effective range for the CL */ 			
+			clfunc.rcp_range = (float)100.0/(clfunc.maxbegins - clfunc.minends);
+
+			/* Some coding fluff for the Op. */
+//			lcdprintf(&pbuflcd,2,0,"SUCCESS");
+			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
+			clfunc.state = CLCREADY;
+			break;
+		
+		/* Calibration is complete. Compute position of CL. */
+		case CLCREADY:
+			fcur = adc1.chan[0].sum;
+			if (fcur < clfunc.minends)
+			{ // CL is in the closed deadzone
+				clfunc.curpos =  0;
+				break;
+			}
+			if (fcur > clfunc.maxbegins)
+			{
+				clfunc.curpos = (float)100.0;
+				break;
+			}
+			clfunc.curpos = (fcur - clfunc.minends) * clfunc.rcp_range;
+			break;
+			
+		// Program Gone Wild trap
+		default: morse_trap (80);
 		}
-		lcd_clear(UARTLCD);
-	}
+
 	return;
 }
-/* ***********************************************************************************************************
- * int calib_control_lever_get(void);
- * @brief	:
- * @return	: Calibrated Control lever: 0 - 4095 (but could be slightly negative) -> 0 - 100%
- ************************************************************************************************************* */
-float calib_control_lever_get(void)
-{
-	float x;
-	x = (adc_last_filtered[ADC1IDX_CONTROL_LEVER] - cloffset) * fpclscale;
-	/* for now do not limit
-	x = x > 1.0 ? 1.0 : x;
-	x = x < 0.0 ? 0.0 : x;
-	*/
-	return x;
-}
-
 

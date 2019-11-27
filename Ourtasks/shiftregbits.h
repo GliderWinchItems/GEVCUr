@@ -19,10 +19,10 @@
 #define LED_RETRIEVE    0x0100
 #define LED_STOP        0x0080
 #define LED_ABORT       0x0040
-#define LED_SPARE20     0x0020
+#define LED_CL_RST      0x0020
 #define LED_SPARE10     0x0010
 #define LED_SPARE08     0x0008
-#define LED_SPARE04     0x0004
+#define LED_CL_FS       0x0004
 #define LED_PREP_PB     0x0002
 #define LED_ARM_PB      0x0001
 
@@ -35,7 +35,7 @@
 #define CL_RST_N0  (1 << 11)	//	low at rest
 #define CP_SPARE11 (1 << 10)  //
 #define CP_SPARE10 (1 <<  9)  //
-#define CL_FS_ NO  (1 <<  8)	// low at full scale
+#define CL_FS_NO   (1 <<  8)	// low at full scale
 #define CP_SPARE8  (1 <<  7)  //
 #define CP_SPARE7  (1 <<  6)  //
 #define CP_SPARE6  (1 <<  5)  //

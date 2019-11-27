@@ -85,6 +85,7 @@
 #include "cdc_txbuff.h"
 #include "SpiOutTask.h"
 #include "BeepTask.h"
+#include "lcdprintf.h"
 
 /* USER CODE END Includes */
 
@@ -126,6 +127,8 @@ uint8_t canflag2;
 
 uint8_t usbdeviceflag = 0; // USB DEVICE INIT complete = 1;
 
+uint8_t lcdflag = 0;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -143,6 +146,8 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
+
+I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi2;
 
@@ -176,6 +181,7 @@ static void MX_ADC1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_I2C1_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
 void CallbackdefaultTaskTimer01(void const * argument);
@@ -228,6 +234,7 @@ int main(void)
   MX_SPI2_Init();
   MX_USART3_UART_Init();
   MX_TIM1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 /*
 DiscoveryF4 LEDs --
@@ -261,7 +268,7 @@ DiscoveryF4 LEDs --
   /* start timers, add new ones, ... */
 
 	/* defaultTask timer for pacing display of stack usages. */
-	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(5000),0);
+	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(1600),0);
 	/* defaultTask timer for pacing ADC monitoring. */
 	ret = xTimerChangePeriod( defautTaskTimer01Handle,pdMS_TO_TICKS(100),0);
 
@@ -274,7 +281,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 406);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -405,6 +412,10 @@ DiscoveryF4 LEDs --
 	/* Beeper task (taskpriority, beepqsize) */
 	Thrdret = xBeepTaskCreate(-1, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+
+  /* init code for USB_DEVICE */
+  MX_USB_DEVICE_Init();
+
 
 
 /* =================================================== */
@@ -594,6 +605,40 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
+
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -911,7 +956,7 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-/* Select code for testing/monitoring. */
+/* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
@@ -920,13 +965,14 @@ void StartDefaultTask(void const * argument)
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
+#define TESTLCDPRINTF
 
 
 
 	osDelay(500);
 	usbdeviceflag = 1;
 
-	int i;
+
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -948,6 +994,16 @@ void StartDefaultTask(void const * argument)
 
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
 
+#ifdef TESTLCDPRINTF
+	struct SERIALSENDTASKBCB* pbuflcd = getserialbuf(&HUARTLCD,64);
+	if (pbuflcd == NULL) morse_trap(12);
+
+	uint32_t lcdrow = 0;
+	uint32_t lcdctr = 0;
+	uint32_t lcdret = 0;
+	
+#endif
+
 	/* Start SPI with interrupts restarting transfer. */
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 	if (pbuf4 == NULL) morse_trap(19);
@@ -959,15 +1015,19 @@ void StartDefaultTask(void const * argument)
 	uint32_t showctr = 0;
 #endif
 
+#ifdef SENDCANTESTMSGSINABURST
 	/* Test CAN msg */
 	struct CANTXQMSG testtx;
 	testtx.pctl = pctl0;
 	testtx.can.id = 0xc2200000;
 	testtx.can.dlc = 8;
+	int i;
 	for (i = 0; i < 8; i++)
 		testtx.can.cd.uc[i] = 0x30 + i;
 	testtx.maxretryct = 8;
 	testtx.bits = 0;
+#endif
+
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
@@ -1019,7 +1079,9 @@ beepqtest.repct  = 2;
 //	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
 #endif
 
+lcdflag = 1;
 
+// ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
 	{
@@ -1028,6 +1090,13 @@ beepqtest.repct  = 2;
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
+
+#ifdef TESTLCDPRINTF
+extern uint32_t lcddbg;
+		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"0123456789 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
+		lcdctr += 1;	lcdrow += 1; if (lcdrow >= 4) lcdrow = 0;
+		lcdret = yprintf(&pbuf1,"\n\rlcdret: %d lcdctr: %d lcddbg: %d",lcdret, lcdctr,lcddbg);
+#endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
@@ -1095,6 +1164,8 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			spioutx.on = 1; // Turn current LED on
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
 
+ #define LEDSCHASINGABIT
+ #ifdef LEDSCHASINGABIT
 			spioutx_prev.on = 0; // Turn previous LED off
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
 			
@@ -1103,6 +1174,8 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			if (spioutx.bitnum > 15) spioutx.bitnum = 0;
 
 //			spisp_wr[0].u16 = (1 << spioutx.bitnum); // Direct set single bit
+
+ #endif
 #endif
 
 

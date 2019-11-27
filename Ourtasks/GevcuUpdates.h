@@ -17,7 +17,7 @@
 
 
 /* *************************************************************************/
-void GevcuUpdates(struct GEVCUFUNCTION* pcf);
+void GevcuUpdates(void);
 /* @brief	: Update outputs based on bits set
  * *************************************************************************/
 #endif

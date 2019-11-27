@@ -40,7 +40,7 @@ struct SERIALSENDTASKBCB
 	SemaphoreHandle_t semaphore;// Semaphore handle
 	uint8_t	*pbuf;             // Pointer to byte buffer to be sent
 	uint16_t size;              // Number of bytes to be sent
-	uint16_t maxsize;           // Buffer size 		
+	uint16_t maxsize;           // Buffer size 	
 };
 
 /* *************************************************************************/

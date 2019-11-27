@@ -109,7 +109,7 @@ void StartADCTask(void const * argument)
 		/* Calibrate and filter ADC readings. */
 		adcparams_cal();
 
-		/* Notify ContactorTask that new readings are ready. */
+		/* Notify GEVCUr Task that new readings are ready. */
 		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
 		
 		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);

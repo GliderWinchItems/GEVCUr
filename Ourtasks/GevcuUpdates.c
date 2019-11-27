@@ -23,21 +23,24 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 
 /* *************************************************************************
- * void GevcuUpdates(struct GEVCUFUNCTION* pcf);
+ * void GevcuUpdates(void);
  * @brief	: Update outputs based on bits set
  * *************************************************************************/
-void GevcuUpdates(struct GEVCUFUNCTION* pcf)
+void GevcuUpdates(void)
 {
-	/* Reset new ADC readings flag. */
-	if ((pcf->evstat & CNCTEVADC) != 0)
-	{
-			pcf->evstat &= ~CNCTEVADC;
-	}
+	/* Reset new various flags. */
+	gevcufunction.evstat &= ~CNCTEVADC;
+	gevcufunction.evstat |= (
+		CNCTEVTIMER1 | /* Timer tick */
+		CNCTEVADC      /* new ADC readings */
+		);
+
+	
 
 	/* Queue keep-alive status CAN msg */
-	if ((pcf->outstat & CNCTOUT05KA) != 0)
+	if ((gevcufunction.outstat & CNCTOUT05KA) != 0)
 	{
-		pcf->outstat &= ~CNCTOUT05KA;	
+		gevcufunction.outstat &= ~CNCTOUT05KA;	
 	}
 
 

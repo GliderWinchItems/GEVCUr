@@ -52,7 +52,7 @@ int yprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
 	xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );
 
 	/* Construct line of data.  Stop filling buffer if it is full. */
-	va_start(argp, fmt);
+//	va_start(argp, fmt);
 	va_start(argp, fmt);
 	pbcb->size = vsnprintf((char*)(pbcb->pbuf),pbcb->maxsize, fmt, argp);
 	va_end(argp);
