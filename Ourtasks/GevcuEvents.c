@@ -22,6 +22,8 @@
 #include "gevcu_msgs.h"
 #include "MailboxTask.h"
 
+#include "main.h"
+
 /* *************************************************************************
  * void GevcuEvents_00(void);
  * @brief	: ADC readings available
@@ -29,6 +31,9 @@
 void GevcuEvents_00(void)
 {
 	gevcufunction.evstat |= CNCTEVADC; // Show new readings ready
+
+	/* Update Control Lever with new ADC readings (or do initial calib). */
+	calib_control_lever();
 	return;
 }
 /* *************************************************************************

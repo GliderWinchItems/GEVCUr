@@ -11,7 +11,9 @@
 #include <string.h>
 #include "yprintf.h"
 
-osSemaphoreId vsnprintfSemaphoreHandle;
+//osSemaphoreId vsnprintfSemaphoreHandle;
+SemaphoreHandle_t vsnprintfSemaphoreHandle;
+
 static uint8_t sw = 0;	// OTO initialization switch
 
 /* **************************************************************************************
@@ -24,8 +26,9 @@ int yprintf_init(void)
 	if (sw == 0)
 	{
 		sw = -1;
-		osSemaphoreDef(vsnprintfSemaphore);
-		vsnprintfSemaphoreHandle = osSemaphoreCreate(osSemaphore(vsnprintfSemaphore), 1);
+//		osSemaphoreDef(vsnprintfSemaphore);
+//		vsnprintfSemaphoreHandle = osSemaphoreCreate(osSemaphore(vsnprintfSemaphore), 1);
+		vsnprintfSemaphoreHandle = xSemaphoreCreateMutex();
 	}
 	return sw;
 }

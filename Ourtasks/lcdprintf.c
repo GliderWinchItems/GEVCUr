@@ -58,7 +58,7 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
 
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
-	xSemaphoreTake(pbcb->semaphore, 6000);
+	xSemaphoreTake(pbcb->semaphore, 6001);
 
 	/* Block if vsnprintf is being uses by someone else. */
 	xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );

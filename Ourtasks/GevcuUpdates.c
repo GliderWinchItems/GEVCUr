@@ -30,7 +30,7 @@ void GevcuUpdates(void)
 {
 	/* Reset new various flags. */
 	gevcufunction.evstat &= ~CNCTEVADC;
-	gevcufunction.evstat |= (
+	gevcufunction.evstat &= ~(
 		CNCTEVTIMER1 | /* Timer tick */
 		CNCTEVADC      /* new ADC readings */
 		);

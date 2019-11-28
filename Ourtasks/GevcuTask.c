@@ -20,6 +20,13 @@
 #include "gevcu_func_init.h"
 #include "calib_control_lever.h"
 
+#include "main.h"
+#include "morse.h"
+#include "getserialbuf.h"
+#include "yprintf.h"
+
+
+
 /* From 'main.c' */
 extern UART_HandleTypeDef huart3;
 
@@ -55,7 +62,7 @@ static void swtim2_callback(TimerHandle_t tm)
  * *************************************************************************/
 osThreadId xGevcuTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, 256);
+ 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, 512);
 	GevcuTaskHandle = osThreadCreate(osThread(GevcuTask), NULL);
 	vTaskPrioritySet( GevcuTaskHandle, taskpriority );
 	return GevcuTaskHandle;
@@ -95,12 +102,11 @@ void StartGevcuTask(void const * argument)
 	if (gevcufunction.swtimer1 == NULL) {morse_trap(40);}
 
 //	/* Create timer for other delays. One-shot */
-//	gevcufunction.swtimer2 = xTimerCreate("swtim2",10,pdFALSE,\
-//		(void *) 0, &swtim2_callback);
+//	gevcufunction.swtimer2 = xTimerCreate("swtim2",10,pdFALSE,(void *) 0, &swtim2_callback);
 //	if (gevcufunction.swtimer2 == NULL) {morse_trap(42);}
 	
 	/* Control Lever init. */
-	calib_control_lever();
+	calib_control_lever_init();
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);

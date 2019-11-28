@@ -176,8 +176,6 @@ struct GEVCUFUNCTION
 	uint32_t statusbits;
 	uint32_t statusbits_prev;
 
-	uint32_t tasktim;  // Running count of timer ticks
-
 	/* Timings in milliseconds. Converted later to timer ticks. */
 	uint32_t ka_k;        // Gevcu polling timer
 	uint32_t keepalive_k;
@@ -223,7 +221,6 @@ void StartGevcuTask(void const * argument);
 
 extern struct GEVCUFUNCTION gevcufunction;
 extern osThreadId GevcuTaskHandle;
-extern struct GEVCUFUNCTION gevcufunction;
 
 #endif
 

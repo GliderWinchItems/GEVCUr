@@ -22,7 +22,9 @@ struct CLFUNCTION
 	float deadr;     // Dead zone for rest position (pct)
 	float deadf;     // Dead zone for full position (pct) 
 	uint32_t timx;	  // GevcuTask timer tick for next state
+	uint16_t toctr;  // Prompt timeOut counter
 	uint8_t state;   // Calibration state; 
+	
 };
 
 /* *********************************************************************************************************** */
@@ -32,6 +34,8 @@ void calib_control_lever_init();
 void calib_control_lever(void);
 /* @brief	: Calibrate CL
  ************************************************************************************************************* */
+
+extern struct CLFUNCTION clfunc;
 
 #endif 
 

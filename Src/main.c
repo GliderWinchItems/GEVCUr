@@ -281,7 +281,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 406);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 386);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -953,26 +953,21 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
-
+//osDelay(500);
 /* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 #define SHOWSERIALPARALLELSTUFF
-//#define TESTBEEPER
+#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
-#define TESTLCDPRINTF
+//#define TESTLCDPRINTF
 
-
-
-	osDelay(500);
 	usbdeviceflag = 1;
-
-
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -992,7 +987,8 @@ void StartDefaultTask(void const * argument)
 	struct SERIALSENDTASKBCB* pbuf2 = getserialbuf(&HUARTMON,96);
 	if (pbuf2 == NULL) morse_trap(12);
 
-	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);
+	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
+	if (pbuf4 == NULL) morse_trap(12);
 
 #ifdef TESTLCDPRINTF
 	struct SERIALSENDTASKBCB* pbuflcd = getserialbuf(&HUARTLCD,64);
@@ -1093,7 +1089,7 @@ lcdflag = 1;
 
 #ifdef TESTLCDPRINTF
 extern uint32_t lcddbg;
-		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"0123456789 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
+		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"\n\r01234 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
 		lcdctr += 1;	lcdrow += 1; if (lcdrow >= 4) lcdrow = 0;
 		lcdret = yprintf(&pbuf1,"\n\rlcdret: %d lcdctr: %d lcddbg: %d",lcdret, lcdctr,lcddbg);
 #endif
@@ -1101,7 +1097,7 @@ extern uint32_t lcddbg;
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
 			showctr += 1; 
-for (showctr = 0; showctr < 10; showctr++)
+for (showctr = 0; showctr < 11; showctr++)
 {
 			switch (showctr)
 			{
@@ -1115,7 +1111,8 @@ case 5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask"); bre
 case 6: stackwatermark_show(GatewayTaskHandle,&pbuf1,  "GatewayTask--"); break;
 case 7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf1,"CdcTxTask----"); break;
 case 8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---"); break;
-case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 9: stackwatermark_show(GevcuTaskHandle, &pbuf1,   "GevcuTask----"); break;
+case 10:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
@@ -1165,7 +1162,7 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
 
  #define LEDSCHASINGABIT
- #ifdef LEDSCHASINGABIT
+ #ifdef  LEDSCHASINGABIT
 			spioutx_prev.on = 0; // Turn previous LED off
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
 			
@@ -1177,8 +1174,6 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
  #endif
 #endif
-
-
 
 #ifdef SHOWADCCOMMONCOMPUTATIONS
 uint32_t dmact_prev = adcommon.dmact;
