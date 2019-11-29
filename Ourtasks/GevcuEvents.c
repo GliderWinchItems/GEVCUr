@@ -21,6 +21,7 @@
 #include "gevcu_cmd_msg.h"
 #include "gevcu_msgs.h"
 #include "MailboxTask.h"
+#include "calib_control_lever.h"
 
 #include "main.h"
 

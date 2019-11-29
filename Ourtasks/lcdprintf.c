@@ -14,6 +14,11 @@
 #include "4x20lcd.h"
 #include "yprintf.h"
 
+/*	LCD Line Size  */
+#define LCDLINESIZE 20
+#define LCDROWSIZE 4
+#define LCD_BACKLIGHT_LEVEL 70
+
 /* **************************************************************************************
  * void lcdprintf_init(struct SERIALSENDTASKBCB** ppbcb);
  * @brief	: Initialize display
@@ -26,7 +31,7 @@ void lcdprintf_init(struct SERIALSENDTASKBCB** ppbcb)
 	yprintf_init();	// JIC not init'd
 
 	/*	wait a half second for LCD to finish splash screen. */
-	osDelay(pdMS_TO_TICKS(500));		
+//	osDelay(pdMS_TO_TICKS(500)); // This is done in GevcuTask/calib_control_lever
 
 	/* Build line of control chars to init display. */
 	uint8_t* p = (uint8_t*)lcd_init(pbcb->pbuf);
@@ -115,7 +120,7 @@ int lcdputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)
 
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
-	xSemaphoreTake(pbcb->semaphore, 6000);
+	xSemaphoreTake(pbcb->semaphore, 6002);
 
 	strncpy((char*)pbcb->pbuf,pchr,pbcb->maxsize);	// Copy and limit size.
 

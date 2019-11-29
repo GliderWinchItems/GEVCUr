@@ -9,15 +9,6 @@
 #include "4x20lcd.h"
 #include <string.h>
 
-uint8_t*  lcd_init(uint8_t*  p) {
-	p = lcd_off(p);
-	p = lcd_on(p);
-
-	p = lcd_clear(p);
-	p = lcd_backlight(p, LCD_BACKLIGHT_LEVEL);
-	p = lcd_moveCursor(p, 0, 0);
-	return p;
-}
 
 uint8_t*  lcd_clear(uint8_t*  p) {
 	*p++ = (254);
@@ -61,3 +52,13 @@ uint8_t*  lcd_moveCursor(uint8_t* p, int row, int col) {
 	}
 	return p;
 }
+
+uint8_t*  lcd_init(uint8_t*  p) {
+	p = lcd_off(p);
+	p = lcd_on(p);
+	p = lcd_clear(p);
+	p = lcd_backlight(p, LCD_BACKLIGHT_LEVEL);
+	p = lcd_moveCursor(p, 0, 0);
+	return p;
+}
+

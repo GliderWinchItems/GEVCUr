@@ -21,23 +21,17 @@
 #include "getserialbuf.h"
 #include "yprintf.h"
 
-enum CLSTATE
-{
-	CLOSE1,
-	CLOSE1WAIT,
-	OPEN1,
-	OPEN1WAIT,
-	CLCREADY   // CL calibration complete
-};
-
 /* Timeout for re-issue LCD/Beep prompt */
 #define CLTIMEOUT ((125*15)/10)  // 1.5 seconds
 
-/* Uncomment for extra code for test and debug. */
-//#define TESTANDDEBUGCALIB
+/* Uncomment to enable extra code for test and debug. */
+#define TESTANDDEBUGCALIB
 #ifdef TESTANDDEBUGCALIB
 #define CLTIMEOUTTEST (125/5) // Test and debug
 #endif
+
+/* LCD splash screen delay. */
+#define CLHALFSEC (75)  // 0.6 seconds
 
 struct CLFUNCTION clfunc;
 
@@ -76,9 +70,6 @@ void calib_control_lever_init()
 	clfunc.deadf = 3.0; // Deadzone for 100% (open)
 
 	/* lcdprintf buffer */
-extern uint8_t lcdflag;
-while(lcdflag == 0) osDelay(3);
-yprintf_init();
 
 	pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (pbuflcd1 == NULL) morse_trap(81);
@@ -98,9 +89,19 @@ void calib_control_lever(void)
 	float frange;
 
 		switch (clfunc.state)
-		{ // The following is a one-time only sequence
+		{ // The following is a one-time only sequenceCLHALFSEC
+		case INITLCD: // Half-second delay for splash screen to clear
+			clfunc.timx = gevcufunction.swtim1ctr + CLHALFSEC;
+			clfunc.state = INITLCD1;
+			break;
+
+		case INITLCD1: // Break until time expires.
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+			/* Init display. */
+			lcdprintf_init(&pbuflcd1);
 		case CLOSE1:
-			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d\n\r",clfunc.toctr++);
+			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d    |",clfunc.toctr++);
 			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = CLOSE1WAIT;
@@ -120,13 +121,13 @@ void calib_control_lever(void)
 			clfunc.min = (float)adc1.chan[0].sum;
 
 #ifdef TESTANDDEBUGCALIB
-lcdprintf(&pbuflcd1,3,0,"ADC %d\n\r",adc1.chan[0].sum);
+lcdprintf(&pbuflcd1,3,0,"ADC %d",adc1.chan[0].sum);
 #endif
 			clfunc.state = OPEN1;
 			clfunc.toctr = 0;
 
 		case OPEN1:			
-			lcdprintf(&pbuflcd1,2,0,"\n\rFULL FWD LEVER %d\n\r",clfunc.toctr++);
+			lcdprintf(&pbuflcd1,2,0,"FULL FWD LEVER %d     |",clfunc.toctr++);
 			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = OPEN1WAIT;
@@ -143,7 +144,7 @@ lcdprintf(&pbuflcd1,3,0,"ADC %d\n\r",adc1.chan[0].sum);
 				break;
 			}
 #ifdef TESTANDDEBUGCALIB
-lcdprintf(&pbuflcd1,4,0,"ADC %d\n\r",adc1.chan[0].sum);
+lcdprintf(&pbuflcd1,4,0,"ADC %d      |",adc1.chan[0].sum);
 #endif
 
 			// Here, switch is closed, so save ADC reading
@@ -162,7 +163,7 @@ lcdprintf(&pbuflcd1,4,0,"ADC %d\n\r",adc1.chan[0].sum);
 			clfunc.rcp_range = (float)100.0/(clfunc.maxbegins - clfunc.minends);
 
 			/* Some coding fluff for the Op. */
-			lcdprintf(&pbuflcd1,1,0,"\n\rSUCCESS\n\r");
+			lcdprintf(&pbuflcd1,1,0,"SUCCESS           |");
 			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
 			clfunc.state = CLCREADY;
 
@@ -182,7 +183,7 @@ lcdprintf(&pbuflcd1,3,0,"maxbegins %10.2f\n\r",clfunc.maxbegins);
 
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d\n\r",clfunc.curpos,adc1.chan[0].sum);
+lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d       |",clfunc.curpos,adc1.chan[0].sum);
 clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
 
@@ -195,7 +196,7 @@ clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d\n\r",clfunc.curpos,adc1.chan[0].sum);
+lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
 clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
 
@@ -206,7 +207,7 @@ clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d\n\r",clfunc.curpos,adc1.chan[0].sum);
+lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
 clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
 

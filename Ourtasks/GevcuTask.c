@@ -115,6 +115,9 @@ void StartGevcuTask(void const * argument)
 	/* Upon startup state */
 	gevcufunction.state = 0;
 
+	/* Upon startup init, then calibrate CL. */
+	clfunc.state = INITLCD;
+
 if (gevcufunction.evstat != 0) morse_trap(46); // Debugging check
 
   /* Infinite loop */

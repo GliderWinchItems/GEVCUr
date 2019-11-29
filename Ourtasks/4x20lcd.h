@@ -8,6 +8,8 @@
 #ifndef __4X20LCD
 #define __4X20LCD
 
+#include <stdio.h>
+
 /*	LCD Line Size  */
 #define LCDLINESIZE 20
 #define LCDROWSIZE 4
