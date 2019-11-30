@@ -54,7 +54,7 @@ while(1==1);
 osThreadId xSpiOutTaskCreate(uint32_t taskpriority)
 {
 	BaseType_t ret = xTaskCreate(StartSpiOutTask, "SpiOutTask",\
-     80, NULL, taskpriority,\
+     (80+96), NULL, taskpriority,\
      &SpiOutTaskHandle);
 	if (ret != pdPASS) return NULL;
 

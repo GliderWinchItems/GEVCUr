@@ -3,6 +3,11 @@
 * Date First Issued  : 07/01/2019
 * Description        : Events in Gevcu function w STM32CubeMX w FreeRTOS
 *******************************************************************************/
+/*
+The CL calibration and ADC->pct position is done via ADC new readings notifications.
+
+
+*/
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -31,7 +36,7 @@
  * *************************************************************************/
 void GevcuEvents_00(void)
 {
-	gevcufunction.evstat |= CNCTEVADC; // Show new readings ready
+	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
 
 	/* Update Control Lever with new ADC readings (or do initial calib). */
 	calib_control_lever();
@@ -70,7 +75,16 @@ uint32_t dbgev04;
 void GevcuEvents_04(void)
 {
 	gevcufunction.swtim1ctr += 1;
-	gevcufunction.evstat |= CNCTEVTIMER1; // Timer tick
+	gevcufunction.evstat |= EVSWTIM1TICK; // Timer tick
+
+	/* Keepalive for contactor CAN msgs. */
+	gevcufunction.cntctr_ka_ctr += 1;
+	if (gevcufunction.cntctr_ka_ctr >= gevcufunction.cntctr_ka_to)
+	{
+		gevcufunction.cntctr_ka_ctr = 0; // Reset timeout counter
+		gevcufunction.evstat |= EVCNTCTR; // Set keepalive trigger bit
+	}
+
 	return;
 }
 /* *************************************************************************
@@ -79,7 +93,6 @@ void GevcuEvents_04(void)
  * *************************************************************************/
 void GevcuEvents_05(void)
 {
-	gevcufunction.evstat |= CNCTEVTIMER2;	// Set timeout bit 	
 	return;
 }
 /* *************************************************************************

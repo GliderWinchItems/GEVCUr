@@ -22,7 +22,7 @@
 #include "yprintf.h"
 
 /* Timeout for re-issue LCD/Beep prompt */
-#define CLTIMEOUT ((125*15)/10)  // 1.5 seconds
+#define CLTIMEOUT (125*5)  // 5 seconds
 
 /* Uncomment to enable extra code for test and debug. */
 #define TESTANDDEBUGCALIB
@@ -36,10 +36,10 @@
 struct CLFUNCTION clfunc;
 
 /* Beeper: { duration on, duration off, repeat count}; */
-static const struct BEEPQ beep1 = {100,50,1}; // Close prompt
-static const struct BEEPQ beep2 = {100,50,2}; // Full open prompt
-static const struct BEEPQ beep3 = {100,50,3}; // Success beeping
-static const struct BEEPQ beepf = {60,40,6};  // We are waiting for you prompt
+static const struct BEEPQ beep1 = {200,50,1}; // Close prompt
+static const struct BEEPQ beep2 = {200,50,1}; // Full open prompt
+static const struct BEEPQ beep3 = {100,40,2}; // Success beeping
+static const struct BEEPQ beepf = {60,20,2};  // We are waiting for you prompt
 
 /* Skip for now
 static const struct SPIOUTREQUEST ledcloseoff = {LED_CL_RST,0};

@@ -23,7 +23,7 @@ osMessageQId BeepTaskQHandle;
  * *************************************************************************/
 void StartBeepTask(void* argument)
 {
-	BaseType_t Qret;	// queue receive return
+//	BaseType_t Qret;	// queue receive return
 	struct BEEPQ beep;
 	int i;
 

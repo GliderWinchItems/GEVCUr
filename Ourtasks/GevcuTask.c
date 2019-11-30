@@ -46,15 +46,6 @@ static void swtim1_callback(TimerHandle_t tm)
 	return;
 }
 /* *************************************************************************
- * void swtim2_callback(TimerHandle_t tm);
- * @brief	: Software timer 2 timeout callback
- * *************************************************************************/
-static void swtim2_callback(TimerHandle_t tm)
-{
-	xTaskNotify(GevcuTaskHandle, GEVCUBIT05, eSetBits);
-	return;
-}
-/* *************************************************************************
  * osThreadId xGevcuTaskCreate(uint32_t taskpriority);
  * @brief	: Create task; task handle created is global for all to enjoy!
  * @param	: taskpriority = Task priority (just as it says!)
@@ -101,10 +92,6 @@ void StartGevcuTask(void const * argument)
 		(void *) 0, swtim1_callback);
 	if (gevcufunction.swtimer1 == NULL) {morse_trap(40);}
 
-//	/* Create timer for other delays. One-shot */
-//	gevcufunction.swtimer2 = xTimerCreate("swtim2",10,pdFALSE,(void *) 0, &swtim2_callback);
-//	if (gevcufunction.swtimer2 == NULL) {morse_trap(42);}
-	
 	/* Control Lever init. */
 	calib_control_lever_init();
 
@@ -112,10 +99,10 @@ void StartGevcuTask(void const * argument)
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
 	if (bret != pdPASS) {morse_trap(44);}
 
-	/* Upon startup state */
+	/* Initial startup state */
 	gevcufunction.state = 0;
 
-	/* Upon startup init, then calibrate CL. */
+	/* Initial startup splash screen delay, then calibrate CL. */
 	clfunc.state = INITLCD;
 
 if (gevcufunction.evstat != 0) morse_trap(46); // Debugging check

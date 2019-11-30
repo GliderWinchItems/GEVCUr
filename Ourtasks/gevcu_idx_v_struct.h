@@ -21,6 +21,7 @@
  count = 64 -> 1/sec 
 */ 
 #define SWTIM1TICKDURATION 8
+#define SWTIM1TICKPERSEC (1000/SWTIM1TICKDURATION)
 
 /* Parameters gevcu instance */
 struct GEVCULC

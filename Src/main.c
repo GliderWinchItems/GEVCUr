@@ -165,7 +165,6 @@ DMA_HandleTypeDef hdma_usart6_tx;
 
 osThreadId defaultTaskHandle;
 osTimerId defaultTaskTimerHandle;
-osTimerId defautTaskTimer01Handle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -184,7 +183,6 @@ static void MX_TIM1_Init(void);
 static void MX_I2C1_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
-void CallbackdefaultTaskTimer01(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -260,17 +258,11 @@ DiscoveryF4 LEDs --
   osTimerDef(defaultTaskTimer, CallbackdefaultTaskTimer);
   defaultTaskTimerHandle = osTimerCreate(osTimer(defaultTaskTimer), osTimerPeriodic, NULL);
 
-  /* definition and creation of defautTaskTimer01 */
-  osTimerDef(defautTaskTimer01, CallbackdefaultTaskTimer01);
-  defautTaskTimer01Handle = osTimerCreate(osTimer(defautTaskTimer01), osTimerPeriodic, NULL);
-
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
 
-	/* defaultTask timer for pacing display of stack usages. */
-	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(1600),0);
-	/* defaultTask timer for pacing ADC monitoring. */
-	ret = xTimerChangePeriod( defautTaskTimer01Handle,pdMS_TO_TICKS(100),0);
+	/* defaultTask timer for pacing defaultTask output. */
+	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(100),0);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -306,11 +298,11 @@ DiscoveryF4 LEDs --
 	ret = xSerialTaskSendAdd(&HUARTMON, NUMCIRBCB3, 1); // dma
 	if (ret < 0) morse_trap(14); // Panic LED flashing
 
-	/* Setup semaphore for yprint and sprintf et al. */
-	yprintf_init();
-
 	/* Create serial receiving task. */
 	xSerialTaskReceiveCreate(0);
+
+	/* Setup semaphore for yprint and sprintf et al. */
+	yprintf_init();
 
 	/* USB-CDC buffering */
 	#define NUMCDCBUFF 3	// Number of CDC task local buffers
@@ -359,12 +351,12 @@ DiscoveryF4 LEDs --
 	// See canfilter_setup.h
 
 	/* Create MailboxTask */
-	xMailboxTaskCreate(2); // (arg) = priority
+	xMailboxTaskCreate(1); // (arg) = priority
 
 	/* Create GatewayTask */
 	xGatewayTaskCreate(1); // (arg) = priority
 
-	/* Contactor control. */
+	/* GEVCUr state machine. */
 	Thrdret = xGevcuTaskCreate(1); // (arg) = priority
 	if (Thrdret == NULL) morse_trap(18);
 
@@ -396,22 +388,17 @@ DiscoveryF4 LEDs --
 		CAN_IT_RX_FIFO1_MSG_PENDING    );
 #endif
 
-	/* Start CANs */
-	HAL_CAN_Start(&hcan1); // CAN1
-#ifdef CONFIGCAN2
-	HAL_CAN_Start(&hcan2); // CAN2
-#endif
-
-	/* ADC summing, calibration, etc. */
-	xADCTaskCreate(3); // (arg) = priority
-
 	/* Spi shift register task. */
 	Thrdret = xSpiOutTaskCreate(0);
+
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
 	Thrdret = xBeepTaskCreate(-1, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+
+	/* ADC summing, calibration, etc. */
+	xADCTaskCreate(3); // (arg) = priority
 
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
@@ -955,14 +942,15 @@ void StartDefaultTask(void const * argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
+
 //osDelay(500);
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 #define SHOWSERIALPARALLELSTUFF
-#define TESTBEEPER
+//#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
@@ -1009,6 +997,8 @@ void StartDefaultTask(void const * argument)
 	int ctr = 0; // Running count
 	uint32_t heapsize;
 	uint32_t showctr = 0;
+	uint32_t t1_DSUFT; // DTW time  
+	uint32_t t2_DSUFT;
 #endif
 
 #ifdef SENDCANTESTMSGSINABURST
@@ -1075,7 +1065,18 @@ beepqtest.repct  = 2;
 //	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
 #endif
 
+/* Purpose: flag to have other task wait before 'for' loop. */
 lcdflag = 1;
+
+	/* Start CANs */
+	HAL_CAN_Start(&hcan1); // CAN1
+#ifdef CONFIGCAN2
+	HAL_CAN_Start(&hcan2); // CAN2
+#endif
+
+uint32_t slowtimectr = 0;
+
+osDelay(1);
 
 // ===== BEGIN FOR LOOP ==============================
 
@@ -1087,6 +1088,12 @@ lcdflag = 1;
 		{
 			noteused |= DEFAULTTSKBIT00;
 
+			
+			slowtimectr += 1;
+			if (slowtimectr >= 10)
+			{
+				slowtimectr = 0;
+
 #ifdef TESTLCDPRINTF
 extern uint32_t lcddbg;
 		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"\n\r01234 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
@@ -1096,7 +1103,9 @@ extern uint32_t lcddbg;
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
+t1_DSUFT = DTWTIME;
 			showctr += 1; 
+/* 'for' is to test doing all scans at one timer tick. */
 for (showctr = 0; showctr < 11; showctr++)
 {
 			switch (showctr)
@@ -1118,6 +1127,9 @@ case 10:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
 			}
 }
+t2_DSUFT = DTWTIME;
+yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
+
 #endif
 
 #ifdef TESTBEEPER
@@ -1144,12 +1156,9 @@ extern uint32_t cdcifctr;
 extern uint32_t dbrxbuff;
 yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
 #endif
-		}
+  			}
 
-/* Faster timeout */
-		if ((noteval & DEFAULTTSKBIT01) != 0)
-		{
-			noteused |= DEFAULTTSKBIT01;
+/* ##### timer not counted down ##### */
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
 #ifdef SHOWSERIALPARALLELSTUFF
@@ -1259,18 +1268,6 @@ void CallbackdefaultTaskTimer(void const * argument)
   /* USER CODE END CallbackdefaultTaskTimer */
 }
 
-/* CallbackdefaultTaskTimer01 function */
-void CallbackdefaultTaskTimer01(void const * argument)
-{
-  /* USER CODE BEGIN CallbackdefaultTaskTimer01 */
-  	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	xTaskNotifyFromISR(defaultTaskHandle, 
-		DEFAULTTSKBIT01,	/* 'or' bit assigned to buffer to notification value. */
-		eSetBits,      /* Set 'or' option */
-		&xHigherPriorityTaskWoken ); 
-  /* USER CODE END CallbackdefaultTaskTimer01 */
-}
-
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM5 interrupt took place, inside
@@ -1317,6 +1314,7 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+morse_trap(222);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

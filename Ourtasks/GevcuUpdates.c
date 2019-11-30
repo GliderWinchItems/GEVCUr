@@ -29,11 +29,19 @@ extern TIM_HandleTypeDef htim4;
 void GevcuUpdates(void)
 {
 	/* Reset new various flags. */
-	gevcufunction.evstat &= ~CNCTEVADC;
 	gevcufunction.evstat &= ~(
-		CNCTEVTIMER1 | /* Timer tick */
-		CNCTEVADC      /* new ADC readings */
+		EVSWTIM1TICK | /* Timer tick */
+		EVNEWADC       /* new ADC readings */
 		);
+
+	/* Contactor keepalive/command msg sending. */
+	if ((gevcufunction.evstat & EVCNTCTR) != 0)
+	{
+		gevcufunction.evstat &= ~EVCNTCTR; // Reset bit
+		
+		
+
+	}
 
 	
 

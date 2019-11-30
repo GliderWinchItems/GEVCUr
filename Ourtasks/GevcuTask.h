@@ -83,8 +83,8 @@ NOTES:
 
 
 /* Event status bit assignments (CoNtaCTor EVent ....) */
-#define CNCTEVTIMER1 (1 << 0) // 1 = timer1 timed out: counter incremented
-#define CNCTEVTIMER2 (1 << 1) // 1 = 
+#define EVSWTIM1TICK (1 << 0) // 1 = timer1 timed out: counter incremented
+#define EVCNTCTR     (1 << 1) // 1 = contactor keepalive timer timeout
 #define CNCTEVTIMER3 (1 << 2) // 1 = 
 #define CNCTEVCACMD  (1 << 3) // 1 = CAN rcv: general purpose command
 #define CNCTEVCANKA  (1 << 4) // 1 = CAN rcv: Keep-alive/command
@@ -92,7 +92,7 @@ NOTES:
 #define CNCTEVCMDRS  (1 << 6) // 1 = Command to reset
 #define CNCTEVCMDCN  (1 << 7) // 1 = Command to connect
 #define CNCTEVHV     (1 << 8) // 1 = New HV readings
-#define CNCTEVADC    (1 << 9) // 1 = New ADC readings
+#define EVNEWADC     (1 << 9) // 1 = New ADC readings
 
 /* Output status bit assignments */
 #define CNCTOUT00K1  (1 << 0) // 1 = contactor #1 energized
@@ -107,7 +107,11 @@ NOTES:
 
 
 /* Number of different CAN id msgs this function sends. */
-# define NUMCANMSGS 6
+#define NUMCANMSGS 6
+/* Indices for array below of "struct CANTXQMSG canmsg[NUMCANMSGS];" */
+#define CID_GEVCUR_KEEPALIVE_R 0 // cid_gevcur_keepalive_r
+
+
 
 
 /* States */
@@ -161,6 +165,8 @@ struct GEVCUFUNCTION
 
 	/* swtim1 timer counter. */
 	uint32_t swtim1ctr; // Running count
+	uint32_t cntctr_ka_ctr; // Contactor keepalive swtim1 tick counter
+	uint32_t cntctr_ka_to;  // Contactor keepalive ctr timeout
 
 	/* Events status */
 	uint32_t evstat;
@@ -179,11 +185,11 @@ struct GEVCUFUNCTION
 	/* Timings in milliseconds. Converted later to timer ticks. */
 	uint32_t ka_k;        // Gevcu polling timer
 	uint32_t keepalive_k;
-	uint32_t ka_cntct_k;  // Contactor sending keepalive/command (ms)
+
 	uint32_t ka_gevcur_k; // GEVCUr keepalive/commmand from PC (ms) 
 	uint32_t ka_dmoc_r_k; // DMOC sending keepalive/command (ms)
 	uint32_t ka_dmoc_i_k; // DMOC failed to receive timeout (ms)
-	uint32_t hbct_k;      // Heartbeat ct: ticks between sending 
+	uint32_t hbct_k;      // Heartbeat ct: ticks between sending
 
 	TimerHandle_t swtimer1; // Software timer1: command/keep-alive
 	TimerHandle_t swtimer2; // Software timer2: multiple purpose delay

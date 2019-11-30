@@ -17,6 +17,7 @@
 #include "stm32f4xx_hal_tim.h"
 #include "morse.h"
 #include "canfilter_setup.h"
+#include "gevcu_idx_v_struct.h"
 
 /* From 'main.c' */
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
@@ -36,6 +37,9 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 
 	/* Pointer to ADC working parameters. */
 	p->padc = padc;
+
+	p->cntctr_ka_to = (SWTIM1TICKPERSEC/3); // Contactor keepalive (three per sec)
+	p->cntctr_ka_ctr = 0; // Contactor keepalive timer tick counter
 
 	/* Convert ms to timer ticks. */
 	p->ka_k       = pdMS_TO_TICKS(p->lc.ka_t);      // Gevcu polling timer (ms)
@@ -63,8 +67,11 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 		p->canmsg[i].can.dlc = 8;    // Default payload size (might be modified when loaded and sent)
 	}
 
-	// Pre-load CAN ids
-
+	/* Pre-load CAN ids & in some cases, dlcs. */
+   	// Contactor keepalive/command msg.
+	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.id  = p->lc.cid_cntctr_keepalive_i;
+	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.dlc = 1;
+	
 	return;
 }
 /* *************************************************************************
