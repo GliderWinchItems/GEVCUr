@@ -27,6 +27,7 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "gevcu_msgs.h"
 #include "MailboxTask.h"
 #include "calib_control_lever.h"
+#include "contactor_control.h"
 
 #include "main.h"
 
@@ -78,12 +79,7 @@ void GevcuEvents_04(void)
 	gevcufunction.evstat |= EVSWTIM1TICK; // Timer tick
 
 	/* Keepalive for contactor CAN msgs. */
-	gevcufunction.cntctr_ka_ctr += 1;
-	if (gevcufunction.cntctr_ka_ctr >= gevcufunction.cntctr_ka_to)
-	{
-		gevcufunction.cntctr_ka_ctr = 0; // Reset timeout counter
-		gevcufunction.evstat |= EVCNTCTR; // Set keepalive trigger bit
-	}
+	contactor_control_time(gevcufunction.swtim1ctr);
 
 	return;
 }
@@ -110,6 +106,11 @@ void GevcuEvents_06(void)
  * *************************************************************************/
 void GevcuEvents_07(void)
 {
+	gevcufunction.evstat |= EVCANCNTCTR; // Show New Contactor CAN msg 
+	
+	/* Send pointer to CAN msg to contactor control routine */
+	contactor_control_CANrcv(&gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
+		
 	return;
 }	
 /* *************************************************************************

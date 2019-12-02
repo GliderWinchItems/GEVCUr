@@ -85,7 +85,7 @@ NOTES:
 /* Event status bit assignments (CoNtaCTor EVent ....) */
 #define EVSWTIM1TICK (1 << 0) // 1 = timer1 timed out: counter incremented
 #define EVCNTCTR     (1 << 1) // 1 = contactor keepalive timer timeout
-#define CNCTEVTIMER3 (1 << 2) // 1 = 
+#define EVCANCNTCTR  (1 << 2) // 1 = CAN rcv: contactor keepalive/command
 #define CNCTEVCACMD  (1 << 3) // 1 = CAN rcv: general purpose command
 #define CNCTEVCANKA  (1 << 4) // 1 = CAN rcv: Keep-alive/command
 #define CNCTEVCAPOL  (1 << 5) // 1 = CAN rcv: Poll
@@ -174,6 +174,9 @@ struct GEVCUFUNCTION
 	/* Output status */
 	uint32_t outstat;
 	uint32_t outstat_prev;
+
+	/* Contactor control */
+	uint8_t cntctr_cmd; // Payload[0] with command bits
 
 	/* Current fault code */
 	enum GEVCU_FAULTCODE faultcode;

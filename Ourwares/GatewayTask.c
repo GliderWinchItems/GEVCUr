@@ -86,7 +86,7 @@ void StartGatewayTask(void const * argument)
 //extern volatile uint8_t usbdeviceflag;
 //while (usbdeviceflag == 0);
 
-//	osDelay(1500);
+//osDelay(100);
 
 	int i;
 
@@ -195,6 +195,14 @@ gatercvflag = 1;
 			yprintf(&pbuf2,"\n\rStartGateway: mbxcannum[%i] was not setup.",i);
 		}
 	}
+
+	/* Start CANs */
+extern CAN_HandleTypeDef hcan1;
+	HAL_CAN_Start(&hcan1); // CAN1
+#ifdef CONFIGCAN2
+	HAL_CAN_Start(&hcan2); // CAN2
+#endif
+
 
   /* Infinite RTOS Task loop */
   for(;;)

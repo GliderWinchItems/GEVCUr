@@ -15,6 +15,7 @@
 #include "gevcu_idx_v_struct.h"
 #include "CanTask.h"
 #include "gevcu_msgs.h"
+#include "contactor_control.h"
 
 #include "morse.h"
 
@@ -35,13 +36,11 @@ void GevcuUpdates(void)
 		);
 
 	/* Contactor keepalive/command msg sending. */
-	if ((gevcufunction.evstat & EVCNTCTR) != 0)
-	{
-		gevcufunction.evstat &= ~EVCNTCTR; // Reset bit
-		
-		
-
-	}
+	contactor_control_CANsend();
+//	if ((gevcufunction.evstat & EVCNTCTR) != 0)
+//	{
+//		gevcufunction.evstat &= ~EVCNTCTR; // Reset bit
+//	}
 
 	
 

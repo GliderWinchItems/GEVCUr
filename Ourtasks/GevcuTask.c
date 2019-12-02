@@ -105,6 +105,9 @@ void StartGevcuTask(void const * argument)
 	/* Initial startup splash screen delay, then calibrate CL. */
 	clfunc.state = INITLCD;
 
+	/* Some initialization for contactor control. */
+	contactor_control_init();
+
 if (gevcufunction.evstat != 0) morse_trap(46); // Debugging check
 
   /* Infinite loop */

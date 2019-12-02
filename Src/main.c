@@ -945,7 +945,7 @@ void StartDefaultTask(void const * argument)
 
 //osDelay(500);
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1067,12 +1067,6 @@ beepqtest.repct  = 2;
 
 /* Purpose: flag to have other task wait before 'for' loop. */
 lcdflag = 1;
-
-	/* Start CANs */
-	HAL_CAN_Start(&hcan1); // CAN1
-#ifdef CONFIGCAN2
-	HAL_CAN_Start(&hcan2); // CAN2
-#endif
 
 uint32_t slowtimectr = 0;
 
