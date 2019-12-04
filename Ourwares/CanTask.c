@@ -104,7 +104,7 @@ QueueHandle_t CanRxQHandle;
 QueueHandle_t xCanRxTaskCreate(uint32_t taskpriority, int32_t queuesize)
 {
  /* definition and creation of CanTask */
-  osThreadDef(CanRxTask, StartCanRxTask, osPriorityNormal, 0, 128);
+  osThreadDef(CanRxTask, StartCanRxTask, osPriorityNormal, 0, 96);
   CanRxTaskHandle = osThreadCreate(osThread(CanRxTask), NULL);
 	vTaskPrioritySet( CanRxTaskHandle, taskpriority );
 

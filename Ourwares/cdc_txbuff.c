@@ -33,6 +33,7 @@ delay is needed for the PC to recognize our usb device, e.g. 'osDelay(1000)'.
 #include <malloc.h>
 #include "cdc_txbuff.h"
 #include "usbd_cdc_if.h"
+#include "morse.h"
 
 #define CDCTIMEDURATION 5	// Timer time period (ms)
 
@@ -99,16 +100,6 @@ static struct CDCBUFFPTR* step_ptr(struct CDCBUFFPTR* pb)
 			pb = pbuff_begin; // Wrap around
 		return pb;
 }
-/* *****************************************************************************
-   Get buffer space and init pointers
-********************************************************************************/
-static uint8_t* pbuff_init(struct CDCBUFFPTR* pb, uint16_t size)
-{
-  pb->begin = calloc(size, sizeof(uint8_t));
-  pb->work  = pb->begin;
-  pb->end   = pb->begin + size;
-  return pb->begin;
-}
 /** ****************************************************************************
   * struct CDCBUFFPTR* cdc_txbuff_init(uint16_t numbuff, uint16_t size);
   * @brief	: Setup buffer pair for CDC TX
@@ -117,32 +108,52 @@ static uint8_t* pbuff_init(struct CDCBUFFPTR* pb, uint16_t size)
   * @return	: NULL = calloc failed; not NULL = pointer to 1st struct with buff ptrs
   ******************************************************************************
   */
+struct CDCBUFFPTR* dbgflash1;
+uint8_t* dbgflash2;
+uint8_t* dbgflash3;
+
 struct CDCBUFFPTR* cdc_txbuff_init(uint16_t numbuff, uint16_t size)
 {
 	/* Minimum of 2 buffers required */
 	if (numbuff < 2)
 	{ // Here, we force 2, but we *could* just bomb, but what if the hapless Programmer
 		// doesn't check the return!
-		numbuff = 2; 
+		morse_trap(201);
 	}
 	/* Miminum of one char for the buffer (is this a duh?) */
 	if (size == 0)
 	{
-		size = 1;
+		morse_trap(202);
+	}
+taskENTER_CRITICAL();
+	struct CDCBUFFPTR* pb = calloc(numbuff, sizeof(struct CDCBUFFPTR));
+	if (pb == NULL)  morse_trap(203);
+
+dbgflash1 = pb;
+
+	/* Array of pointers to byte buffers. */
+	pbuff_begin = pb;
+	pbuff_end   = pbuff_begin;
+	pbuff_end  += numbuff;
+
+	/* Get memory for byte buffer. */
+	uint8_t* pc = calloc(numbuff, size * sizeof(uint8_t) );
+	if (pc == NULL) morse_trap(204);
+
+dbgflash2 = pc;
+
+	/* Init array of pointers to byte buffers. */
+	uint8_t k;
+	for (k = 0; k < numbuff; k++)
+	{
+		(pb+k)->begin = (pc+k);
+		(pb+k)->work  = (pc+k);
+		(pb+k)->end   = (pc+k) + size;
 	}
 
-	struct CDCBUFFPTR* pb = calloc(numbuff, sizeof(struct CDCBUFFPTR));
-	if (pb == NULL)  return NULL;
-	pbuff_begin = pb;
-	pbuff_end = pbuff_begin;
-	pbuff_end += numbuff;
+dbgflash2 = (pb+k)->end;
 
-	/* Get memory for buffers, and init pointers for each */
-	while (pb != pbuff_end)
-	{
-	   if (pbuff_init(pb++, size) == NULL) return NULL;
-   }
-
+taskEXIT_CRITICAL();
 	/* Init pointers for adding/taking */
 	pbuff_m = pbuff_begin;	// Adding
 	pbuff_i = pbuff_begin;	// Taking

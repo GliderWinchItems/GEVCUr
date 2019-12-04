@@ -203,6 +203,11 @@ int main(void)
 	BaseType_t ret;	   // Used for returns from function calls
 	osMessageQId Qidret; // Function call return
 	osThreadId Thrdret;  // Return from thread create
+
+// Debug: Clear heap area
+uint32_t* pclr = (uint32_t*)(0x2000b94c);
+while (pclr < (uint32_t*)(0x2000b94c + 32768)) *pclr++ = 0x0;
+
   /* USER CODE END 1 */
   
 
@@ -219,6 +224,33 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+	/* Add bcb circular buffer to SerialTaskSend for uart6 -- LCD */
+	#define NUMCIRBCB6  16 // Size of circular buffer of BCB for uart6
+	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 1); // dma
+	if (ret < 0) morse_trap(1); // Panic LED flashing
+
+	/* Add bcb circular buffer to SerialTaskSend for usart2 -- gateway */
+	#define NUMCIRBCB2  16 // Size of circular buffer of BCB for usart2
+	ret = xSerialTaskSendAdd(&huart2, NUMCIRBCB2, 1); // dma
+	if (ret < 0) morse_trap(2); // Panic LED flashing
+
+	/* Add bcb circular buffer to SerialTaskSend for usart3 -- PC monitor */
+	#define NUMCIRBCB3  16 // Size of circular buffer of BCB for usart3
+	ret = xSerialTaskSendAdd(&HUARTMON, NUMCIRBCB3, 1); // dma
+	if (ret < 0) morse_trap(14); // Panic LED flashing
+
+	/* Setup TX linked list for CAN  */
+   // CAN1 (CAN_HandleTypeDef *phcan, uint8_t canidx, uint16_t numtx, uint16_t numrx);
+	pctl0 = can_iface_init(&hcan1, 0, 32, 64);
+	if (pctl0 == NULL) morse_trap(7); // Panic LED flashing
+	if (pctl0->ret < 0) morse_trap(77);
+
+	// CAN 2
+#ifdef CONFIGCAN2
+	pctl1 = can_iface_init(&hcan2, 1,32, 64);
+	if (pctl1 == NULL) morse_trap(8); // Panic LED flashing
+	if (pctl1->ret < 0) morse_trap(88);
+#endif
 
   /* USER CODE END SysInit */
 
@@ -283,20 +315,6 @@ DiscoveryF4 LEDs --
 	// Task handle "osThreadId SerialTaskHandle" is global
 	xSerialTaskSendCreate(0);	// Create task and set Task priority
 
-	/* Add bcb circular buffer to SerialTaskSend for uart6 -- LCD */
-	#define NUMCIRBCB6  16 // Size of circular buffer of BCB for uart6
-	ret = xSerialTaskSendAdd(&HUARTLCD, NUMCIRBCB6, 1); // dma
-	if (ret < 0) morse_trap(1); // Panic LED flashing
-
-	/* Add bcb circular buffer to SerialTaskSend for usart2 -- gateway */
-	#define NUMCIRBCB2  16 // Size of circular buffer of BCB for usart2
-	ret = xSerialTaskSendAdd(&huart2, NUMCIRBCB2, 1); // dma
-	if (ret < 0) morse_trap(2); // Panic LED flashing
-
-	/* Add bcb circular buffer to SerialTaskSend for usart3 -- PC monitor */
-	#define NUMCIRBCB3  16 // Size of circular buffer of BCB for usart3
-	ret = xSerialTaskSendAdd(&HUARTMON, NUMCIRBCB3, 1); // dma
-	if (ret < 0) morse_trap(14); // Panic LED flashing
 
 	/* Create serial receiving task. */
 	xSerialTaskReceiveCreate(0);
@@ -305,8 +323,8 @@ DiscoveryF4 LEDs --
 	yprintf_init();
 
 	/* USB-CDC buffering */
-	#define NUMCDCBUFF 3	// Number of CDC task local buffers
-	#define CDCBUFFSIZE 64*16	// Best buff size is multiples of usb packet size
+	#define NUMCDCBUFF 16	// Number of CDC task local buffers
+	#define CDCBUFFSIZE 64*2	// Best buff size is multiples of usb packet size
 	struct CDCBUFFPTR* pret;
 	pret = cdc_txbuff_init(NUMCDCBUFF, CDCBUFFSIZE); // Setup local buffers
 	if (pret == NULL) morse_trap(3);
@@ -324,19 +342,6 @@ DiscoveryF4 LEDs --
 //  Qidret = xCanRxTaskCreate(1, 32); // CanTask priority, Number of msgs in queue
 //	if (Qidret < 0) morse_trap(6); // Panic LED flashing
 
-	/* Setup TX linked list for CAN  */
-   // CAN1 (CAN_HandleTypeDef *phcan, uint8_t canidx, uint16_t numtx, uint16_t numrx);
-	pctl0 = can_iface_init(&hcan1, 0, 32, 64);
-	if (pctl0 == NULL) morse_trap(7); // Panic LED flashing
-	if (pctl0->ret < 0) morse_trap(77);
-
-	// CAN 2
-#ifdef CONFIGCAN2
-	pctl1 = can_iface_init(&hcan2, 1,32, 64);
-	if (pctl1 == NULL) morse_trap(8); // Panic LED flashing
-	if (pctl1->ret < 0) morse_trap(88);
-#endif
-
 	/* Setup CAN hardware filters to default to accept all ids. */
 	HAL_StatusTypeDef Cret;
 	Cret = canfilter_setup_first(0, &hcan1, 15); // CAN1
@@ -351,7 +356,7 @@ DiscoveryF4 LEDs --
 	// See canfilter_setup.h
 
 	/* Create MailboxTask */
-	xMailboxTaskCreate(1); // (arg) = priority
+	xMailboxTaskCreate(2); // (arg) = priority
 
 	/* Create GatewayTask */
 	xGatewayTaskCreate(1); // (arg) = priority

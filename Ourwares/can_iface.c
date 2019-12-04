@@ -100,7 +100,7 @@ taskENTER_CRITICAL();
 	p = (struct CANTAKEPTR*)calloc(1, sizeof(struct CANTAKEPTR));
 	if (p == NULL){ taskEXIT_CRITICAL();return NULL;}
 
-	/* Initialize the pointer to curret add location of the circular buffer. */
+	/* Initialize the pointer to current add location of the circular buffer. */
    /* Given 'p', the beginning, end, and location CAN msgs are being added
       can be accessed. */
 	p->pcir  = &pctl->cirptrs;
@@ -432,9 +432,11 @@ static void moveremove2(struct CAN_CTLBLOCK* pctl)
  * @param	: phcan = pointer to 'MX CAN handle (control block)
  * @return	: Pointer to our CAN control bock
  * *********************************************************************/
+extern CAN_HandleTypeDef hcan1;
 struct CAN_CTLBLOCK* getpctl(CAN_HandleTypeDef *phcan)
 {
 //if (pctl == pctl1) morse_trap(73);
+//if (phcan != &hcan1) while(1==1);
 
 	struct CAN_CTLBLOCK** ppx = &pctllist[0];
 	while (ppx != ppctllist) // Step through list of pointers 
@@ -540,6 +542,7 @@ debug1 += 1;
    producing a Hard_Fault. The stack dump showed that R0 was loaded
    with an addresses above the sram limit. */
 if (pctl == NULL) morse_trap (557);
+//if (pctl == NULL) while(1==1);
 
 	do /* Unload hardware RX FIFO */
 	{

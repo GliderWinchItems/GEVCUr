@@ -26,7 +26,7 @@ static uint8_t* hex(uint8_t *p, uint8_t c)	// Convert 'c' to hex, placing in out
 /* **************************************************************************************
  * void gateway_CANtoPC(struct SERIALSENDTASKBCB** ppbcb, struct CANRCVBUF* pcan);
  * @brief	: Convert CAN msg into ascii/hex in a buffer for SerialTaskSend
- * @param	: pycb = pointer to poiner to buffer control block w buffer and uart handle
+ * @param	: pycb = pointer to pointer to buffer control block w buffer and uart handle
  * @param	: pcan = CAN msg
  * @return	: 
  * ************************************************************************************** */

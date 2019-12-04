@@ -45,7 +45,7 @@ taskENTER_CRITICAL();
 	/* Save max number of mailboxes for this CAN module */
 	mbxcannum[pctl->canidx].arraysizemax = arraysize;
 
-	/* This needed to find the CAN module in 'StartMailboxTask' */
+	/* This is needed to find the CAN module in 'StartMailboxTask' */
 	mbxcannum[pctl->canidx].pctl = pctl;
 
 	/* Get memory for the array of mailbox pointers */
@@ -119,7 +119,7 @@ struct CANNOTIFYLIST* MailboxTask_enable_notifications(struct MAILBOXCAN* pmbx)
  *	@brief	: Add a mailbox, given CAN control block ptr, and other stuff
  * @param	: pctl = Pointer to CAN control block, i.e. CAN module/CAN bus, for mailbox
  * @param	: canid = CAN ID
- * @param	: tskhandle = Task handle; NULL for use current task; 
+ * @param	: tskhandle = Task handle; NULL to use current task; 
  * @param	: notebit = notification bit; NULL = no notification
  * @paran	: noteskip = notify = 0; skip notification = 1;
  * @param	: paytype = payload type code (see 'PAYLOAD_TYPE_INSERT.sql' in 'GliderWinchCommons/embed/svn_common/db')
@@ -139,10 +139,10 @@ struct MAILBOXCAN* MailboxTask_add(struct CAN_CTLBLOCK* pctl,\
 	struct MAILBOXCAN** ppmbx;
 
 	/* Check that the bozo programmer got the prior initializations done correctly. */
-	if (canid == 0)    morse_trap(25); // return NULL;
-	if (pctl  == NULL) morse_trap(26); //return NULL;
-	if (pctl->canidx >= STM32MAXCANNUM) morse_trap(27);       //return NULL;
-	if (mbxcannum[pctl->canidx].pctl == NULL) morse_trap(28); //return NULL;
+	if (canid == 0)    morse_trap(25); 
+	if (pctl  == NULL) morse_trap(26); 
+	if (pctl->canidx >= STM32MAXCANNUM) morse_trap(27);       
+	if (mbxcannum[pctl->canidx].pctl == NULL) morse_trap(28); 
 
 	if (tskhandle == NULL)
 		tskhandle = xTaskGetCurrentTaskHandle();
