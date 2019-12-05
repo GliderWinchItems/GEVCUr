@@ -346,6 +346,10 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
  * @param	: pmbxnum = pointer to mailbox control block
  * @param	: pncan = pointer to CAN msg in can_face.c circular buffer
  * *************************************************************************/
+struct MAILBOXCAN** dbgppmbx;
+struct MAILBOXCAN*   dbgpmbx;
+int dbgi;
+
 static struct MAILBOXCAN* lookup(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBUFN* pncan)
 {
 	struct MAILBOXCAN** ppmbx;
@@ -353,9 +357,12 @@ static struct MAILBOXCAN* lookup(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBUF
 	int i;
 
 	ppmbx = pmbxnum->pmbxarray;
+dbgppmbx = ppmbx;
+dbgi = pmbxnum->arraysizecur;
 	for (i = 0; i < pmbxnum->arraysizecur; i++)
 	{
 		pmbx = *(ppmbx + i); // Point to mailbox[i]
+dbgpmbx = pmbx;
 		if (pmbx->ncan.can.id == pncan->can.id)
 		{ // Here, found!
 			pmbx->ncan = *pncan; // Copy CAN msg to mailbox

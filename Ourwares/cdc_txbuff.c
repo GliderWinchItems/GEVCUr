@@ -108,12 +108,18 @@ static struct CDCBUFFPTR* step_ptr(struct CDCBUFFPTR* pb)
   * @return	: NULL = calloc failed; not NULL = pointer to 1st struct with buff ptrs
   ******************************************************************************
   */
+// Debug: save and have listed in .map
 struct CDCBUFFPTR* dbgflash1;
-uint8_t* dbgflash2;
 uint8_t* dbgflash3;
+uint32_t* dbgflash4;
+uint8_t* dbgflash2;
+
 
 struct CDCBUFFPTR* cdc_txbuff_init(uint16_t numbuff, uint16_t size)
 {
+	struct CDCBUFFPTR* pb;
+	uint8_t* pc;
+
 	/* Minimum of 2 buffers required */
 	if (numbuff < 2)
 	{ // Here, we force 2, but we *could* just bomb, but what if the hapless Programmer
@@ -126,7 +132,11 @@ struct CDCBUFFPTR* cdc_txbuff_init(uint16_t numbuff, uint16_t size)
 		morse_trap(202);
 	}
 taskENTER_CRITICAL();
-	struct CDCBUFFPTR* pb = calloc(numbuff, sizeof(struct CDCBUFFPTR));
+
+dbgflash4 = calloc(8, sizeof(uint32_t));
+memset (dbgflash4,0xcc,4*8); // Easy id
+
+	pb = calloc(numbuff, sizeof(struct CDCBUFFPTR));
 	if (pb == NULL)  morse_trap(203);
 
 dbgflash1 = pb;
@@ -137,21 +147,24 @@ dbgflash1 = pb;
 	pbuff_end  += numbuff;
 
 	/* Get memory for byte buffer. */
-	uint8_t* pc = calloc(numbuff, size * sizeof(uint8_t) );
+// Debug: add padding of 64
+	pc = calloc(numbuff, size * sizeof(uint8_t) + 128);
 	if (pc == NULL) morse_trap(204);
 
+memset(pc,0x7,size * sizeof(uint8_t) + 128);
 dbgflash2 = pc;
 
 	/* Init array of pointers to byte buffers. */
 	uint8_t k;
 	for (k = 0; k < numbuff; k++)
 	{
-		(pb+k)->begin = (pc+k);
-		(pb+k)->work  = (pc+k);
-		(pb+k)->end   = (pc+k) + size;
+		(pb+k)->begin = (pc+k*size);
+		(pb+k)->work  = (pc+k*size);
+		(pb+k)->end   = (pc+k*size+size);
+dbgflash3 = (pb+k)->end;
 	}
 
-dbgflash2 = (pb+k)->end;
+if (dbgflash3 < (uint8_t*)0x20000000 ) morse_trap(205);
 
 taskEXIT_CRITICAL();
 	/* Init pointers for adding/taking */
@@ -198,6 +211,7 @@ cdcct5 +=1;	// DEBUG: Count number of buffer "sends"
 		if (pbuff_m == pbuff_i)
 		{
 			pbuff_m = step_ptr(pbuff_m);
+			pbuff_m->work = pbuff_m->begin;
 		}
 		return 1;
 	}

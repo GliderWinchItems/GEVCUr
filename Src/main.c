@@ -205,8 +205,8 @@ int main(void)
 	osThreadId Thrdret;  // Return from thread create
 
 // Debug: Clear heap area
-uint32_t* pclr = (uint32_t*)(0x2000b94c);
-while (pclr < (uint32_t*)(0x2000b94c + 32768)) *pclr++ = 0x0;
+uint32_t* pclr = (uint32_t*)(0x2000bb80);
+while (pclr < (uint32_t*)(0x2000bb80 + 32768)) *pclr++ = 0x66666666;
 
   /* USER CODE END 1 */
   
@@ -323,7 +323,7 @@ DiscoveryF4 LEDs --
 	yprintf_init();
 
 	/* USB-CDC buffering */
-	#define NUMCDCBUFF 16	// Number of CDC task local buffers
+	#define NUMCDCBUFF 3	// Number of CDC task local buffers
 	#define CDCBUFFSIZE 64*2	// Best buff size is multiples of usb packet size
 	struct CDCBUFFPTR* pret;
 	pret = cdc_txbuff_init(NUMCDCBUFF, CDCBUFFSIZE); // Setup local buffers
