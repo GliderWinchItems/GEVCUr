@@ -18,6 +18,7 @@
 #include "morse.h"
 #include "canfilter_setup.h"
 #include "gevcu_idx_v_struct.h"
+#include "../../../GliderWinchCommons/embed/svn_common/trunk/db/gen_db.h"
 
 /* From 'main.c' */
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
@@ -41,21 +42,21 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 	p->cntctr_ka_to = (SWTIM1TICKPERSEC/3); // Contactor keepalive (three per sec)
 	p->cntctr_ka_ctr = 0; // Contactor keepalive timer tick counter
 
-	/* Convert ms to timer ticks. */
-	p->ka_k       = pdMS_TO_TICKS(p->lc.ka_t);      // Gevcu polling timer (ms)
-	p->keepalive_k= pdMS_TO_TICKS(p->lc.keepalive_t); // keep-alive timeout (timeout delay ms)
-	p->hbct_k     = pdMS_TO_TICKS(p->lc.hbct_t);    // Heartbeat ct: ticks between sending msgs hv1:cur1
+	/* Convert gevcu_idx_v_struct times to timer ticks. */
+	p->ka_k       = (p->lc.ka_t);   // Gevcu polling timer (configTICK_RATE_HZ = 512)
+	p->keepalive_k= (p->lc.keepalive_t); // keep-alive timeout (timeout delay ms)
+	p->hbct_k     = (p->lc.hbct_t); // Heartbeat ct: ticks between sending msgs hv1:cur1
 	
 	/* Add CAN Mailboxes                         CAN           CAN ID        Notify bit   Paytype */
-	p->pmbx_cid_gps_sync        =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,GEVCUBIT06,0,23);
-	p->pmbx_cid_cntctr_keepalive_r =  MailboxTask_add(pctl0,p->lc.cid_cntctr_keepalive_r,NULL,GEVCUBIT07,0,23);
-	p->pmbx_cid_dmoc_actualtorq =  MailboxTask_add(pctl0,p->lc.cid_dmoc_actualtorq,NULL,GEVCUBIT08,0,23);
-	p->pmbx_cid_dmoc_speed      =  MailboxTask_add(pctl0,p->lc.cid_dmoc_speed,     NULL,GEVCUBIT09,0,23);
-//	p->pmbx_cid_dmoc_dqvoltamp  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_dqvoltamp, NULL,GEVCUBIT10,0,23);
-	p->pmbx_cid_dmoc_torque     =  MailboxTask_add(pctl0,p->lc.cid_dmoc_torque,    NULL,GEVCUBIT11,0,23);
-	p->pmbx_cid_dmoc_critical_f =  MailboxTask_add(pctl0,p->lc.cid_dmoc_critical_f,NULL,GEVCUBIT12,0,23);
-	p->pmbx_cid_dmoc_hv_status  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_status, NULL,GEVCUBIT13,0,23);
-	p->pmbx_cid_dmoc_hv_temps   =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,23);
+	p->pmbx_cid_gps_sync        =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,GEVCUBIT06,0,U8);
+	p->pmbx_cid_cntctr_keepalive_r=MailboxTask_add(pctl0,p->lc.cid_cntctr_keepalive_r,NULL,GEVCUBIT07,0,U8_U8_U8);
+	p->pmbx_cid_dmoc_actualtorq =  MailboxTask_add(pctl0,p->lc.cid_dmoc_actualtorq,NULL,GEVCUBIT08,0,I16);
+	p->pmbx_cid_dmoc_speed      =  MailboxTask_add(pctl0,p->lc.cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6);
+//	p->pmbx_cid_dmoc_dqvoltamp  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_dqvoltamp, NULL,GEVCUBIT10,0,I16_I16_I16_I16);
+	p->pmbx_cid_dmoc_torque     =  MailboxTask_add(pctl0,p->lc.cid_dmoc_torque,    NULL,GEVCUBIT11,0,I16_I16);
+	p->pmbx_cid_dmoc_critical_f =  MailboxTask_add(pctl0,p->lc.cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
+	p->pmbx_cid_dmoc_hv_status  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6);
+	p->pmbx_cid_dmoc_hv_temps   =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8);
 	p->pmbx_cid_gevcur_keepalive_i = MailboxTask_add(pctl0,p->lc.cid_gevcur_keepalive_i,NULL,GEVCUBIT15,0,23);
 
 	/* Pre-load fixed data in CAN msgs */
@@ -67,7 +68,7 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 		p->canmsg[i].can.dlc = 8;    // Default payload size (might be modified when loaded and sent)
 	}
 
-	/* Pre-load CAN ids & in some cases, dlcs. */
+	/* Pre-load CAN ids & in some cases, dlc. */
    	// Contactor keepalive/command msg.
 	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.id  = p->lc.cid_cntctr_keepalive_i;
 	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.dlc = 1;

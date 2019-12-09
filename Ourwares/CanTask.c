@@ -52,7 +52,7 @@ void canmsg_expand(CAN_TxHeaderTypeDef *phal, uint8_t *pdat, struct CANRCVBUF *p
 QueueHandle_t  xCanTxTaskCreate(uint32_t taskpriority, int32_t queuesize)
 {
  /* definition and creation of CanTask */
-  osThreadDef(CanTxTask, StartCanTxTask, osPriorityNormal, 0, 192);
+  osThreadDef(CanTxTask, StartCanTxTask, osPriorityNormal, 0, 96);
   CanTxTaskHandle = osThreadCreate(osThread(CanTxTask), NULL);
 	vTaskPrioritySet( CanTxTaskHandle, taskpriority );
 
@@ -69,8 +69,6 @@ void StartCanTxTask(void const * argument)
    BaseType_t Qret;	// queue receive return
 	struct CANTXQMSG txq;
 	int ret;
-
-osDelay(512*10); // Debug delay
 
   /* Infinite RTOS Task loop */
   for(;;)

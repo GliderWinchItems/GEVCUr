@@ -28,6 +28,7 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "MailboxTask.h"
 #include "calib_control_lever.h"
 #include "contactor_control.h"
+#include "dmoc_control.h"
 
 #include "main.h"
 
@@ -37,10 +38,16 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
  * *************************************************************************/
 void GevcuEvents_00(void)
 {
+	float fclpos; 
+
 	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
 
-	/* Update Control Lever with new ADC readings (or do initial calib). */
-	calib_control_lever();
+	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
+	fclpos = calib_control_lever();
+
+	/* Convert control level position into torque request for DMOC #1. */
+	dmoc_control_throttlereq(&dmocctl[0], fclpos);
+	
 	return;
 }
 /* *************************************************************************
@@ -81,6 +88,9 @@ void GevcuEvents_04(void)
 	/* Keepalive for contactor CAN msgs. */
 	contactor_control_time(gevcufunction.swtim1ctr);
 
+	/* Keepalive and torque command for DMOC */
+	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
+
 	return;
 }
 /* *************************************************************************
@@ -109,7 +119,8 @@ void GevcuEvents_07(void)
 	gevcufunction.evstat |= EVCANCNTCTR; // Show New Contactor CAN msg 
 	
 	/* Send pointer to CAN msg to contactor control routine */
-	contactor_control_CANrcv(&gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
+	contactor_control_CANrcv(gevcufunction.swtim1ctr,\
+              &gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
 		
 	return;
 }	
@@ -119,6 +130,8 @@ void GevcuEvents_07(void)
  * *************************************************************************/
 void GevcuEvents_08(void)
 {
+	dmoc_control_GEVCUBIT08(&dmocctl[0],\
+        &gevcufunction.pmbx_cid_dmoc_actualtorq->ncan.can);
 	return;
 }
 /* *************************************************************************

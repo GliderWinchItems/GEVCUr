@@ -23,6 +23,8 @@
 #define SWTIM1TICKDURATION 8
 #define SWTIM1TICKPERSEC (1000/SWTIM1TICKDURATION)
 
+#define SWTIM1_64PERSEC (configTICK_RATE_HZ/64) // swtim1 ticks 
+
 /* Parameters gevcu instance */
 struct GEVCULC
  {
@@ -64,7 +66,7 @@ struct GEVCULC
 
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends; we receive
-	uint32_t cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to poll
+	uint32_t cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
      // PC sends;  we receive 
 	uint32_t cid_gevcur_keepalive_i; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
    // DMOC sends; we receive

@@ -16,6 +16,7 @@
 #include "CanTask.h"
 #include "gevcu_msgs.h"
 #include "contactor_control.h"
+#include "dmoc_control.h"
 
 #include "morse.h"
 
@@ -37,14 +38,11 @@ void GevcuUpdates(void)
 
 	/* Contactor keepalive/command msg sending. */
 	contactor_control_CANsend();
-//	if ((gevcufunction.evstat & EVCNTCTR) != 0)
-//	{
-//		gevcufunction.evstat &= ~EVCNTCTR; // Reset bit
-//	}
-
 	
+	/* DMOC CAN msg sending. */
+	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
-	/* Queue keep-alive status CAN msg */
+	/* Queue GEVCUr keep-alive status CAN msg */
 	if ((gevcufunction.outstat & CNCTOUT05KA) != 0)
 	{
 		gevcufunction.outstat &= ~CNCTOUT05KA;	

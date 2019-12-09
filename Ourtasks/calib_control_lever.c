@@ -70,7 +70,6 @@ void calib_control_lever_init()
 	clfunc.deadf = 3.0; // Deadzone for 100% (open)
 
 	/* lcdprintf buffer */
-
 	pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (pbuflcd1 == NULL) morse_trap(81);
 
@@ -78,12 +77,14 @@ void calib_control_lever_init()
 }
 
 /* ***********************************************************************************************************
- * void calib_control_lever(void);
+ * float calib_control_lever(void);
  * @brief	: Calibrate CL
+ * @param	: control lever postion as a percent (0 - 100)
+ * @return	: Return lever position as percent
  ************************************************************************************************************* */
 uint32_t ccldbg;
 
-void calib_control_lever(void)
+float calib_control_lever(void)
 {
 	float fcur;
 	float frange;
@@ -217,6 +218,6 @@ clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 		default: morse_trap (80);
 		}
 
-	return;
+	return clfunc.curpos;
 }
 

@@ -205,8 +205,8 @@ int main(void)
 	osThreadId Thrdret;  // Return from thread create
 
 // Debug: Clear heap area
-uint32_t* pclr = (uint32_t*)(0x2000bb80);
-while (pclr < (uint32_t*)(0x2000bb80 + 32768)) *pclr++ = 0x66666666;
+//uint32_t* pclr = (uint32_t*)(0x2000bb80);
+//while (pclr < (uint32_t*)(0x2000bb80 + 32768)) *pclr++ = 0x66666666;
 
   /* USER CODE END 1 */
   
@@ -323,8 +323,8 @@ DiscoveryF4 LEDs --
 	yprintf_init();
 
 	/* USB-CDC buffering */
-	#define NUMCDCBUFF 3	// Number of CDC task local buffers
-	#define CDCBUFFSIZE 64*2	// Best buff size is multiples of usb packet size
+	#define NUMCDCBUFF 4	// Number of CDC task local buffers
+	#define CDCBUFFSIZE 64*4	// Best buff size is multiples of usb packet size
 	struct CDCBUFFPTR* pret;
 	pret = cdc_txbuff_init(NUMCDCBUFF, CDCBUFFSIZE); // Setup local buffers
 	if (pret == NULL) morse_trap(3);
@@ -334,7 +334,7 @@ DiscoveryF4 LEDs --
 	if (Qidret < 0) morse_trap(4); // Panic LED flashing
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
-  Qidret = xCanTxTaskCreate(0, 32); // CanTask priority, Number of msgs in queue
+  Qidret = xCanTxTaskCreate(0, 64); // CanTask priority, Number of msgs in queue
 	if (Qidret < 0) morse_trap(5); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
@@ -948,7 +948,6 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-//osDelay(500);
 /* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS

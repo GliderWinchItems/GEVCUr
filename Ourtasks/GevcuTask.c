@@ -19,6 +19,8 @@
 #include "GevcuUpdates.h"
 #include "gevcu_func_init.h"
 #include "calib_control_lever.h"
+#include "contactor_control.h"
+#include "dmoc_control.h"
 
 #include "main.h"
 #include "morse.h"
@@ -53,7 +55,7 @@ static void swtim1_callback(TimerHandle_t tm)
  * *************************************************************************/
 osThreadId xGevcuTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, 512);
+ 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, (312-14));
 	GevcuTaskHandle = osThreadCreate(osThread(GevcuTask), NULL);
 	vTaskPrioritySet( GevcuTaskHandle, taskpriority );
 	return GevcuTaskHandle;
@@ -95,10 +97,6 @@ void StartGevcuTask(void const * argument)
 	/* Control Lever init. */
 	calib_control_lever_init();
 
-	/* Start command/keep-alive timer */
-	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
-	if (bret != pdPASS) {morse_trap(44);}
-
 	/* Initial startup state */
 	gevcufunction.state = 0;
 
@@ -108,7 +106,12 @@ void StartGevcuTask(void const * argument)
 	/* Some initialization for contactor control. */
 	contactor_control_init();
 
-if (gevcufunction.evstat != 0) morse_trap(46); // Debugging check
+	/* Some initialization for first DMOC unit control. */
+	dmoc_control_init(&dmocctl[0]);
+
+	/* Start command/keep-alive timer */
+	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
+	if (bret != pdPASS) {morse_trap(44);}
 
   /* Infinite loop */
   for(;;)

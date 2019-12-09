@@ -16,10 +16,6 @@
 #include "stm32f4xx_hal_usart.h"
 #include "stm32f4xx_hal_uart.h"
 
-
-/*
-*/
-
 #define LCDQSIZE 8	// LCD Q size
 
 //static uint32_t LcdTaskBuffer[ 64 ];
@@ -63,10 +59,8 @@ void StartLcdTask(void* argument1)
 
 		/* Queue buffer to be sent. */
 		vSerialTaskSendQueueBuf(&pssb);
-
-		
-
 	}
+	return;
 }
 /* *************************************************************************
  * osThreadId xLcdTaskCreate(uint32_t taskpriority, UART_HandleTypeDef* phuart, uint32_t numbcb);

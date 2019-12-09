@@ -42,8 +42,10 @@ struct CLFUNCTION
 void calib_control_lever_init();
 /* @brief	: Prep for CL calibration
  ************************************************************************************************************* */
-void calib_control_lever(void);
+float calib_control_lever(void);
 /* @brief	: Calibrate CL
+ * @param	: control lever postion as a percent (0 - 100)
+ * @return	: Return lever position as percent
  ************************************************************************************************************* */
 
 extern struct CLFUNCTION clfunc;

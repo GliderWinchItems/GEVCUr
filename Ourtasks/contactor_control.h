@@ -16,7 +16,7 @@
 #include "morse.h"
 #include "common_can.h"
 
-#define CNCTR_KATICKS (125/3)
+#define CNCTR_KATICKS (128/3)
 
 enum CONTACTOR_CONTROL_STATE
 {
@@ -56,8 +56,9 @@ void contactor_control_time(uint32_t ctr);
 /* @brief	: Timer input to state machine
  * @param	: ctr = sw1ctr time ticks
  ************************************************************************************************************* */
-void contactor_control_CANrcv(struct CANRCVBUF* pcan);
+void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan);
 /* @brief	: Handle contactor command CAN msgs being received
+ * @param	: ctr = sw1tim tick counter
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
 void contactor_control_CANsend(void);

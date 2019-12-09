@@ -27,10 +27,11 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
  count = 4 -> 64/sec (if we want to approximate the logging rate)
  count = 64 -> 1/sec 
 */ 
-	p->ka_t       = SWTIM1TICKDURATION; // Gevcu polling timer (ms) 
+	p->ka_t       = 4; // Gevcu polling timer: 4 * (1/512) 
 
 	p->keepalive_t= 2555; // keep-alive timeout (timeout delay ms)
 	p->hbct_t    = 1000; // Heartbeat ct: ticks between sending 
+	p->ka_dmoc_r_t = 2;  // DMOC keepalive/torque command (sw1tim ticks)
 
  // CAN ids we send
    //                      CANID_HEX      CANID_NAME             CAN_MSG_FMT     DESCRIPTION
@@ -45,7 +46,7 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends
-	p->cid_cntctr_keepalive_r  = 0xE3600000; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to poll
+	p->cid_cntctr_keepalive_r  = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
      // PC sends to GEVCUr (i.e. "us")
 	p->cid_gevcur_keepalive_i = 0xE3E00000; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
      // DMOC sends

@@ -135,6 +135,8 @@ C_SOURCES += Ourtasks/SpiOutTask.c
 C_SOURCES += Ourtasks/calib_control_lever.c
 C_SOURCES += Ourtasks/4x20lcd.c
 C_SOURCES += Ourtasks/contactor_control.c
+C_SOURCES += Ourtasks/dmoc_control.c
+C_SOURCES += paycnvt.c
 
 # /* USER CODE END */ 
 
