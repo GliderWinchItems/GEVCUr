@@ -17,6 +17,8 @@ enum CLSTATE
 	CLOSE1WAIT,
 	OPEN1,
 	OPEN1WAIT,
+	CLOSE2,
+	CLOSE2WAIT,
 	CLCREADY   // CL calibration complete
 };
 

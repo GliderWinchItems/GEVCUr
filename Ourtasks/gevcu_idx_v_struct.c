@@ -49,15 +49,14 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 	p->cid_cntctr_keepalive_r  = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
      // PC sends to GEVCUr (i.e. "us")
 	p->cid_gevcur_keepalive_i = 0xE3E00000; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
-     // DMOC sends
-	p->cid_dmoc_actualtorq = 0x47400000; // CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000
-	p->cid_dmoc_speed      = 0x47600000; // CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?)
-	p->cid_dmoc_dqvoltamp  = 0x47C00000; // CANID_DMOC_DQVOLTAMP: I16_I16_I16_I16','DMOC: D volt:amp, Q volt:amp
+     // DMOC sends                        11 bit
+	p->cid_dmoc_actualtorq = 0x47400000; // 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000
+	p->cid_dmoc_speed      = 0x47600000; // 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?)
+	p->cid_dmoc_dqvoltamp  = 0x47C00000; // 0x23E CANID_DMOC_DQVOLTAMP: I16_I16_I16_I16','DMOC: D volt:amp, Q volt:amp
 	p->cid_dmoc_torque     = 0x05683004; // CANID_DMOC_TORQUE:    I16_I16,'DMOC: Torque,-(Torque-30000)
-	p->cid_dmoc_critical_f = 0x056837fc; // CANID_DMOC_TORQUE:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
-	p->cid_dmoc_hv_status  = 0xCA000000; // CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
-	p->cid_dmoc_hv_temps   = 0xCA200000; // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
-
+	p->cid_dmoc_critical_f = 0x056837fc; // CANID_DMOC_CRITICAL_F:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
+	p->cid_dmoc_hv_status  = 0xCA000000; // 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
+	p->cid_dmoc_hv_temps   = 0xCA200000; // 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
    // Others send
 	p->cid_gps_sync     = 0x00400000; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 

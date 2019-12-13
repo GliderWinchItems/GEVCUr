@@ -41,8 +41,8 @@ extern CAN_HandleTypeDef hcan2;
 /* Abort feature--which may hang TX! */
 #define YESABORTCODE
 
-/* Uncomment to cause all TX msgs to loop back */
-//#define CANMSGLOOPBACKALL
+/* Uncomment to cause TX msgs bit set to appear as received after sent. */
+#define CANMSGLOOPBACKALL
 
 /* subroutine declarations */
 static void loadmbx2(struct CAN_CTLBLOCK* pctl);
@@ -298,15 +298,15 @@ int can_driver_put(struct CAN_CTLBLOCK* pctl,struct CANRCVBUF *pcan,uint8_t maxr
 	/* 'pnew' now points to the block that is free (and not linked). */
 
 	/* Build struct/block for addition to the pending list. */
-	// retryct    xb[0]	// Counter for number of retries for TERR errors
-	// maxretryct xb[1]	// Maximum number of TERR retry counts
-	// bits	      xb[2]		// Use these bits to set some conditions (see below)
-	// nosend     xb[3]	// Do not send: 0 = send; 1 = do NOT send on CAN bus (internal use only)
+	// retryct    xb[0]  // Counter for number of retries for TERR errors
+	// maxretryct xb[1]  // Maximum number of TERR retry counts
+	// bits	     xb[2]  // Use these bits to set some conditions (see below)
+	// nosend     xb[3]  // Do not send: 0 = send; 1 = do NOT send on CAN bus (internal use only)
 	pnew->can     = *pcan;	// Copy CAN msg.
 	pnew->x.xb[1] = maxretryct;	// Maximum number of TERR retry counts
-	pnew->x.xb[2] = bits;	// Use these bits to set some conditions (see .h file)
-	pnew->x.xb[3] = 0;	// not used for now
-	pnew->x.xb[0] = 0;	// Retry counter for TERRs
+	pnew->x.xb[2] = bits;// Use these bits to set some conditions (see .h file)
+	pnew->x.xb[3] = 0;   // not used for now
+	pnew->x.xb[0] = 0;   // Retry counter for TERRs
 
 	/* Find location to insert new msg.  Lower value CAN ids are higher priority, 
            and when the CAN id msg to be inserted has the same CAN id as the 'pfor' one

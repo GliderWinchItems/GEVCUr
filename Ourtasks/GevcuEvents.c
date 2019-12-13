@@ -136,23 +136,26 @@ void GevcuEvents_08(void)
 }
 /* *************************************************************************
  * void GevcuEvents_09(void);
- * @brief	: CAN: cid_dmoc_speed
+ * @brief	: CAN: cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6);
  * *************************************************************************/
 void GevcuEvents_09(void)
 {
+	dmoc_control_GEVCUBIT09(&dmocctl[0],\
+        &gevcufunction.pmbx_cid_dmoc_speed->ncan.can);
 	return;
 }
 /* *************************************************************************
  * void GevcuEvents_10(void);
- * @brief	: CAN: cid_dmoc_dqvoltamp
+ * @brief	: CAN: cid_dmoc_dqvoltamp, NULL,GEVCUBIT10,0,I16_I16_I16_I16);
  * *************************************************************************/
 void GevcuEvents_10(void)
 {
+
 	return;
 }
 /* *************************************************************************
  * void GevcuEvents_11(void);
- * @brief	: CAN: cid_dmoc_torque
+ * @brief	: CAN: cid_dmoc_torque, NULL,GEVCUBIT11,0,I16_I16); 
  * *************************************************************************/
 void GevcuEvents_11(void)
 {
@@ -160,7 +163,7 @@ void GevcuEvents_11(void)
 }
 /* *************************************************************************
  * void GevcuEvents_12(void);
- * @brief	: CAN: cid_dmoc_critical_f
+ * @brief	: CAN: cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
  * *************************************************************************/
 void GevcuEvents_12(void)
 {
@@ -168,17 +171,29 @@ void GevcuEvents_12(void)
 }
 /* *************************************************************************
  * void GevcuEvents_13(void);
- * @brief	: CAN: cid_dmoc_hv_status
+ * @brief	: CAN: cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6);
  * *************************************************************************/
 void GevcuEvents_13(void)
 {
+	dmoc_control_GEVCUBIT13(&dmocctl[0],\
+        &gevcufunction.pmbx_cid_dmoc_hv_status->ncan.can);
 	return;
 }
 /* *************************************************************************
  * void GevcuEvents_14(void);
- * @brief	: CAN: cid_dmoc_hv_temps
+ * @brief	: CAN: cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8);
  * *************************************************************************/
 void GevcuEvents_14(void)
+{
+	dmoc_control_GEVCUBIT13(&dmocctl[0],\
+        &gevcufunction.pmbx_cid_dmoc_hv_temps->ncan.can);
+	return;
+}
+/* *************************************************************************
+ * void GevcuEvents_15(void);
+ * @brief	: CAN: cid_gevcur_keepalive_i,NULL,GEVCUBIT15,0,23);
+ * *************************************************************************/
+void GevcuEvents_15(void)
 {
 	return;
 }

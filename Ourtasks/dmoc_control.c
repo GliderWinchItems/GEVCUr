@@ -10,11 +10,15 @@
 #include "morse.h"
 #include "DMOCchecksum.h"
 #include "paycnvt.h"
+#include "can_iface.h"
 
 /* Name the indices to correspond to the GEVCU DMOC documentation. */
 #define CMD1 0 
 #define CMD2 1 
 #define CMD3 2 
+
+#define FALSE 1
+#define TRUE  0
 
 /* Command request bits assignments. 
 Sourced location: ../dmoc/OurTasks/ContactorTask.h
@@ -67,6 +71,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->maxregenwatts = 60000; // ?
 	pdmocctl->maxaccelwatts = 60000; // ?
 	pdmocctl->torqueoffset  = 30000; // Torque command offset 
+	pdmocctl->speedoffset   = 20000; // Speed command offset
+	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
 	pdmocctl->maxspeed      = 10000; // Max speed (signed)
 	pdmocctl->maxtorque     = 29999; // Max torque (signed)
 
@@ -78,7 +84,7 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	{
 		pdmocctl->cmd[i].txqcan.pctl       = pctl0; // CAN1 control block ptr (from main.c)
 		pdmocctl->cmd[i].txqcan.maxretryct = 8;
-		pdmocctl->cmd[i].txqcan.bits       = 0; // /NART
+		pdmocctl->cmd[i].txqcan.bits       = CANMSGLOOPBACKBIT; // Route tx copy as if received
 		pdmocctl->cmd[i].txqcan.can.dlc    = 8; // All command msgs have 8 payload bytes
 
 		for (j = 0; j < 8; j++) // Clear out payload (later, some bytes are bytes are overwritten)
@@ -144,9 +150,133 @@ void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr)
  ************************************************************************************************************* */
 void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
+/* 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
 	/* Extract reported torque and update latest reading. */
 //				torqueActual = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]) - 30000;
 	pdmocctl->torqueact = ((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->torqueoffset;
+	return;
+}
+/* ***********************************************************************************************************
+ * void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+ * @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
+{
+/* cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6); */
+/* 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
+
+	// Speed (signed)
+	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->speedoffset;
+
+	// DMOC status
+	pdmocctl->dmocstateact = (pcan->cd.uc[1] >> 4);
+
+        //actually, the above is an operation status report which doesn't correspond
+        //to the state enum so translate here.
+	switch (pdmocctl->dmocstateact) 
+	{
+	case 0: //Initializing
+            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstatefaulted = FALSE;
+            break;
+
+	case 1: //disabled
+            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstatefaulted = FALSE;
+            break;
+
+	case 2: //ready (standby)
+            pdmocctl->dmocstateact =  DMOC_STANDBY;
+            pdmocctl->dmocstatefaulted = FALSE;
+            pdmocctl->dmocready = TRUE;
+            break;
+
+	case 3: //enabled
+            pdmocctl->dmocstateact =  DMOC_ENABLE;
+            pdmocctl->dmocstatefaulted = FALSE;
+            break;
+
+	case 4: //Power Down
+            pdmocctl->dmocstateact =  DMOC_POWERDOWN;
+            pdmocctl->dmocstatefaulted = FALSE;
+            break;
+
+	case 5: //Fault
+            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstatefaulted = TRUE;
+            break;
+
+	case 6: //Critical Fault
+            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstatefaulted = TRUE;
+            break;
+
+	case 7: //LOS
+            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstatefaulted = TRUE;
+            break;
+	}
+	return;
+}
+/* ***********************************************************************************************************
+ * void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+ * @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
+{
+/* cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6); */
+/* 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status */
+
+/*        dcVoltage = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]);
+        dcCurrent = ((frame->data.bytes[2] * 256) + frame->data.bytes[3]) - 5000; //offset is 500A, unit = .1A
+        activityCount++; */
+
+	pdmocctl->speedact   = (pcan->cd.uc[0] << 8 | pcan->cd.uc[1]);
+	pdmocctl->currentact = (pcan->cd.uc[2] << 8 | pcan->cd.uc[3]) - pdmocctl->currentoffset;
+	pdmocctl->activityctr += 1;
+	return;
+}
+/* ***********************************************************************************************************
+ * void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+ * @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
+{
+/*cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8); */
+/* 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
+
+/*       RotorTemp = frame->data.bytes[0];
+        invTemp = frame->data.bytes[1];
+        StatorTemp = frame->data.bytes[2];
+        temperatureInverter = (invTemp-40) *10;
+        //now pick highest of motor temps and report it
+        if (RotorTemp > StatorTemp) {
+            temperatureMotor = (RotorTemp - 40) * 10;
+        }
+        else {
+            temperatureMotor = (StatorTemp - 40) * 10;
+        }
+        activityCount++; */
+
+	pdmocctl->rotortemp   = pcan->cd.uc[0];
+	pdmocctl->invtemp     = pcan->cd.uc[1];
+	pdmocctl->statortemp  = pcan->cd.uc[2];
+	pdmocctl->invtempcalc = (pdmocctl->invtemp - 40) * 10;
+	if (pdmocctl->rotortemp > pdmocctl->statortemp)
+	{
+		pdmocctl->motortemp = (pdmocctl->rotortemp - 40) * 10;
+	}
+	else
+	{
+		pdmocctl->motortemp = (pdmocctl->statortemp - 40) * 10;
+	}
+	pdmocctl->activityctr += 1;
 	return;
 }
 
@@ -190,16 +320,12 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->mode == DMOC_MODETORQUE)
 	{ // Torque mode
 /* For speed mode they seem to be controlling speed by adjusting the torque! */
-      if(pdmocctl->speedact < pdmocctl->maxspeed) 
-		{ //If actual rpm is less than max rpm, add torque to offset
-            pdmocctl->torquereq += pdmocctl->torquereq;   
-      }
-      else 
-		{  // Reduce torque
-/* Why do they use "1/1.3" for reducing the torque to reduce speed? */
-      	pdmocctl->torquereq += pdmocctl->torquereq /1.3;  
-      }
-		ntmp = pdmocctl->torquereq; // JIC torquereq gets changed between following instructions
+      if(pdmocctl->speedact > pdmocctl->maxspeed) 
+		{ // If actual rpm is greater than max rpm, zero the torque req.            
+      	pdmocctl->torquereq = 0;
+		}
+		// Command is offset
+		ntmp = pdmocctl->torquereq + pdmocctl->maxtorque; 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
@@ -255,6 +381,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
  ************************************************************************************************************* */
 void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct)
 {
-	
+	pdmocctl->torquereq = (int)(fpct * (float)pdmocctl->maxtorque * 0.01);
+	return;	
 }
 

@@ -201,6 +201,11 @@ void StartGevcuTask(void const * argument)
 			GevcuEvents_14();
 			noteuse |= GEVCUBIT14;
 		}
+		if ((noteval & GEVCUBIT15) != 0) 
+		{ // CAN:  
+			GevcuEvents_15();
+			noteuse |= GEVCUBIT15;
+		}
   /* ========= States =============================== */
 
 		switch (gevcufunction.state)

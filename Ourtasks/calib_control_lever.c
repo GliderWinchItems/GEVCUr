@@ -65,6 +65,7 @@ void calib_control_lever_init()
    clfunc.max   = 0;
 	clfunc.toctr = 0;
 	clfunc.state = 0;
+	clfunc.curpos = 0;
 
 	clfunc.deadr = 3.0; // Deadzone for 0% (closed)
 	clfunc.deadf = 3.0; // Deadzone for 100% (open)
@@ -166,7 +167,7 @@ lcdprintf(&pbuflcd1,4,0,"ADC %d      |",adc1.chan[0].sum);
 			/* Some coding fluff for the Op. */
 			lcdprintf(&pbuflcd1,1,0,"SUCCESS           |");
 			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
-			clfunc.state = CLCREADY;
+			clfunc.state = CLOSE2;
 
 #ifdef TESTANDDEBUGCALIB
 lcdprintf(&pbuflcd1,2,0,"mineds    %10.2f\n\r",clfunc.minends);
@@ -174,6 +175,29 @@ lcdprintf(&pbuflcd1,3,0,"maxbegins %10.2f\n\r",clfunc.maxbegins);
 #endif
 
 			break;
+
+		/* Here the OP has set the CL at max. Return to zero before ready. */
+		case CLOSE2:
+			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d    |",clfunc.toctr++);
+			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
+			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
+			clfunc.state = CLOSE2WAIT;
+			break;
+
+		case CLOSE2WAIT:
+			fcur = adc1.chan[0].sum;
+			if (fcur < clfunc.minends)
+			{
+				clfunc.curpos =  0; // jic
+				clfunc.state = CLCREADY;
+			}
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
+			{
+				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+				clfunc.state = CLOSE2;
+			}
+			break;
+
 		
 		/* Calibration is complete. Compute position of CL. */
 		case CLCREADY:

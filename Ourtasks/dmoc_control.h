@@ -69,18 +69,32 @@ struct DMOCCTL
 	int32_t torquecmd;    // Command (do we need this?)
 	int32_t maxspeed;     // Max speed (signed)
 	int32_t maxtorque;    // Max torque (signed)
-	int32_t speedact;     // Speed actual 
+	int32_t speedact;     // Speed actual (reported)
 	int32_t torqueact;    // Torque actual (signed)
 	int32_t regencalc;    // Calculated from maxregenwatts
 	int32_t accelcalc;    // Calculated from maxaccelwatts
+	int32_t currentact;   // Current Actual (reported)
+
 
 	uint32_t maxregenwatts;
 	uint32_t maxaccelwatts;
-	uint32_t torqueoffset; // Offset for zero torque, (nominally 30000)
+	uint32_t torqueoffset; // Offset for zero torque,     (nominally 30000)
+	uint32_t speedoffset;  // Offset for zero speed       (nominally 20000)
+	uint32_t currentoffset;// Offset for reported current (nominally  5000)
+	uint32_t activityctr;  // A counter
+
+	// Extracted and calculated (deg C) temperatures
+	uint8_t rotortemp;     // Temperature: rotor (raw)
+	uint8_t invtemp;       // Temperature: inverter (raw)
+	uint8_t statortemp;    // Temperature: stator (raw)
+	uint8_t invtempcalc;   // Temperature: inverter (deg C)
+	uint8_t motortemp;     // Temperature: motor (deg C)
 
 	uint8_t state;        // Our State machine
 	uint8_t dmocstatereq; // DMOC state requested
 	uint8_t dmocstateact; // DMOC state actual
+	uint8_t dmocstatefaulted; // 1 = faulted
+	uint8_t dmocready;
 	uint8_t alive;        // DMOC counter (see docs)
 	uint8_t mode;         // Speed or Torque selection
 	uint8_t sendflag;     // 1 = send CAN msg, 0 = skip

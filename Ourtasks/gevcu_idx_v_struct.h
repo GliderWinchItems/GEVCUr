@@ -74,7 +74,7 @@ struct GEVCULC
 	uint32_t cid_dmoc_speed;      // CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?)
 	uint32_t cid_dmoc_dqvoltamp;  // CANID_DMOC_DQVOLTAMP: I16_I16_I16_I16','DMOC: D volt:amp, Q volt:amp
 	uint32_t cid_dmoc_torque;     // CANID_DMOC_TORQUE:    I16_I16,'DMOC: Torque,-(Torque-30000)
-	uint32_t cid_dmoc_critical_f; // CANID_DMOC_TORQUE:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
+	uint32_t cid_dmoc_critical_f; // CANID_DMOC_CRITICAL_F:    NONE',   'DMOC: Critical Fault: payload = DEADB0FF
 	uint32_t cid_dmoc_hv_status;  // CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
 	uint32_t cid_dmoc_hv_temps;   // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
    // GPS/Logger sends; we receive

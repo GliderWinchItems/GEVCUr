@@ -29,6 +29,7 @@ void GevcuEvents_11(void);
 void GevcuEvents_12(void);
 void GevcuEvents_13(void);
 void GevcuEvents_14(void);
+void GevcuEvents_15(void);
 
 #endif
 

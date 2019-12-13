@@ -83,21 +83,21 @@ union CAN_X
 	u8	xb[4];	// TX 
 };
 
-// retryct xb[0]	// Counter for number of retries for TERR errors
+/* xb usage for TX */
+// retryct    xb[0]	// Counter for number of retries for TERR errors
 // maxretryct xb[1]	// Maximum number of TERR retry counts
-// bits	   xb[2]		// Use these bits to set some conditions (see below)
-// nosend  xb[1]	// Do not send: 0 = send; 1 = do NOT send on CAN bus (internal use only)
-/*  -- bits -- */
-#define	SOFTNART	0x01     // 1 = No retries (including arbitration); 0 = retries
-#define NOCANSEND	0x02     // 1 = Do not send to the CAN bus
-#define CANMSGLOOPBACKBIT 0x04  // 1 = Loopback: copy of outgoing msg appears in incoming
+// bits       xb[2]	// Use these bits to set some conditions (see below)
+// nosend     xb[3]	// Do not send: 0 = send; 1 = do NOT send on CAN bus (internal use only)
+/*  bit definition within bits, xb[2] */
+#define SOFTNART	        0x01 // 1 = No retries (including arbitration); 0 = retries
+#define NOCANSEND	        0x02 // 1 = Do not send to the CAN bus
+#define CANMSGLOOPBACKBIT 0x04 // 1 = Loopback: copy of outgoing msg appears in incoming
 
 struct CAN_POOLBLOCK	// Used for common CAN TX/RX linked lists
 {
 volatile struct CAN_POOLBLOCK* volatile plinknext;	// Linked list pointer (low value id -> high value)
 	 struct CANRCVBUF can;		// Msg queued
 	 union  CAN_X x;			// Extra goodies that are different for TX and RX
-
 };
 
 /* Here: everything you wanted to know about a CAN module (i.e. CAN1, CAN2, CAN3) */
