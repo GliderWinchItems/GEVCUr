@@ -61,7 +61,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->sendflag  = 0;
 	pdmocctl->alive     = 0; // DMOC count increments by 2 & truncated
 	pdmocctl->dmocstateact = DMOC_DISABLED;   // Assume initial state
-	pdmocctl->dmocstatereq = DMOC_STANDBY;    // Requested startup state
+	pdmocctl->dmocopstate  = DMOC_STANDBY;    // Requested startup state
+	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
 
 
@@ -300,12 +301,83 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	pdmocctl->alive = (pdmocctl->alive + 2) & 0x0F;
 
 	/* CMD1: RPM plus state of key and gear selector ***************  */
+
+/*  --DmocMotorController.cpp --<cmd1 snip>--  
+    if (throttleRequested > 0 && operationState == ENABLE && selectedGear != NEUTRAL && powerMode == modeSpeed)
+        speedRequested = 20000 + (((long) throttleRequested * (long) config->speedMax) / 1000);
+    else
+        speedRequested = 20000;
+    output.data.bytes[0] = (speedRequested & 0xFF00) >> 8;
+    output.data.bytes[1] = (speedRequested & 0x00FF);
+    output.data.bytes[2] = 0; //not used
+    output.data.bytes[3] = 0; //not used
+    output.data.bytes[4] = 0; //not used
+    output.data.bytes[5] = ON; //key state
+ */
+
+	/* Translate above DmocMotorController.cpp */
+	ntmp = pdmocctl->speedreq; // Requested speed (RPM?)
+
+	// (Limit speed request: -20000 < speedreq < 20000)
+	if ((ntmp > pdmocctl->speedoffset) || (ntmp < pdmocctl->speedoffset))
+	         ntmp = pdmocctl->speedoffset;
+
+	// Send non-zero speed command only when everything is ready
+	if ((ntmp > 0) && 
+	    (pdmocctl->dmocopstate == DMOC_ENABLE ) && 
+	    (pdmocctl->dmocgear    != DMOC_NEUTRAL) && 
+       (pdmocctl->mode        == DMOC_MODESPEED) )
+            ntmp += pdmocctl->speedoffset; // Command requested speed
+    else
+            ntmp = pdmocctl->speedoffset; // Command zero speed
+
 	// Update payload
-	ntmp = pdmocctl->speedreq; // JIC speedreq gets changed between following instruction
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[5] = 1; // Key state = ON (this could be in 'init')
-	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[6] = pdmocctl->alive | (DMOC_DRIVE << 4) | (pdmocctl->dmocstatereq << 6) ;
+
+/* --DmocMotorController.cpp -- <cmd1 snip>--
+   //handle proper state transitions
+    newstate = DISABLED;
+    if (actualState == DISABLED && (operationState == STANDBY || operationState == ENABLE))
+        newstate = STANDBY;
+    if ((actualState == STANDBY || actualState == ENABLE) && operationState == ENABLE)
+        newstate = ENABLE;
+    if (operationState == POWERDOWN)
+        newstate = POWERDOWN;
+
+    if (actualState == ENABLE) {
+        output.data.bytes[6] = alive + ((byte) selectedGear << 4) + ((byte) newstate << 6); //use new automatic state system.
+    }
+    else { //force neutral gear until the system is enabled.
+        output.data.bytes[6] = alive + ((byte) NEUTRAL << 4) + ((byte) newstate << 6); //use new automatic state system.
+    }
+*/
+
+/* Translate above DmocMotorController.cpp */
+	pdmocctl->dmocstatenew = DMOC_DISABLED;
+
+	/* When DMOC shows DISABLED, send our request for STANDBY, providing we want ENABLE. */
+	if (pdmocctl->dmocstateact == DMOC_DISABLED && (pdmocctl->dmocopstate == DMOC_ENABLE || pdmocctl->dmocopstate == ENABLE))
+		pdmocctl->dmocstatenew = DMOC_STANDBY;
+
+	/* Send ENABLE when DMOC shows either STANDBY or ENABLE. */
+	if ((pdmocctl->dmocstateact == DMOC_STANDBY || pdmocctl->dmocstateact == DMOC_ENABLE) && (pdmocctl->dmocopstate == DMOC_ENABLE))
+		pdmocctl->dmocstatenew = DMOC_ENABLE;
+
+	/* In case we want to initiate powerdown the DMOC via operational state. */
+	if (pdmocctl->dmocopstate == DMOC_POWERDOWN)
+		pdmocctl->dmocstatenew = DMOC_POWERDOWN;
+
+	if (pdmocctl->dmocstateact == DMOC_ENABLE)
+	{ // DMOC is showing that it is enabled.
+		pdmocctl->cmd[CMD1].txqcan.can.cd.uc[6] = pdmocctl->alive | (DMOC_DRIVE << 4) | (pdmocctl->dmocstatenew << 6) ;
+	}
+	else
+	{ // Show DMOC neutral gear until the DMOC shows that it is enabled.
+		pdmocctl->cmd[CMD1].txqcan.can.cd.uc[6] = pdmocctl->alive | (DMOC_NEUTRAL << 4) | (pdmocctl->dmocstatenew << 6) ;
+	}
+
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[7] = DMOCchecksum(&pdmocctl->cmd[CMD1].txqcan.can); 
 
 	// Queue CAN msg

@@ -91,8 +91,10 @@ struct DMOCCTL
 	uint8_t motortemp;     // Temperature: motor (deg C)
 
 	uint8_t state;        // Our State machine
-	uint8_t dmocstatereq; // DMOC state requested
+	uint8_t dmocstatenew; // DMOC state requested
 	uint8_t dmocstateact; // DMOC state actual
+	uint8_t dmocopstate;  // DMOC operation state
+	uint8_t dmocgear;     // DMOC gear selection
 	uint8_t dmocstatefaulted; // 1 = faulted
 	uint8_t dmocready;
 	uint8_t alive;        // DMOC counter (see docs)

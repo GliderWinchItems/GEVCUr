@@ -47,17 +47,18 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 	p->keepalive_k= (p->lc.keepalive_t); // keep-alive timeout (timeout delay ms)
 	p->hbct_k     = (p->lc.hbct_t); // Heartbeat ct: ticks between sending msgs hv1:cur1
 	
+// Skip CAN msg arrival notifications for lines that are commented out.
 	/* Add CAN Mailboxes                         CAN           CAN ID        Notify bit   Paytype */
 	p->pmbx_cid_gps_sync        =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,GEVCUBIT06,0,U8);
 	p->pmbx_cid_cntctr_keepalive_r=MailboxTask_add(pctl0,p->lc.cid_cntctr_keepalive_r,NULL,GEVCUBIT07,0,U8_U8_U8);
 	p->pmbx_cid_dmoc_actualtorq =  MailboxTask_add(pctl0,p->lc.cid_dmoc_actualtorq,NULL,GEVCUBIT08,0,I16);
 	p->pmbx_cid_dmoc_speed      =  MailboxTask_add(pctl0,p->lc.cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6);
 //	p->pmbx_cid_dmoc_dqvoltamp  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_dqvoltamp, NULL,GEVCUBIT10,0,I16_I16_I16_I16);
-	p->pmbx_cid_dmoc_torque     =  MailboxTask_add(pctl0,p->lc.cid_dmoc_torque,    NULL,GEVCUBIT11,0,I16_I16);
-	p->pmbx_cid_dmoc_critical_f =  MailboxTask_add(pctl0,p->lc.cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
+//	p->pmbx_cid_dmoc_torque     =  MailboxTask_add(pctl0,p->lc.cid_dmoc_torque,    NULL,GEVCUBIT11,0,I16_I16);
+//	p->pmbx_cid_dmoc_critical_f =  MailboxTask_add(pctl0,p->lc.cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
 	p->pmbx_cid_dmoc_hv_status  =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6);
 	p->pmbx_cid_dmoc_hv_temps   =  MailboxTask_add(pctl0,p->lc.cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8);
-	p->pmbx_cid_gevcur_keepalive_i = MailboxTask_add(pctl0,p->lc.cid_gevcur_keepalive_i,NULL,GEVCUBIT15,0,23);
+//	p->pmbx_cid_gevcur_keepalive_i = MailboxTask_add(pctl0,p->lc.cid_gevcur_keepalive_i,NULL,GEVCUBIT15,0,23);
 
 	/* Pre-load fixed data in CAN msgs */
 	for (i = 0; i < NUMCANMSGS; i++)
