@@ -1,0 +1,74 @@
+cpsimulator_shiftreg_input.txt
+12/23/2019
+
+Columns---
+ 1: header position (0 - 15);
+ 2: spi word bit (0 - 15)
+ 3: shift register pack-pin simulator
+ 4: connector J8-P8
+ 5: name
+ 6: shift register pin schematic
+ 7: shift register input name 1
+ 8: shift register input name 2
+ 9: #define name
+10: simulator jumper to header
+
+8  15 1-06 P8-3  IN0   6 D7 H SW_SAFE
+9  14 1-05 P8-4  IN1   5 D6 G SW_ACTIVE
+10 13 1-04 P8-5  IN2   4 D5 F PB_ARM 
+11 12 1-03 P8-6  IN3   3 D4 E PB_PREP
+12 11 1-14 P8-10 IN4  14 D3 D CL_RST_N0  white to rest CL sw
+13 10 1-13 P8-8  IN5  13 D2 C CP_SPARE11
+14  9 1-12 P8-9  IN6  12 D1 B CP_SPARE10
+15  8 1-11 P8-7  IN7  11 D0 A CL_FS_NO   purple to forward CL sw
+0   7 2-06 P8-11 IN8   6 D7 H CP_SPARE8
+1   6 2-05 P8-12 IN9   5 D6 G CP_SPARE7
+2   5 2-04 P8-13 IN10  4 D5 F CP_SPARE6
+3   4 2-03 P8-14 IN11  3 D4 E CP_SPARE5
+4   3 2-14 P8-15 IN12 14 D3 D CP_SPARE4
+5   2 2-13 P8-16 IN13 13 D2 C CP_SPARE3
+6   1 2-12 ..... IN14 12 D1 B CP_SPARE2
+7   0 2-11 ..... IN15 11 D0 A CP_SPARE1
+ 
+
+Wire colors on simulator module board--
+Switch header (w wire colors)
+ 0 2-06 grn
+ 1 2-05 yel
+ 2 2-04 wht
+ 3 2-03 blu
+ 4 2-14 grn
+ 5 2-13 yel
+ 6 2-12 wht
+ 7 2-11 blu
+ 8 1-06 grn
+ 9 1-05 yel
+10 1-04 wht
+11 1-03 blu
+12 1-14 grn
+13 1-13 yel
+14 1-12 wht
+15 1-11 blu 
+
+shift register interconnect
+1-09 to 2-10
+
+//	Sixteen control panel switch mapping
+#define SW_SAFE    (1 << 15)	//	active low
+#define SW_ACTIVE  (1 << 14)	//	active low
+#define PB_ARM     (1 << 13)	//	active low
+#define PB_PREP    (1 << 12)	//	active low
+#define CL_RST_N0  (1 << 11)	//	Control Lever:Rest switch (low) 
+#define CP_SPARE11 (1 << 10)  //
+#define CP_SPARE10 (1 <<  9)  //
+#define CL_FS_NO   (1 <<  8)	// Control Lever:Forward switch (low)
+#define CP_SPARE8  (1 <<  7)  //
+#define CP_SPARE7  (1 <<  6)  //
+#define CP_SPARE6  (1 <<  5)  //
+#define CP_SPARE5  (1 <<  4)  //
+#define CP_SPARE4  (1 <<  3)  //
+#define CP_SPARE3  (1 <<  3)  //
+#define CP_SPARE2  (1 <<  2)  //
+#define CP_SPARE1  (1 <<  0)  //
+
+

@@ -9,6 +9,7 @@
 #define __SHIFTREGBITS
 
 /* Sixteen LED or other outputs */
+/* etmc0 definitions */
 #define LED_SAFE        0x8000
 #define LED_PREP        0x4000
 #define LED_ARM         0x2000
@@ -26,16 +27,15 @@
 #define LED_PREP_PB     0x0002
 #define LED_ARM_PB      0x0001
 
-
 //	Sixteen control panel switch mapping
 #define SW_SAFE    (1 << 15)	//	active low
 #define SW_ACTIVE  (1 << 14)	//	active low
 #define PB_ARM     (1 << 13)	//	active low
 #define PB_PREP    (1 << 12)	//	active low
-#define CL_RST_N0  (1 << 11)	//	low at rest
+#define CL_RST_N0  (1 << 11)	//	Control Lever:Rest switch (low) 
 #define CP_SPARE11 (1 << 10)  //
 #define CP_SPARE10 (1 <<  9)  //
-#define CL_FS_NO   (1 <<  8)	// low at full scale
+#define CL_FS_NO   (1 <<  8)	// Control Lever:Forward switch (low)
 #define CP_SPARE8  (1 <<  7)  //
 #define CP_SPARE7  (1 <<  6)  //
 #define CP_SPARE6  (1 <<  5)  //
@@ -45,5 +45,4 @@
 #define CP_SPARE2  (1 <<  2)  //
 #define CP_SPARE1  (1 <<  0)  //
 
-  
 #endif
