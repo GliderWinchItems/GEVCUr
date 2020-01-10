@@ -33,16 +33,20 @@
 #define PB_ARM     (1 << 13)	//	active low
 #define PB_PREP    (1 << 12)	//	active low
 #define CL_RST_N0  (1 << 11)	//	Control Lever:Rest switch (low) 
-#define CP_SPARE11 (1 << 10)  //
+#define CP_SPARE3  (1 << 10)  //
 #define CP_SPARE10 (1 <<  9)  //
 #define CL_FS_NO   (1 <<  8)	// Control Lever:Forward switch (low)
-#define CP_SPARE8  (1 <<  7)  //
-#define CP_SPARE7  (1 <<  6)  //
-#define CP_SPARE6  (1 <<  5)  //
-#define CP_SPARE5  (1 <<  4)  //
-#define CP_SPARE4  (1 <<  3)  //
-#define CP_SPARE3  (1 <<  3)  //
-#define CP_SPARE2  (1 <<  2)  //
-#define CP_SPARE1  (1 <<  0)  //
+#define CP_BRAKE   (1 <<  7)  // Brake
+#define CP_GUILLO  (1 <<  6)  // Guillotine
+#define CP_JOGLEFT (1 <<  5)  // Joggle Left
+#define CP_JOGRITE (1 <<  4)  // Joggle Right
+#define CP_ZODOMTR (1 <<  3)  // Zero Odometer
+#define CP_ZTENSION (1 << 2) // Zero tension
+#define CP_SPARE1  (1 <<  1)  //
+#define CP_SPARE0  (1 <<  0)  //
+
+// GEVCUr switch re-use
+#define CP_REVERSETORQ  CP_ZTENSION // Changes sign of torque command
+
 
 #endif

@@ -11,6 +11,8 @@
 #include "DMOCchecksum.h"
 #include "paycnvt.h"
 #include "can_iface.h"
+#include "spiserialparallel.h"
+#include "shiftregbits.h"
 
 /* Name the indices to correspond to the GEVCU DMOC documentation. */
 #define CMD1 0 
@@ -392,12 +394,21 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->mode == DMOC_MODETORQUE)
 	{ // Torque mode
 /* For speed mode they seem to be controlling speed by adjusting the torque! */
-      if(pdmocctl->speedact > pdmocctl->maxspeed) 
-		{ // If actual rpm is greater than max rpm, zero the torque req.            
+      if ( (pdmocctl->speedact >   pdmocctl->maxspeed) ||
+			  (pdmocctl->speedact <  -pdmocctl->maxspeed)  ) 
+		{ // If actual (abs) rpm is greater than max (abs) rpm, zero the torque req.            
       	pdmocctl->torquereq = 0;
 		}
 		// Command is offset
-		ntmp = pdmocctl->torquereq + pdmocctl->maxtorque; 
+		if ((spisp_rd[0].u16 & CP_REVERSETORQ) == 0)
+		{ // Pushbutton pressed: Op wants torque command reversed
+			ntmp = -pdmocctl->torquereq;
+		}
+		else
+		{
+			ntmp = pdmocctl->torquereq;
+		}
+		ntmp += pdmocctl->maxtorque; 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
