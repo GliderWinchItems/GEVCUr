@@ -345,7 +345,7 @@ DiscoveryF4 LEDs --
 	/* Setup CAN hardware filters to default to accept all ids. */
 	HAL_StatusTypeDef Cret;
 	Cret = canfilter_setup_first(0, &hcan1, 15); // CAN1
-	if (Cret == HAL_ERROR) morse_trap(9);
+//$	if (Cret == HAL_ERROR) morse_trap(9);
 
 #ifdef CONFIGCAN2
 	Cret = canfilter_setup_first(1, &hcan2, 15); // CAN2
