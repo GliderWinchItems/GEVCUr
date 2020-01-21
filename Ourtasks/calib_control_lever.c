@@ -27,8 +27,11 @@
 /* Uncomment to enable extra code for test and debug. */
 #define TESTANDDEBUGCALIB
 #ifdef TESTANDDEBUGCALIB
-#define CLTIMEOUTTEST (125/5) // Test and debug
+  #define CLTIMEOUTTEST (125/5) // Test and debug
 #endif
+
+/* Uncomment to enable LCD position going to monitor uart. */
+#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
 #define CLHALFSEC (75)  // 0.6 seconds
@@ -48,7 +51,9 @@ static const struct SPIOUTREQUEST ledopenoff  = {LED_CL_FS ,0};
 static const struct SPIOUTREQUEST ledopenon   = {LED_CL_FS ,1};
 */
 
+/* uart output buffers. */
 static struct SERIALSENDTASKBCB* pbuflcd1;
+static struct SERIALSENDTASKBCB* pbufmon1;
 
 /* ***********************************************************************************************************
  * void calib_control_lever_init();
@@ -73,6 +78,10 @@ void calib_control_lever_init()
 	/* lcdprintf buffer */
 	pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (pbuflcd1 == NULL) morse_trap(81);
+
+#ifdef SENDLCDPOSITIONTOUART
+   pbufmon1 = getserialbuf(&HUARTMON,48);
+#endif
 
 	return;
 }
@@ -206,11 +215,22 @@ lcdprintf(&pbuflcd1,3,0,"maxbegins %10.2f\n\r",clfunc.maxbegins);
 			{ // CL is in the closed deadzone
 				clfunc.curpos =  0;
 
+#ifdef SENDLCDPOSITIONTOUART
+if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
+  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
+ #ifndef TESTANDDEBUGCALIB 
+  clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
+ #endif
+}
+#endif
+
+
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d       |",clfunc.curpos,adc1.chan[0].sum);
-clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
+  lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d       |",clfunc.curpos,adc1.chan[0].sum);
+  clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
+
 
 				break;
 			}
@@ -218,23 +238,42 @@ clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 			{
 				clfunc.curpos = (float)100.0;
 
+#ifdef SENDLCDPOSITIONTOUART
+if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
+  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
+ #ifndef TESTANDDEBUGCALIB 
+  clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
+ #endif
+}
+#endif
 
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
 lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
 clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
+
 
 				break;
 			}
 			clfunc.curpos = (fcur - clfunc.minends) * clfunc.rcp_range;
 
+#ifdef SENDLCDPOSITIONTOUART
+if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
+  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
+ #ifndef TESTANDDEBUGCALIB 
+  clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
+ #endif
+}
+#endif
+
 
 #ifdef TESTANDDEBUGCALIB
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
 lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
 clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
 #endif
+
 
 			break;
 			

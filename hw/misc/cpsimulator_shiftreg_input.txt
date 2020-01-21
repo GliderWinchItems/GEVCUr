@@ -96,24 +96,24 @@ shift register interconnect
 // STM32 16b word reverses order of bytes sent, i.e. the
 //  output of 0x1122 has the byte with 0x22 sent first.
 //                   (low byte) sw off on (on = active low)
-#define SW_SAFE     (1 <<  7)	//	F7 77  P8-3  IN 0 H
-#define SW_ACTIVE   (1 <<  6)	//	F7 B7  P8-4  IN 1 G
-#define PB_ARM      (1 <<  5)	//	77 57  P8-5  IN 2 F
-#define PB_PREP     (1 <<  4)	//	77 67  P8-6  IN 3 E
-#define CL_RST_N0   (1 <<  3)	//	7F 77  P8-7  IN 4 D
-#define CP_ZTENSION (1 <<  2) // 77 73  P8-8  IN 5 C
-#define CP_ZODOMTR  (1 <<  1) // 77 75  P8-9  IN 6 B
-#define CL_FS_NO    (1 <<  0)	// 7F 7E  P8_10 IN 7 A
+#define SW_SAFE     (1 <<  7)	//	F7 77  P8-3  IN 0 H RB wht
+#define SW_ACTIVE   (1 <<  6)	//	F7 B7  P8-4  IN 1 G RB gry
+#define PB_ARM      (1 <<  5)	//	77 57  P8-5  IN 2 F RB pur
+#define PB_PREP     (1 <<  4)	//	77 67  P8-6  IN 3 E RB blu
+#define CL_RST_N0   (1 <<  3)	//	7F 77  P8-7  IN 4 D CL wht
+#define CP_ZTENSION (1 <<  2) // 77 73  P8-8  IN 5 C RB grn
+#define CP_ZODOMTR  (1 <<  1) // 77 75  P8-9  IN 6 B RB yel
+#define CL_FS_NO    (1 <<  0)	// 7F 7E  P8_10 IN 7 A CL pur
 
 // High byte not yet connected (?)
-#define CP_SPARE1  (1 << 15)  // Not on connector   IN 15 A
-#define CP_SPARE2  (1 << 14)  // Not on connector   IN 14 B
-#define CP_SPARE2  (1 << 13)  // Zero tension P8-16 IN 13 C
-#define CP_SPARE2  (1 << 12)  // Zero odometerP8-15 IN 12 D
-#define CP_JOGRITE (1 << 11)  // Joggle Right P8-14 IN 11 E
-#define CP_JOGLEFT (1 << 10)  // Joggle Left  P8-13 IN 10 F
-#define CP_GUILLO  (1 <<  9)  // Guillotine   P8-12 IN  9 G
-#define CP_BRAKE   (1 <<  8)  // Brake        P8-11 IN  8 H 
+#define CP_SPARE1  (1 << 15)  // Not on connector   IN 15 A org
+#define CP_SPARE2  (1 << 14)  // Not on connector   IN 14 B red
+#define CP_SPARE2  (1 << 13)  // Zero tension P8-16 IN 13 C brn 
+#define CP_SPARE2  (1 << 12)  // Zero odometerP8-15 IN 12 D blk
+#define CP_JOGRITE (1 << 11)  // Joggle Right P8-14 IN 11 E wht
+#define CP_JOGLEFT (1 << 10)  // Joggle Left  P8-13 IN 10 F gry
+#define CP_GUILLO  (1 <<  9)  // Guillotine   P8-12 IN  9 G pur
+#define CP_BRAKE   (1 <<  8)  // Brake        P8-11 IN  8 H blu
 
 
 

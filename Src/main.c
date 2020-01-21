@@ -1058,6 +1058,9 @@ spioutx.bitnum = 0;
 struct SPIOUTREQUEST spioutx_prev;
 spioutx_prev.bitnum = 15;
 
+//#include "calib_control_lever.h"
+//extern struct CLFUNCTION clfunc;
+
 #endif
 
 
@@ -1167,6 +1170,8 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			/* Send a lit LED down the row, over and over. */
 			spioutx.on = 1; // Turn current LED on
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
+
+  //       yprintf(&pbuf2,"\n\r#### curpos %4.1f",clfunc.curpos);
 
  #define LEDSCHASINGABIT
  #ifdef  LEDSCHASINGABIT
