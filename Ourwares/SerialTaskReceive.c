@@ -18,6 +18,8 @@
 #include "gateway_PCtoCAN.h"
 #include "morse.h"
 
+#include "main.h"
+
 /*
 BaseType_t Rret; // Return value
 ...
@@ -217,6 +219,7 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 void StartSerialTaskReceive(void* argument)
 {
+taskflags |= TSKBITSerialRcvTask;
 	struct SERIALRCVBCB* prtmp = prbhd;
 	struct SERIALRCVBCB* prtmp2;
 	

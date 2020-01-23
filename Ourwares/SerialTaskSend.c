@@ -15,6 +15,8 @@
 #include "stm32f4xx_hal_usart.h"
 #include "stm32f4xx_hal_uart.h"
 
+#include "main.h"
+
 
 /*
 Goals: 
@@ -189,6 +191,8 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 void StartSerialTaskSend(void* argument1)
 {
+taskflags |= TSKBITSerialTask;
+;
 	struct SERIALSENDTASKBCB*  pssb; // Copied item from queue
 	struct SSCIRBUF* ptmp;	// Circular buffer pointer block pointer
 

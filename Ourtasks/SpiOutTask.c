@@ -10,6 +10,8 @@
 
 #include "SpiOutTask.h"
 
+#include "main.h"
+
 osThreadId SpiOutTaskHandle = NULL;
 
 /* Queue */
@@ -22,6 +24,7 @@ osMessageQId SpiOutTaskQHandle;
  * *************************************************************************/
 void StartSpiOutTask(void* argument)
 {
+taskflags |= TSKBITSpiOutTask;
 	struct SPIOUTREQUEST  spireq; // Copied item from queue
 
   /* Infinite loop */

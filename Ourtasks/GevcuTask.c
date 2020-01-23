@@ -66,6 +66,7 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * *************************************************************************/
 void StartGevcuTask(void const * argument)
 {
+taskflags |= TSKBITGevcuTask ;
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 	uint32_t noteuse = 0xffffffff;

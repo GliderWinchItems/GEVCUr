@@ -35,6 +35,8 @@ delay is needed for the PC to recognize our usb device, e.g. 'osDelay(1000)'.
 #include "usbd_cdc_if.h"
 #include "morse.h"
 
+#include "main.h"
+
 #define CDCTIMEDURATION 5	// Timer time period (ms)
 
 /* Prototypes */
@@ -223,6 +225,7 @@ cdcct5 +=1;	// DEBUG: Count number of buffer "sends"
  * *************************************************************************/
 void StartCdcTxTaskSend(void const * argument)
 {
+taskflags |= TSKBITCdcTxTask;
 	BaseType_t Qret;	// queue receive return
 	struct CDCTXTASKBCB   ssb; // Copied item from queue
 

@@ -31,7 +31,7 @@
 #endif
 
 /* Uncomment to enable LCD position going to monitor uart. */
-#define SENDLCDPOSITIONTOUART
+//#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
 #define CLHALFSEC (75)  // 0.6 seconds

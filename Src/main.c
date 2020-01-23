@@ -125,7 +125,9 @@ uint8_t canflag;
 uint8_t canflag1;
 uint8_t canflag2;
 
-uint8_t usbdeviceflag = 0; // USB DEVICE INIT complete = 1;
+// Debugging task start-up sequence
+uint32_t taskflags = 0; // Bits set when each task starts
+volatile uint32_t taskflagssave;
 
 uint8_t lcdflag = 0;
 
@@ -948,8 +950,15 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
+// Without this, a hard fault takes place under some combinations of selections
+// for display. vTaskDelay w Zero ticks causes no delay, but yields to other Ready tasks.
+taskflags |= TSKBITdefaultTask;
+vTaskDelay(0);
+taskflagssave = taskflags;
+//while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
+
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -958,8 +967,6 @@ void StartDefaultTask(void const * argument)
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
-
-	usbdeviceflag = 1;
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1058,8 +1065,8 @@ spioutx.bitnum = 0;
 struct SPIOUTREQUEST spioutx_prev;
 spioutx_prev.bitnum = 15;
 
-//#include "calib_control_lever.h"
-//extern struct CLFUNCTION clfunc;
+#include "calib_control_lever.h"
+extern struct CLFUNCTION clfunc;
 
 #endif
 
@@ -1167,11 +1174,11 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			yprintf(&pbuf3,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
+			yprintf(&pbuf2,"\tcurpos %4.1f",clfunc.curpos);
+
 			/* Send a lit LED down the row, over and over. */
 			spioutx.on = 1; // Turn current LED on
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
-
-  //       yprintf(&pbuf2,"\n\r#### curpos %4.1f",clfunc.curpos);
 
  #define LEDSCHASINGABIT
  #ifdef  LEDSCHASINGABIT
