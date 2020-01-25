@@ -26,9 +26,8 @@
 
 /* Uncomment to enable extra code for test and debug. */
 #define TESTANDDEBUGCALIB
-#ifdef TESTANDDEBUGCALIB
-  #define CLTIMEOUTTEST (125/5) // Test and debug
-#endif
+
+#define CLTIMEOUTTEST (125/5) // Test and debug
 
 /* Uncomment to enable LCD position going to monitor uart. */
 //#define SENDLCDPOSITIONTOUART
