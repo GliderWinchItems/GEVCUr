@@ -111,6 +111,7 @@ int lcdprintf(struct SERIALSENDTASKBCB** ppbcb, int row, int col, const char *fm
  * int lcdputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr);
  * @brief	: Send zero terminated string to SerialTaskSend
  * @param	: pbcb = pointer to pointer to stuct with uart pointers and buffer parameters
+ * @param	: pchr = pointer to input string to 'put'
  * @return	: Number of chars sent
  * ************************************************************************************** */
 int lcdputs(struct SERIALSENDTASKBCB** ppbcb, char* pchr)

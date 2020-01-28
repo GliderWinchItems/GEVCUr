@@ -101,9 +101,6 @@ taskflags |= TSKBITGevcuTask ;
 	/* Initial startup state */
 	gevcufunction.state = 0;
 
-	/* Initial startup splash screen delay, then calibrate CL. */
-	clfunc.state = INITLCD;
-
 	/* Some initialization for contactor control. */
 	contactor_control_init();
 

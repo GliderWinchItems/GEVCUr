@@ -10,22 +10,22 @@
 
 /* Sixteen LED or other outputs */
 /* etmc0 definitions */
-#define LED_SAFE        0x8000
-#define LED_PREP        0x4000
-#define LED_ARM         0x2000
-#define LED_GNDRLRTN    0x1000
-#define LED_RAMP        0x0800
-#define LED_CLIMB       0x0400
-#define LED_RECOVERY    0x0200
-#define LED_RETRIEVE    0x0100
-#define LED_STOP        0x0080
-#define LED_ABORT       0x0040
-#define LED_CL_RST      0x0020
-#define LED_SPARE10     0x0010
-#define LED_SPARE08     0x0008
-#define LED_CL_FS       0x0004
-#define LED_PREP_PB     0x0002
-#define LED_ARM_PB      0x0001
+#define LED_SAFE        15 // 0x8000
+#define LED_PREP        14 // 0x4000
+#define LED_ARM         13 // 0x2000
+#define LED_GNDRLRTN    12 // 0x1000
+#define LED_RAMP        11 // 0x0800
+#define LED_CLIMB       10 // 0x0400
+#define LED_RECOVERY     9 // 0x0200
+#define LED_RETRIEVE     8 // 0x0100
+#define LED_STOP         7 // 0x0080
+#define LED_ABORT        6 // 0x0040
+#define LED_CL_RST       5 // 0x0020
+#define LED_SPARE10      4 // 0x0010
+#define LED_SPARE08      3 // 0x0008
+#define LED_CL_FS        2 // 0x0004
+#define LED_PREP_PB      1 // 0x0002
+#define LED_ARM_PB       0 // 0x0001
 
 /* The following commented-out defines are the original
 //	Sixteen control panel switch mapping

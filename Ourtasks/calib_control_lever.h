@@ -1,6 +1,6 @@
 /******************************************************************************
 * File Name          : calib_control_lever.h
-* Date First Issued  : 10/12/2019, hack of 08/31/2014
+* Date First Issued  : 01/26/2020
 * Board              : DiscoveryF4
 * Description        : Master Controller: Control Lever calibration
 *******************************************************************************/
@@ -13,13 +13,19 @@ enum CLSTATE
 {
 	INITLCD,
 	INITLCD1,
+	INITLCD2,
+	INITLCD3,
+	INITLCD4,
+	INITLCD5,
+	INITLCD6,
 	CLOSE1,
 	CLOSE1WAIT,
 	OPEN1,
 	OPEN1WAIT,
 	CLOSE2,
 	CLOSE2WAIT,
-	CLCREADY   // CL calibration complete
+	CLCREADY,   // CL calibration complete
+	SEQDONE
 };
 
 struct CLFUNCTION
@@ -37,7 +43,6 @@ struct CLFUNCTION
 	uint32_t timx;	  // GevcuTask timer tick for next state
 	uint16_t toctr;  // Prompt timeOut counter
 	uint8_t state;   // Calibration state; 
-	
 };
 
 /* *********************************************************************************************************** */
@@ -51,6 +56,7 @@ float calib_control_lever(void);
  ************************************************************************************************************* */
 
 extern struct CLFUNCTION clfunc;
+extern uint8_t flag_clcalibed; 
 
 #endif 
 

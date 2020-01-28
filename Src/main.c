@@ -150,6 +150,7 @@ DMA_HandleTypeDef hdma_adc1;
 CAN_HandleTypeDef hcan1;
 
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 SPI_HandleTypeDef hspi2;
 
@@ -721,7 +722,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 35001; // 50% PWM 17500 ; //100% 35001;
+  sConfigOC.Pulse = 15700;//35001;//15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -871,6 +872,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+  /* DMA1_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream7_IRQn, 12, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream7_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -1176,21 +1180,29 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 			yprintf(&pbuf2,"\tcurpos %4.1f",clfunc.curpos);
 
+ #define LEDSCHASINGABIT
+ #ifdef  LEDSCHASINGABIT
+	extern uint8_t flag_clcalibed; 
+		if (flag_clcalibed == 0)
+		{
 			/* Send a lit LED down the row, over and over. */
 			spioutx.on = 1; // Turn current LED on
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
 
- #define LEDSCHASINGABIT
- #ifdef  LEDSCHASINGABIT
 			spioutx_prev.on = 0; // Turn previous LED off
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
 			
 			spioutx_prev = spioutx; // Update previous
 			spioutx.bitnum += 1;    // Advance new
 			if (spioutx.bitnum > 15) spioutx.bitnum = 0;
-
-//			spisp_wr[0].u16 = (1 << spioutx.bitnum); // Direct set single bit
-
+		}
+		// When Calibration complete turn off the lit LED
+		if (flag_clcalibed == 1)
+		{
+			flag_clcalibed = 2;
+			spioutx_prev.on = 0; // Turn previous LED off
+			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
+		}
  #endif
 #endif
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 * File Name          : calib_control_lever.c
-* Date First Issued  : 08/31/2014
+* Date First Issued  : 01/26/2020
 * Board              : DiscoveryF4
 * Description        : Master Controller: Control Lever calibration
 *******************************************************************************/
@@ -20,20 +20,35 @@
 #include "morse.h"
 #include "getserialbuf.h"
 #include "yprintf.h"
+#include "lcdprintf.h"
+
+/* Send position percent to LCD. */
+#define SENDLCDPOSITIONTOUART
 
 /* Timeout for re-issue LCD/Beep prompt */
-#define CLTIMEOUT (125*5)  // 5 seconds
+#define CLTIMEOUT (128*5)  // 5 seconds
 
-/* Uncomment to enable extra code for test and debug. */
-#define TESTANDDEBUGCALIB
+/* GevcuTask counts 'sw1timer' ticks for various timeouts.
+	 Gevcu polling timer (ka_k): 4 * (1/512), 128/sec
+*/
 
-#define CLTIMEOUTTEST (125/5) // Test and debug
+#define CLTIMEOUTTEST (128/4) // Test and debug
 
 /* Uncomment to enable LCD position going to monitor uart. */
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define CLHALFSEC (75)  // 0.6 seconds
+#define SPLASHDELAY (128 * 3)  // 3 seconds
+/* LCD delay following commant */
+#define LCDLINEDELAY (2) // 2 * (1/128) = 15.625 ms
+#define INITDELAY2 ( 4)  // OFF (31.25 ms)
+#define INITDELAY3 ( 4)  // ON  (31.25 ms)
+#define INITDELAY4 (51)  // CLEAR (~400 ms)
+#define INITDELAY5 ( 4)  // BACKLIGHT  (31.25 ms)
+#define INITDELAY6 (13)  // MOVE CURSOR (~100 ms)
+
+/* Flag to show others when CL calibration is complete. */
+uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 
 struct CLFUNCTION clfunc;
 
@@ -42,13 +57,6 @@ static const struct BEEPQ beep1 = {200,50,1}; // Close prompt
 static const struct BEEPQ beep2 = {200,50,1}; // Full open prompt
 static const struct BEEPQ beep3 = {100,40,2}; // Success beeping
 static const struct BEEPQ beepf = {60,20,2};  // We are waiting for you prompt
-
-/* Skip for now
-static const struct SPIOUTREQUEST ledcloseoff = {LED_CL_RST,0};
-static const struct SPIOUTREQUEST ledcloseon  = {LED_CL_RST,1};
-static const struct SPIOUTREQUEST ledopenoff  = {LED_CL_FS ,0};
-static const struct SPIOUTREQUEST ledopenon   = {LED_CL_FS ,1};
-*/
 
 /* uart output buffers. */
 static struct SERIALSENDTASKBCB* pbuflcd1;
@@ -64,12 +72,12 @@ the CL would become a separate function.
 */
 void calib_control_lever_init()
 {
-	clfunc.state = 0;
-	clfunc.min   = 0;
-   clfunc.max   = 0;
-	clfunc.toctr = 0;
-	clfunc.state = 0;
+	clfunc.state  = 0;
+	clfunc.min    = 0;
+   clfunc.max    = 0;
+	clfunc.toctr  = 0;
 	clfunc.curpos = 0;
+	clfunc.state  = OPEN1;//INITLCD;
 
 	clfunc.deadr = 3.0; // Deadzone for 0% (closed)
 	clfunc.deadf = 3.0; // Deadzone for 100% (open)
@@ -95,23 +103,98 @@ uint32_t ccldbg;
 
 float calib_control_lever(void)
 {
+	uint8_t byt[32];
+	uint8_t* p;
+
+
 	float fcur;
 	float frange;
 
 		switch (clfunc.state)
-		{ // The following is a one-time only sequenceCLHALFSEC
+		{ // The following is a one-time only sequenceSPLASHDELAY
 		case INITLCD: // Half-second delay for splash screen to clear
-			clfunc.timx = gevcufunction.swtim1ctr + CLHALFSEC;
+			clfunc.timx = gevcufunction.swtim1ctr + SPLASHDELAY;
 			clfunc.state = INITLCD1;
+//			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line
 			break;
 
-		case INITLCD1: // Break until time expires.
+		case INITLCD1: // Delay further LCD commands until time expires.
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
 				break;
-			/* Init display. */
-			lcdprintf_init(&pbuflcd1);
+			p = lcd_off(&byt[0]); // LCD OFF
+			*p = 0;
+			lcdputs(&pbuflcd1, (char*)&byt[0]);
+			clfunc.timx = gevcufunction.swtim1ctr + INITDELAY2;
+			clfunc.state = INITLCD2;
+			break;
+
+		case INITLCD2: 
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+			p = lcd_on(&byt[0]); // LCD ON
+			*p = 0;
+			lcdputs(&pbuflcd1, (char*)&byt[0]);
+			clfunc.timx = gevcufunction.swtim1ctr + INITDELAY3;
+			clfunc.state = INITLCD3;
+			break;
+
+		case INITLCD3: 
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+			p = lcd_clear(&byt[0]); // LCD CLEAR
+			*p = 0;
+			lcdputs(&pbuflcd1, (char*)&byt[0]);
+			clfunc.timx = gevcufunction.swtim1ctr + INITDELAY4;
+			clfunc.state = INITLCD4;
+			break;
+
+		case INITLCD4: 
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+			p = lcd_backlight(&byt[0], LCD_BACKLIGHT_LEVEL); // LCD Backlight
+			*p = 0;
+			lcdputs(&pbuflcd1, (char*)&byt[0]);
+			clfunc.timx = gevcufunction.swtim1ctr + INITDELAY5;
+			clfunc.state = INITLCD5;
+			break;
+
+		case INITLCD5: 
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+			p = lcd_moveCursor(&byt[0],0,0); // LCD MOVE CURSOR
+			*p = 0;
+			lcdputs(&pbuflcd1, (char*)&byt[0]);
+			clfunc.timx = gevcufunction.swtim1ctr + INITDELAY6;
+			clfunc.state = INITLCD6; // NEXT: CL forward
+			break;
+
+		case INITLCD6: // Complete wait of MOVE CURSOR
+			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0)
+				break;
+
+		case OPEN1:			
+			lcdprintf(&pbuflcd1,1,0,"FULL FWD LEVER %d  ",clfunc.toctr++);
+			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
+			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
+			clfunc.state = OPEN1WAIT;
+			break;
+
+		case OPEN1WAIT:
+			if ((spisp_rd[0].u16 & CL_FS_NO) != 0)
+			{ // Here, sw for forward position is not closed
+				if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
+				{ // Time out waiting. Alert Op again.
+					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+					clfunc.state = OPEN1; // Timed out--re-beep the Op
+				}
+				break;
+			}
+			// Here, switch is closed, so save ADC reading
+			clfunc.max = (float)adc1.chan[0].sum;
+
+		/* Move CL to rest postion. */
 		case CLOSE1:
-			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d    |",clfunc.toctr++);
+			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d ",clfunc.toctr++);
 			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = CLOSE1WAIT;
@@ -129,37 +212,11 @@ float calib_control_lever(void)
 			}
 			// Here, switch is closed, so save ADC reading
 			clfunc.min = (float)adc1.chan[0].sum;
-
-#ifdef TESTANDDEBUGCALIB
-lcdprintf(&pbuflcd1,3,0,"ADC %d",adc1.chan[0].sum);
-#endif
-			clfunc.state = OPEN1;
+			clfunc.state = SEQDONE; // NEXT: Compute range
 			clfunc.toctr = 0;
-
-		case OPEN1:			
-			lcdprintf(&pbuflcd1,2,0,"FULL FWD LEVER %d     |",clfunc.toctr++);
-			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
-			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
-			clfunc.state = OPEN1WAIT;
 			break;
-
-		case OPEN1WAIT:
-			if ((spisp_rd[0].u16 & CL_FS_NO) != 0)
-			{ // Here, sw for rest position is not closed
-				if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
-				{
-					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
-					clfunc.state = OPEN1; // Timed out--re-beep the Op
-				}
-				break;
-			}
-#ifdef TESTANDDEBUGCALIB
-lcdprintf(&pbuflcd1,4,0,"ADC %d      |",adc1.chan[0].sum);
-#endif
-
-			// Here, switch is closed, so save ADC reading
-			clfunc.max = (float)adc1.chan[0].sum;
-		
+	
+		case SEQDONE:
 			/* Total travel of CL in terms of ADC readings. */
 			frange = (clfunc.max - clfunc.min);
 
@@ -173,39 +230,12 @@ lcdprintf(&pbuflcd1,4,0,"ADC %d      |",adc1.chan[0].sum);
 			clfunc.rcp_range = (float)100.0/(clfunc.maxbegins - clfunc.minends);
 
 			/* Some coding fluff for the Op. */
-			lcdprintf(&pbuflcd1,1,0,"SUCCESS           |");
+//			lcdprintf(&pbuflcd1,1,0,"SUCCESS        ");
 			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
-			clfunc.state = CLOSE2;
-
-#ifdef TESTANDDEBUGCALIB
-lcdprintf(&pbuflcd1,2,0,"mineds    %10.2f\n\r",clfunc.minends);
-lcdprintf(&pbuflcd1,3,0,"maxbegins %10.2f\n\r",clfunc.maxbegins);
-#endif
-
-			break;
-
-		/* Here the OP has set the CL at max. Return to zero before ready. */
-		case CLOSE2:
-			lcdprintf(&pbuflcd1,1,0,"CLOSE LEVER %d    |",clfunc.toctr++);
-			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
-			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
-			clfunc.state = CLOSE2WAIT;
-			break;
-
-		case CLOSE2WAIT:
-			fcur = adc1.chan[0].sum;
-			if (fcur < clfunc.minends)
-			{
-				clfunc.curpos =  0; // jic
-				clfunc.state = CLCREADY;
-			}
-			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
-			{
-				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
-				clfunc.state = CLOSE2;
-			}
-			break;
-
+			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST; // Time delay for lcd printf
+			clfunc.state = CLCREADY;
+			flag_clcalibed = 1; // Let others know CL is calibrated
+//			break;
 		
 		/* Calibration is complete. Compute position of CL. */
 		case CLCREADY:
@@ -216,21 +246,11 @@ lcdprintf(&pbuflcd1,3,0,"maxbegins %10.2f\n\r",clfunc.maxbegins);
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
- #ifndef TESTANDDEBUGCALIB 
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
- #endif
 }
 #endif
-
-
-#ifdef TESTANDDEBUGCALIB
-if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-  lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d       |",clfunc.curpos,adc1.chan[0].sum);
-  clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
-#endif
-
-
 				break;
 			}
 			if (fcur > clfunc.maxbegins)
@@ -239,47 +259,27 @@ if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
- #ifndef TESTANDDEBUGCALIB 
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
- #endif
 }
 #endif
-
-#ifdef TESTANDDEBUGCALIB
-if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
-clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
-#endif
-
-
 				break;
 			}
 			clfunc.curpos = (fcur - clfunc.minends) * clfunc.rcp_range;
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-  yprintf(&pbufmon1,"\n\rcurpos %4.1f %d",clfunc.curpos,adc1.chan[0].sum);
- #ifndef TESTANDDEBUGCALIB 
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
- #endif
 }
 #endif
-
-
-#ifdef TESTANDDEBUGCALIB
-if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-lcdprintf(&pbuflcd1,2,0,"curpos %4.1f %d      |",clfunc.curpos,adc1.chan[0].sum);
-clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;}
-#endif
-
-
 			break;
 			
 		// Program Gone Wild trap
 		default: morse_trap (80);
 		}
-
 	return clfunc.curpos;
 }
 

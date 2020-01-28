@@ -25,4 +25,8 @@ uint8_t*  lcd_clear(uint8_t*  p);
 uint8_t*  lcd_on(uint8_t*  p);
 uint8_t*  lcd_off(uint8_t*  p);
 
+uint8_t*  lcd_backlight(uint8_t*  p, int level);
+
+uint8_t*  lcd_moveCursor(uint8_t* p, int row, int col);
+
 #endif 
