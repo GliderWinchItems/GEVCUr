@@ -297,7 +297,7 @@ DiscoveryF4 LEDs --
   /* start timers, add new ones, ... */
 
 	/* defaultTask timer for pacing defaultTask output. */
-	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(100*4),0);
+	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(100),0);
 
   /* USER CODE END RTOS_TIMERS */
 
