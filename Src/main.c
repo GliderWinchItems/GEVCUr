@@ -1102,7 +1102,7 @@ osDelay(1);
 
 			
 			slowtimectr += 1;
-			if (slowtimectr >= 10)
+			if (slowtimectr >= 10*4)
 			{
 				slowtimectr = 0;
 
