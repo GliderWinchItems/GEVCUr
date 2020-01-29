@@ -72,12 +72,11 @@ the CL would become a separate function.
 */
 void calib_control_lever_init()
 {
-	clfunc.state  = 0;
-	clfunc.min    = 0;
+	clfunc.min    = 65521;
    clfunc.max    = 0;
 	clfunc.toctr  = 0;
 	clfunc.curpos = 0;
-	clfunc.state  = OPEN1;//INITLCD;
+	clfunc.state  = INITLCD;
 
 	clfunc.deadr = 3.0; // Deadzone for 0% (closed)
 	clfunc.deadf = 3.0; // Deadzone for 100% (open)
@@ -189,8 +188,16 @@ float calib_control_lever(void)
 				}
 				break;
 			}
-			// Here, switch is closed, so save ADC reading
-			clfunc.max = (float)adc1.chan[0].sum;
+			clfunc.state = OPEN1MAX;
+			// Drop through to OPEN1MAX
+		case OPEN1MAX:
+			// Here, forward sw is closed. Save ADC readings until sw opens
+			if ((float)adc1.chan[0].sum > clfunc.max)
+			{ // Save new and larger reading
+				clfunc.max = (float)adc1.chan[0].sum;
+			}
+			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) break;				
+			// Here, sw for forward position has gone open
 
 		/* Move CL to rest postion. */
 		case CLOSE1:
@@ -210,11 +217,17 @@ float calib_control_lever(void)
 				}
 				break;
 			}
-			// Here, switch is closed, so save ADC reading
-			clfunc.min = (float)adc1.chan[0].sum;
-			clfunc.state = SEQDONE; // NEXT: Compute range
-			clfunc.toctr = 0;
-			break;
+			clfunc.state = CLOSE1MAX;
+
+		/* Move CL to rest position. */
+		case CLOSE1MAX:
+			// Here, rest position sw is closed. Save ADC readings until sw opens
+			if ((float)adc1.chan[0].sum < clfunc.min)
+			{ // Save new and larger reading
+				clfunc.min = (float)adc1.chan[0].sum;
+			}
+			if ((spisp_rd[0].u16 & CL_RST_N0) == 0) break;
+			// Here, sw for rest position has gone open
 	
 		case SEQDONE:
 			/* Total travel of CL in terms of ADC readings. */
@@ -246,8 +259,8 @@ float calib_control_lever(void)
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
-  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %5d  ",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
 }
 #endif
@@ -259,8 +272,8 @@ if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
-  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %5d  ",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
 }
 #endif
@@ -270,8 +283,8 @@ if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
 
 #ifdef SENDLCDPOSITIONTOUART
 if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0){
-//  yprintf(&pbufmon1,"\n\rCL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
-  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %d",clfunc.curpos,adc1.chan[0].sum);
+//  yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.chan[0].sum);
+  lcdprintf(&pbuflcd1,1,0,"CL %5.1f %5d  ",clfunc.curpos,adc1.chan[0].sum);
   clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUTTEST;
 }
 #endif
