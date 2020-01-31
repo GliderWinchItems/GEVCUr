@@ -6,6 +6,14 @@
 *******************************************************************************/
 #include "adc_idx_v_struct.h"
 
+/*
+The radian frequency cutoff is Fs/K where Fs is the IIR filter rate. 
+Ks is about 500 Hz so the radian bandwidth is 167 Sz or about 26.6 Hz. 
+The time constant is the reciprocal of the radian bandwidth so about 6 ms. The 10-90 risetime would then be 13.2 ms. 
+Since those outputs are at a 64 Hz rate (15.6 ms period), that seems like a pretty reasonable value for K.
+
+*/
+
 /* **************************************************************************************
  * int adc_idx_v_struct_hardcode_params(struct ADCGEVCULC* p);
  * @brief	: Hard-code load local copy with parameters
@@ -89,7 +97,7 @@ struct ADCCALABS
 };
 */
 	// PC1 IN11 - CL reading
-	p->cabs[ADC1IDX_CONTROL_LEVER].iir.k     = 10;    // Filter time constant
+	p->cabs[ADC1IDX_CONTROL_LEVER].iir.k     = 5;    // Filter time constant
 	p->cabs[ADC1IDX_CONTROL_LEVER].iir.scale = 2;     // Filter integer scaling
 	p->cabs[ADC1IDX_CONTROL_LEVER].adcvn     = 64480; // (ADC reading) v5
 	p->cabs[ADC1IDX_CONTROL_LEVER].fvn       = 5.03;  // (float) measured v5 (volts)

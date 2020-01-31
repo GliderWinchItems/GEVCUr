@@ -959,7 +959,7 @@ void StartDefaultTask(void const * argument)
 taskflags |= TSKBITdefaultTask;
 vTaskDelay(0);
 taskflagssave = taskflags;
-//while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
+while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
@@ -1179,10 +1179,10 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 #ifdef SHOWSERIALPARALLELSTUFF
 			/* SPI serial-parallel hw testing. */
-			yprintf(&pbuf3,"\n\rspi ctr: %d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
+			yprintf(&pbuf3,"\n\rspi ctr: %4d wr: %04X rd: %04X",(spispctr - spispctr_prev),spisp_wr[0].u16,spisp_rd[0].u16);
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
-			yprintf(&pbuf2,"\tcurpos %4.1f",clfunc.curpos);
+			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
 
 
 #endif

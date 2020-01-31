@@ -38,8 +38,8 @@ Compute
 #define ZTOLERANCE         0.05 // +/- tolerance for re-adjustment of Hall_effect sensor zero
 #define ADCSCALEbits         15 // 2^x scale large
 
-/* ADC reading sequence/array indices                         */
-/* These indices -=>MUST<= match the hardware ADC scan sequence    */
+/* ADC reading sequence/array indices                                           */
+/* These indices -=>MUST<= match the hardware ADC scan sequence in STM32CubeMX. */
 #define ADC1IDX_CONTROL_LEVER 0   // PC1 IN11 - CL reading
 #define ADC1IDX_12VSUPPLYRAW  1   // PC2 IN12 - +12 Raw
 #define ADC1IDX_5VSUPPLY      2   // PC4 IN14 - 5V #also CAN driver RS output:pushpull
