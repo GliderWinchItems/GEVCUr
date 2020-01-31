@@ -298,7 +298,7 @@ float calib_control_lever(void)
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
 //                                       01234567890123456789
-				lcdprintf(&pbuflcd1,CLROW,0,"MOVE A BIT FOWARD ");
+				lcdprintf(&pbuflcd1,CLROW,0,"MOVE A BIT FORWARD ");
 				clfunc.timx = gevcufunction.swtim1ctr + CLRESEND; 
 			}
 			if ((spisp_rd[0].u16 & CL_RST_N0) == 0) 
