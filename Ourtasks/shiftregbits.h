@@ -9,7 +9,7 @@
 #define __SHIFTREGBITS
 
 /* Sixteen LED or other outputs */
-/* etmc0 definitions */
+/* etmc0 original definitions 
 #define LED_SAFE        15 // 0x8000
 #define LED_PREP        14 // 0x4000
 #define LED_ARM         13 // 0x2000
@@ -26,6 +26,7 @@
 #define LED_CL_FS        2 // 0x0004
 #define LED_PREP_PB      1 // 0x0002
 #define LED_ARM_PB       0 // 0x0001
+*/
 
 /* The following commented-out defines are the original
 //	Sixteen control panel switch mapping
@@ -47,6 +48,25 @@
 #define CP_SPARE0  (1 <<  0)  //
 */
 
+/* Sixteen LEDs from gsm CP tests. */
+#define LED_STOP         0 //
+#define LED_ABORT        1 //
+#define LED_RETRIEVE     2 //
+#define LED_RECOVERY     3 //
+#define LED_CLIMB        4 //
+#define LED_RAMP         5 //
+#define LED_GNDRLRTN     6 //
+#define LED_ARM          7 //
+#define LED_PREP         8 //
+#define LED_SAFE         9 //
+#define LED_ARM_PB      10 //
+#define LED_PREP_PB     11 //
+#define LED_SPARERS     12 // *LED_CL_RST
+#define LED_SPARE10     13 //
+#define LED_SPARE08     14 //
+#define LED_SPAREFS     15 // *LED_CL_FS
+// * - as originally defined, but not implemented
+
 /* Result of test with Control Panel */
 // GSM CP test: 1/19/20 FFxx (high byte not connected)
 // NOTE: shift reg 'H' bit is sent first, and is spi msb.
@@ -67,10 +87,11 @@
 #define CP_SPARE2  (1 << 14)  // Not on connector   IN 14 B
 #define CP_DUNNO1  (1 << 13)  // Zero tension P8-16 IN 13 C
 #define CP_DUNNO2  (1 << 12)  // Zero odometerP8-15 IN 12 D
-#define CP_JOGRITE (1 << 11)  // Joggle Right P8-14 IN 11 E
-#define CP_JOGLEFT (1 << 10)  // Joggle Left  P8-13 IN 10 F
+#define CP_JOGRITE (1 << 11)  // Joggle Right P8-14 IN 11 E *
+#define CP_JOGLEFT (1 << 10)  // Joggle Left  P8-13 IN 10 F *
 #define CP_GUILLO  (1 <<  9)  // Guillotine   P8-12 IN  9 G
 #define CP_BRAKE   (1 <<  8)  // Brake        P8-11 IN  8 H 
+// * - Not connected
 
 
 // GEVCUr switch re-use

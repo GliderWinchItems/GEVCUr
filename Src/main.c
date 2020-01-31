@@ -967,6 +967,7 @@ taskflagssave = taskflags;
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 #define SHOWSERIALPARALLELSTUFF
+#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
@@ -1063,16 +1064,17 @@ for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
 
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
-
-struct SPIOUTREQUEST spioutx;
-spioutx.bitnum = 0;
-struct SPIOUTREQUEST spioutx_prev;
-spioutx_prev.bitnum = 15;
-
-#include "calib_control_lever.h"
-extern struct CLFUNCTION clfunc;
-
 #endif
+
+#ifdef STARTUPCHASINGLEDS
+#include "calib_control_lever.h"
+struct SPIOUTREQUEST spioutx;
+spioutx.bitnum = 0; // Start with bit 0
+struct SPIOUTREQUEST spioutx_prev;
+spioutx_prev.bitnum = 15; // Sart with previous bit 15
+uint8_t chasectr = 0; // Slow down output rate
+#endif
+
 
 
 #ifdef TESTBEEPER
@@ -1100,7 +1102,9 @@ osDelay(1);
 		{
 			noteused |= DEFAULTTSKBIT00;
 
-			
+			/* Update CL position on LCD. */
+			lcdout();
+	
 			slowtimectr += 1;
 			if (slowtimectr >= 10)
 			{
@@ -1180,21 +1184,27 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 			yprintf(&pbuf2,"\tcurpos %4.1f",clfunc.curpos);
 
- #define LEDSCHASINGABIT
- #ifdef  LEDSCHASINGABIT
-	extern uint8_t flag_clcalibed; 
+
+#endif
+
+#ifdef STARTUPCHASINGLEDS
 		if (flag_clcalibed == 0)
 		{
-			/* Send a lit LED down the row, over and over. */
-			spioutx.on = 1; // Turn current LED on
-			xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
+			chasectr += 1;
+			if (chasectr > 3)
+			{
+				chasectr = 0;
+				/* Send a lit LED down the row, over and over. */
+				spioutx.on = 1; // Turn current LED on
+				xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
 
-			spioutx_prev.on = 0; // Turn previous LED off
-			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
+				spioutx_prev.on = 0; // Turn previous LED off
+				xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
 			
-			spioutx_prev = spioutx; // Update previous
-			spioutx.bitnum += 1;    // Advance new
-			if (spioutx.bitnum > 15) spioutx.bitnum = 0;
+				spioutx_prev = spioutx; // Update previous
+				spioutx.bitnum += 1;    // Advance new
+				if (spioutx.bitnum > 15) spioutx.bitnum = 0;
+			}
 		}
 		// When Calibration complete turn off the lit LED
 		if (flag_clcalibed == 1)
@@ -1203,7 +1213,6 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			spioutx_prev.on = 0; // Turn previous LED off
 			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
 		}
- #endif
 #endif
 
 #ifdef SHOWADCCOMMONCOMPUTATIONS

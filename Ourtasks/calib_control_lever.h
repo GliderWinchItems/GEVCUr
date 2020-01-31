@@ -18,6 +18,7 @@ enum CLSTATE
 	INITLCD4,
 	INITLCD5,
 	INITLCD6,
+	INITLCD7,
 	CLOSE1,
 	CLOSE1WAIT,
 	CLOSE1MAX,
@@ -27,7 +28,8 @@ enum CLSTATE
 	CLOSE2,
 	CLOSE2WAIT,
 	CLCREADY,   // CL calibration complete
-	SEQDONE
+	SEQDONE,
+	SEQDONE1
 };
 
 struct CLFUNCTION
@@ -39,6 +41,9 @@ struct CLFUNCTION
 	float maxbegins; // max - deadzone full position
 	float rcp_range; // (reciprocal) 100.0/(maxbegins - minends)
 	float curpos;    // Current position (pct)
+	float curpos_h;  // Current position (readings)
+	float h_diff;    // Hysteresus: allowable difference (readings)
+	float hysteresis;// Hysteresis +/- around curpos (pct)
 	/* Control Lever full close and full open zones. */
 	float deadr;     // Dead zone for rest position (pct)
 	float deadf;     // Dead zone for full position (pct) 
@@ -56,9 +61,12 @@ float calib_control_lever(void);
  * @param	: control lever postion as a percent (0 - 100)
  * @return	: Return lever position as percent
  ************************************************************************************************************* */
+void lcdout(void);
+/* @brief	: Output CL position to LCD
+ ************************************************************************************************************* */
 
 extern struct CLFUNCTION clfunc;
 extern uint8_t flag_clcalibed; 
-
+extern uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 #endif 
 

@@ -115,8 +115,8 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments
-#define HUARTMON  huart3 // uart for PC monitoring
-#define HUARTLCD  huart6 // uart for LCD
+#define HUARTMON  huart3 // uart  for PC monitoring
+#define HUARTLCD  huart6 // uart  for LCD
 #define HUARTGATE huart2 // usart for gateway
 
 extern UART_HandleTypeDef huart2;
