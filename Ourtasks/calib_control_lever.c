@@ -118,8 +118,8 @@ void lcdout(void)
 	if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0) // Pace output updates
 	{ 
 		if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0) return;
-//  	yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.chan[0].sum); // Monitor uart output
- 	 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f %5d      ",clfunc.curpos,adc1.chan[0].sum); // LCD
+//  	yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.abs[0].adcfil); // Monitor uart output
+ 	 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f %5d      ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
  		clfunc.timx = gevcufunction.swtim1ctr + CLLINEDELAY;
 //lcdprintf(&pbuflcd1,      2,0,"%5.1f %5.1f        ",clfunc.curpos_h,clfunc.h_diff); 
 //lcdprintf(&pbuflcd1,      3,0,"%5.1f %5.1f        ",clfunc.maxbegins, clfunc.minends); 
@@ -256,9 +256,9 @@ float calib_control_lever(void)
 
 		case OPEN1MAX:
 			// Here, forward sw is closed. Save ADC readings until sw opens
-			if ((float)adc1.chan[0].sum > clfunc.max)
+			if ((float)adc1.abs[0].adcfil > clfunc.max)
 			{ // Save new and larger reading
-				clfunc.max = (float)adc1.chan[0].sum;
+				clfunc.max = (float)adc1.abs[0].adcfil;
 			}
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
@@ -291,9 +291,9 @@ float calib_control_lever(void)
 		/* Find minimum reading. */
 		case CLOSE1MAX:
 			// Here, rest position sw is closed. Save ADC readings until sw opens
-			if ((float)adc1.chan[0].sum < clfunc.min)
+			if ((float)adc1.abs[0].adcfil < clfunc.min)
 			{ // Save new and larger reading
-				clfunc.min = (float)adc1.chan[0].sum;
+				clfunc.min = (float)adc1.abs[0].adcfil;
 			}
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
@@ -340,7 +340,7 @@ float calib_control_lever(void)
 		/* Compute position of CL. */
 		case CLCREADY:
 			/* New adc reading. */
-			fcur = adc1.chan[0].sum; // Convert to float
+			fcur = adc1.abs[0].adcfil; // Convert to float
 
 			/* Large absolute change triggers change in curpos. */
 			ftmp = fcur - clfunc.curpos_h; // (New - Current) position
