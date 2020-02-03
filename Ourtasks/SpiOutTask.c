@@ -15,7 +15,7 @@
 osThreadId SpiOutTaskHandle = NULL;
 
 /* Queue */
-#define QUEUESIZE 16	// Queue size for requests
+#define QUEUESIZE 32	// Queue size for requests
 osMessageQId SpiOutTaskQHandle;
 
 /* *************************************************************************
@@ -36,7 +36,6 @@ taskflags |= TSKBITSpiOutTask;
 		/* Skip bogus bit numbers and on/off settings */
 			xQueueReceive(SpiOutTaskQHandle,&spireq,portMAX_DELAY);
 		} while ((spireq.bitnum > 15) || (spireq.on > 1));
-
 		if (spireq.on != 0)
 		{
 			spisp_wr[0].u16 |= (1 << spireq.bitnum);

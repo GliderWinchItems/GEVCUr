@@ -86,6 +86,7 @@
 #include "SpiOutTask.h"
 #include "BeepTask.h"
 #include "lcdprintf.h"
+#include "LEDTask.h"
 
 /* USER CODE END Includes */
 
@@ -398,11 +399,14 @@ DiscoveryF4 LEDs --
 
 	/* Spi shift register task. */
 	Thrdret = xSpiOutTaskCreate(0);
-
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
 	Thrdret = xBeepTaskCreate(-1, 32);
+	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+
+	/* LED task (taskpriority, max queued items) .*/
+	Thrdret = xLEDTaskCreate(-1, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* ADC summing, calibration, etc. */
@@ -410,7 +414,6 @@ DiscoveryF4 LEDs --
 
   /* init code for USB_DEVICE */
 //  MX_USB_DEVICE_Init();
-
 
 
 /* =================================================== */
@@ -1068,11 +1071,11 @@ uint32_t spispctr_prev = 0;
 
 #ifdef STARTUPCHASINGLEDS
 #include "calib_control_lever.h"
-struct SPIOUTREQUEST spioutx;
-spioutx.bitnum = 0; // Start with bit 0
-struct SPIOUTREQUEST spioutx_prev;
-spioutx_prev.bitnum = 15; // Sart with previous bit 15
-uint8_t chasectr = 0; // Slow down output rate
+struct LEDREQ spiledx;
+spiledx.bitnum = 0; // Start with bit 0
+struct LEDREQ spiledx_prev;
+spiledx_prev.bitnum = 15; // Sart with previous bit 15
+uint8_t chasectr = 0; // Counter for slowing down output rate
 #endif
 
 
@@ -1122,22 +1125,25 @@ extern uint32_t lcddbg;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 11; showctr++)
+for (showctr = 0; showctr < 13; showctr++)
 {
 			switch (showctr)
 			{
 /* Cycle through the tasks. */
-case 0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--"); break;
-case 1: stackwatermark_show(SerialTaskHandle ,&pbuf1,"SerialTask---"); break;
-case 2: stackwatermark_show(CanTxTaskHandle  ,&pbuf1,"CanTxTask----"); break;
-case 3: stackwatermark_show(MailboxTaskHandle,&pbuf1,"MailboxTask--"); break;
-case 4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------"); break;
-case 5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask"); break;
-case 6: stackwatermark_show(GatewayTaskHandle,&pbuf1,  "GatewayTask--"); break;
-case 7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf1,"CdcTxTask----"); break;
-case 8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---"); break;
-case 9: stackwatermark_show(GevcuTaskHandle, &pbuf1,   "GevcuTask----"); break;
-case 10:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--"); break;
+case  1: stackwatermark_show(SerialTaskHandle ,&pbuf1,"SerialTask---"); break;
+case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf1,"CanTxTask----"); break;
+case  3: stackwatermark_show(MailboxTaskHandle,&pbuf1,"MailboxTask--"); break;
+case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------"); break;
+case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask"); break;
+case  6: stackwatermark_show(GatewayTaskHandle,&pbuf1,  "GatewayTask--"); break;
+case  7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf1,"CdcTxTask----"); break;
+case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---"); break;
+case  9: stackwatermark_show(GevcuTaskHandle, &pbuf1,   "GevcuTask----"); break;
+case 10: stackwatermark_show(BeepTaskHandle, &pbuf1,    "BeepTask-----"); break;
+case 11: stackwatermark_show(LEDTaskHandle, &pbuf1,     "LEDTask------"); break;
+
+case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
@@ -1184,35 +1190,33 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
 			yprintf(&pbuf2,"\tcurpos %5.1f",clfunc.curpos);
-
-
 #endif
 
 #ifdef STARTUPCHASINGLEDS
 		if (flag_clcalibed == 0)
 		{
 			chasectr += 1;
-			if (chasectr > 3)
+			if (chasectr > 2)
 			{
 				chasectr = 0;
 				/* Send a lit LED down the row, over and over. */
-				spioutx.on = 1; // Turn current LED on
-				xQueueSendToBack(SpiOutTaskQHandle,&spioutx,portMAX_DELAY);
+				spiledx.mode = LED_ON; // Turn current LED on
+				xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
 
-				spioutx_prev.on = 0; // Turn previous LED off
-				xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
-			
-				spioutx_prev = spioutx; // Update previous
-				spioutx.bitnum += 1;    // Advance new
-				if (spioutx.bitnum > 15) spioutx.bitnum = 0;
+				spiledx_prev.mode = LED_OFF; // Turn previous LED off
+				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
+				
+				spiledx_prev = spiledx; // Update previous
+				spiledx.bitnum += 1;    // Advance new
+				if (spiledx.bitnum > 15) spiledx.bitnum = 0;
 			}
 		}
 		// When Calibration complete turn off the lit LED
 		if (flag_clcalibed == 1)
 		{
 			flag_clcalibed = 2;
-			spioutx_prev.on = 0; // Turn previous LED off
-			xQueueSendToBack(SpiOutTaskQHandle,&spioutx_prev,portMAX_DELAY);
+			spiledx_prev.mode = LED_OFF; // Turn previous LED off
+			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 		}
 #endif
 

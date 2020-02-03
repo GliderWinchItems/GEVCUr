@@ -130,17 +130,17 @@ taskflags |= TSKBITGevcuTask ;
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
-		{ // spare
+		{ // spare (notification not expected)
 //			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)
-		{ // (spare)
+		{ // spare (notification not expected)
 //			GevcuEvents_02();
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)
-		{ // (spare)
+		{ // spare (notification not expected)
 //			GevcuEvents_03();			
 			noteuse |= GEVCUBIT03;
 		}
@@ -150,7 +150,7 @@ taskflags |= TSKBITGevcuTask ;
 			noteuse |= GEVCUBIT04;
 		}
 		if ((noteval & GEVCUBIT05) != 0)
-		{ // (spare)
+		{ // spare (notification not expected)
 //			GevcuEvents_05();
 			noteuse |= GEVCUBIT05;
 		}
@@ -165,49 +165,53 @@ taskflags |= TSKBITGevcuTask ;
 			noteuse |= GEVCUBIT07;
 		}
 		if ((noteval & GEVCUBIT08) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_actualtorq
 			GevcuEvents_08();
 			noteuse |= GEVCUBIT08;
 		}
 		if ((noteval & GEVCUBIT09) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_speed
 			GevcuEvents_09();
 			noteuse |= GEVCUBIT09;
 		}
 		if ((noteval & GEVCUBIT10) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_dqvoltamp (see * below)
 			GevcuEvents_10();
 			noteuse |= GEVCUBIT10;
 		}
 		if ((noteval & GEVCUBIT11) != 0) 
-		{ // CAN: 
+		{ // CAN: cid_dmoc_torque (see * below)
 			GevcuEvents_11();
 			noteuse |= GEVCUBIT11;
 		}
 		if ((noteval & GEVCUBIT12) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_critical_f (see * below)
 			GevcuEvents_12();
 			noteuse |= GEVCUBIT12;
 		}
 		if ((noteval & GEVCUBIT13) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_hv_status
 			GevcuEvents_13();
 			noteuse |= GEVCUBIT13;
 		}
 		if ((noteval & GEVCUBIT14) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_dmoc_hv_temps
 			GevcuEvents_14();
 			noteuse |= GEVCUBIT14;
 		}
 		if ((noteval & GEVCUBIT15) != 0) 
-		{ // CAN:  
+		{ // CAN:  cid_gevcur_keepalive_i (see * below)
 			GevcuEvents_15();
 			noteuse |= GEVCUBIT15;
 		}
+// * = gevcu_func_init.c: this CAN msg not initialized for a Mailbox */
+
   /* ========= States =============================== */
 
 		switch (gevcufunction.state)
 		{
+		case GEVCU_INIT:
+			break;
 
 		default:
 			break;

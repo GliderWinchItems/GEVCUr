@@ -45,7 +45,7 @@
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define SPLASHDELAY (128 * 3)  // 3 seconds
+#define SPLASHDELAY (1) //(128 * 3)  // 3 seconds
 /* LCD delay following command */
 #define LCDLINEDELAY (1) // 2 * (1/128) = 15.625 ms
 #define INITDELAY2 ( 1)  // OFF (31.25 ms)
@@ -71,6 +71,29 @@ static const struct BEEPQ beepf = {60,20,2};  // We are waiting for you prompt
 /* uart output buffers. */
 static struct SERIALSENDTASKBCB* pbuflcd1;
 static struct SERIALSENDTASKBCB* pbufmon1;
+
+enum CLSTATE
+{
+	INITLCD,
+	INITLCD1,
+	INITLCD2,
+	INITLCD3,
+	INITLCD4,
+	INITLCD5,
+	INITLCD6,
+	INITLCD7,
+	CLOSE1,
+	CLOSE1WAIT,
+	CLOSE1MAX,
+	OPEN1,
+	OPEN1WAIT,
+	OPEN1MAX,
+	CLOSE2,
+	CLOSE2WAIT,
+	CLCREADY,   // CL calibration complete
+	SEQDONE,
+	SEQDONE1
+};
 
 /* ***********************************************************************************************************
  * void calib_control_lever_init();

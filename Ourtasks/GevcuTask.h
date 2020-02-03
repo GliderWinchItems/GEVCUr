@@ -147,6 +147,15 @@ enum GEVCU_CMD_CODES
 	ADCINTERNALVREF,  // IN18     - Internal voltage reference
 };
 
+/* GevcuTask states. */
+enum GEVCU_STATES
+{
+	GEVCU_INIT,   // 
+	GEVCU_SAFE,
+	GEVCU_ACTIVE,
+	GEVCU_PREP
+};
+
 /* CAN msg array index names. */
 enum CANCMD_R
 {

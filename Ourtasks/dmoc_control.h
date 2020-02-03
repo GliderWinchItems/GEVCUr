@@ -117,6 +117,16 @@ void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: pcan = pointer to CAN msg struct
 ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+/* @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+/* @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
 void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct);
 /* @brief	: Convert 0 - 100 percent into torquereq
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit

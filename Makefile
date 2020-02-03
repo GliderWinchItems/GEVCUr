@@ -136,7 +136,8 @@ C_SOURCES += Ourtasks/calib_control_lever.c
 C_SOURCES += Ourtasks/4x20lcd.c
 C_SOURCES += Ourtasks/contactor_control.c
 C_SOURCES += Ourtasks/dmoc_control.c
-C_SOURCES += paycnvt.c
+C_SOURCES += Ourtasks/paycnvt.c
+C_SOURCES += Ourtasks/LEDTask.c
 
 # /* USER CODE END */ 
 

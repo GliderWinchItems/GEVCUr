@@ -62,7 +62,7 @@ void StartBeepTask(void* argument)
 osThreadId xBeepTaskCreate(uint32_t taskpriority, uint32_t beepqsize)
 {
 	BaseType_t ret = xTaskCreate(&StartBeepTask, "BeepTask",\
-     128, NULL, taskpriority, &BeepTaskHandle);
+     64, NULL, taskpriority, &BeepTaskHandle);
 	if (ret != pdPASS) return NULL;
 
 	BeepTaskQHandle = xQueueCreate(beepqsize, sizeof(struct BEEPQ) );

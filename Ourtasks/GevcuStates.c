@@ -17,5 +17,8 @@
 #include "morse.h"
 #include "adcparamsinit.h"
 
-
+/* *************************************************************************
+ * void GevcuStates_(void);
+ * @brief	: CAN: cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
+ * *************************************************************************/
 
