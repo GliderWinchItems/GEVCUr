@@ -87,6 +87,7 @@
 #include "BeepTask.h"
 #include "lcdprintf.h"
 #include "LEDTask.h"
+#include "SwitchTask.h"
 
 /* USER CODE END Includes */
 
@@ -396,6 +397,10 @@ DiscoveryF4 LEDs --
 		CAN_IT_RX_FIFO0_MSG_PENDING |  \
 		CAN_IT_RX_FIFO1_MSG_PENDING    );
 #endif
+
+	/* Switch logic from queue loaded by Spi interrupts. */
+	Thrdret = xSwitchTaskCreate(1);
+	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Spi shift register task. */
 	Thrdret = xSpiOutTaskCreate(0);
@@ -1061,9 +1066,7 @@ uint16_t idx_xxsum_prev = 0;
 uint16_t hdrctr3 = 999;
 uint8_t ix;
 for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
-
 #endif
-
 
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
@@ -1077,8 +1080,6 @@ struct LEDREQ spiledx_prev;
 spiledx_prev.bitnum = 15; // Sart with previous bit 15
 uint8_t chasectr = 0; // Counter for slowing down output rate
 #endif
-
-
 
 #ifdef TESTBEEPER
 struct BEEPQ beepqtest;
@@ -1125,25 +1126,26 @@ extern uint32_t lcddbg;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 13; showctr++)
+for (showctr = 0; showctr < 14; showctr++)
 {
 			switch (showctr)
 			{
 /* Cycle through the tasks. */
-case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--"); break;
-case  1: stackwatermark_show(SerialTaskHandle ,&pbuf1,"SerialTask---"); break;
-case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf1,"CanTxTask----"); break;
-case  3: stackwatermark_show(MailboxTaskHandle,&pbuf1,"MailboxTask--"); break;
-case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------"); break;
-case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask"); break;
-case  6: stackwatermark_show(GatewayTaskHandle,&pbuf1,  "GatewayTask--"); break;
-case  7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf1,"CdcTxTask----"); break;
-case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,  "SpiOutTask---"); break;
-case  9: stackwatermark_show(GevcuTaskHandle, &pbuf1,   "GevcuTask----"); break;
-case 10: stackwatermark_show(BeepTaskHandle, &pbuf1,    "BeepTask-----"); break;
-case 11: stackwatermark_show(LEDTaskHandle, &pbuf1,     "LEDTask------"); break;
+case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");break;
+case  1: stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");break;
+case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");break;
+case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
+case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");break;
+case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");break;
+case  6: stackwatermark_show(GatewayTaskHandle,&pbuf3,"GatewayTask--");break;
+case  7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf4,"CdcTxTask----");break;
+case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,"SpiOutTask---");break;
+case  9: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
+case 10: stackwatermark_show(BeepTaskHandle,   &pbuf3,"BeepTask-----");break;
+case 11: stackwatermark_show(LEDTaskHandle,    &pbuf4,"LEDTask------");break;
+case 12: stackwatermark_show(SwitchTaskHandle, &pbuf1,"SwitchTask---");break;
 
-case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 13:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
@@ -1189,7 +1191,12 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
-			yprintf(&pbuf2,"\tcurpos %5.1f",clfunc.curpos);
+extern struct SWPAIR swpair_safeactive;
+extern uint16_t spilocal;
+extern uint32_t swxctr;
+			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d",clfunc.curpos,swpair_safeactive.state,spilocal,swxctr);
+
+			
 #endif
 
 #ifdef STARTUPCHASINGLEDS

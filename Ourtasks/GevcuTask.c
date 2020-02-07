@@ -126,16 +126,16 @@ taskflags |= TSKBITGevcuTask ;
 		noteuse = 0;
 		if ((noteval & GEVCUBIT00) != 0)
 		{ // ADC readings ready
-			GevcuEvents_00();
+//			GevcuEvents_00(); // Skip and let ADCTask to the CL work
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
-		{ // spare (notification not expected)
+		{ // Switches changed to ACTIVE
 //			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)
-		{ // spare (notification not expected)
+		{ // Switches changed to SAFE
 //			GevcuEvents_02();
 			noteuse |= GEVCUBIT02;
 		}

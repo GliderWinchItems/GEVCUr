@@ -16,7 +16,7 @@
 #include "adcextendsum.h"
 
 #include "adcparams.h"
-
+#include "calib_control_lever.h"
 #include "main.h"
 
 extern ADC_HandleTypeDef hadc1;
@@ -29,6 +29,8 @@ uint32_t adcdbctr = 0;// debug
 
 osThreadId ADCTaskHandle;
 
+float fclpos;
+
 /* *************************************************************************
  * osThreadId xADCTaskCreate(uint32_t taskpriority);
  * @brief	: Create task; task handle created is global for all to enjoy!
@@ -37,7 +39,7 @@ osThreadId ADCTaskHandle;
  * *************************************************************************/
 osThreadId xADCTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 144);
+ 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 256);
 	ADCTaskHandle = osThreadCreate(osThread(ADCTask), NULL);
 	vTaskPrioritySet( ADCTaskHandle, taskpriority );
 	return ADCTaskHandle;
@@ -114,8 +116,12 @@ taskflags |= TSKBITADCTask;
 
 		/* Notify GEVCUr Task that new readings are ready. */
 		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
-		
-		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
+	
+// Do the work in this task and not GevcuTask.	
+//		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
+
+	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
+	fclpos = calib_control_lever();
   }
 }
 
