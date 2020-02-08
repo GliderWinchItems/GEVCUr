@@ -965,9 +965,9 @@ void StartDefaultTask(void const * argument)
 // Without this, a hard fault takes place under some combinations of selections
 // for display. vTaskDelay w Zero ticks causes no delay, but yields to other Ready tasks.
 taskflags |= TSKBITdefaultTask;
-vTaskDelay(0);
+//vTaskDelay(0);
 taskflagssave = taskflags;
-while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
+//while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
@@ -1191,10 +1191,12 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			spispctr_prev = spispctr; // Running count of spi interrupts
 
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
-extern struct SWPAIR swpair_safeactive;
+
+//extern struct SWPAIR swpair_safeactive;
+extern struct SWPAIR pb_reversetorq;
 extern uint16_t spilocal;
 extern uint32_t swxctr;
-			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d",clfunc.curpos,swpair_safeactive.state,spilocal,swxctr);
+			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d %d",clfunc.curpos,pb_reversetorq.state,spilocal,swxctr,pb_reversetorq.on);
 
 			
 #endif

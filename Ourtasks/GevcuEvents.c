@@ -29,6 +29,9 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "calib_control_lever.h"
 #include "contactor_control.h"
 #include "dmoc_control.h"
+#include "LEDTask.h"
+#include "SwitchTask.h"
+#include "shiftregbits.h"
 
 #include "main.h"
 
@@ -80,6 +83,8 @@ void GevcuEvents_03(void)
  * *************************************************************************/
 uint32_t dbgev04;
 
+struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
+
 void GevcuEvents_04(void)
 {
 	gevcufunction.swtim1ctr += 1;
@@ -90,6 +95,13 @@ void GevcuEvents_04(void)
 
 	/* Keepalive and torque command for DMOC */
 	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
+
+/* Temporary. LEDs */
+if (pb_reversetorq.on != ledx_prev.mode)
+{
+	ledx_prev.mode = pb_reversetorq.on;
+	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
+}
 
 	return;
 }
