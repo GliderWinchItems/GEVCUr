@@ -83,6 +83,8 @@ void GevcuEvents_03(void)
  * *************************************************************************/
 uint32_t dbgev04;
 
+uint8_t ledxon;
+uint8_t ledmode = 3;
 struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
 
 void GevcuEvents_04(void)
@@ -96,10 +98,17 @@ void GevcuEvents_04(void)
 	/* Keepalive and torque command for DMOC */
 	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
 
-/* Temporary. LEDs */
-if (pb_reversetorq.on != ledx_prev.mode)
-{
-	ledx_prev.mode = pb_reversetorq.on;
+/* Temporary. LED test */
+if (pb_reversetorq.on != ledxon)
+{ // Changed
+	ledxon = pb_reversetorq.on;
+	if (ledxon > 0) 
+      ledx_prev.mode = ledmode;
+	else 	
+	{
+      ledx_prev.mode = 0;
+//		ledmode += 1; if (ledmode > 5) ledmode = 1;
+	}
 	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
 }
 

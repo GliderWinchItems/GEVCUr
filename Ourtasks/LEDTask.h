@@ -1,7 +1,7 @@
 /******************************************************************************
 * File Name          : LEDTask.h
 * Date First Issued  : 01/31/2020
-* Description        : GSM Control Panel LED 
+* Description        : SPI/LED control 
 *******************************************************************************/
 
 #ifndef __LEDTASK
@@ -18,19 +18,13 @@
 #define LED_BLINKSLOW 2
 #define LED_BLINKFAST 3
 #define LED_BLINK1SEC 4
+#define LED_BLINKWINK 5
 
 struct LEDREQ
 {
 	uint8_t bitnum;	// Bit number (0 - 15)
-	uint8_t mode;     // 
-		// 0 = off
-		// 1 = on 
-		// 3 = blink slow
-		// 4 = blink fast
-		// 5 = 1 sec on/off	
-
+	uint8_t mode;     // LED mode code
 };
-
 
 /* *************************************************************************/
 osThreadId xLEDTaskCreate(uint32_t taskpriority, uint32_t ledqsize);
@@ -41,7 +35,6 @@ osThreadId xLEDTaskCreate(uint32_t taskpriority, uint32_t ledqsize);
 void StartLEDTask(void* argument);
 /*	@brief	: Task startup
  * *************************************************************************/
-
 
 extern osMessageQId LEDTaskQHandle;
 extern osThreadId   LEDTaskHandle;

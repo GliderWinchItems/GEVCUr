@@ -1,7 +1,7 @@
 /******************************************************************************
 * File Name          : LEDTask.c
 * Date First Issued  : 01/31/2020
-* Description        : GSM Control Panel LED 
+* Description        : SPI/LED control
 *******************************************************************************/
 
 #include "FreeRTOS.h"
@@ -44,34 +44,168 @@ static struct SPIOUTREQUEST spiout[] =
 
 struct LEDCTL
 {
-	uint8_t mode;
-	uint8_t ctr;    // Timing counter
-	uint8_t onoff;  // Present on/off status
+	uint16_t bitmsk; // spi bit mask (1 << led_bitnum)
+	uint8_t mode; // Mode: off,on,blink...
+	uint8_t ctr;  // Timing counter
+	uint8_t on;   // Present on/off status
 };
 
-/* Specification for each possible LED/ */
-static struct LEDCTL ledctl[16] = {0};
+/* Linked list for LEDs currently in blink mode. */
+struct LEDLIST
+{
+	struct LEDLIST* next;
+	struct LEDCTL ctl;
+};
+
+/* Entry for each possible LED. */
+static struct LEDLIST* phead;
+static struct LEDLIST ledlist[17];
 
 /* Preset counter ticks for blink modes. */
 static const uint16_t dur_off[] = 
 { /* Blinking: OFF timing count. */
-	0,
-	0,
+	 0,
+	 0,
 	64, /* Blink slow */
 	16, /* Blink fast */
-	128 /* Blink 1sec */
+	64, /* Blink 1sec */
+  112  /* Blink short wink */
 };
 static const uint16_t dur_on[] = 
 { /* Blinking: ON timing count. */
-	0,
-	0,
+	 0,
+	 0,
 	64, /* Blink slow */
-	16, /* Blink fast */
-	128 /* Blink 1sec */
+	 4, /* Blink fast */
+	64, /* Blink 1sec */
+   16  /* Blink short wink */
 };
 
 osMessageQId LEDTaskQHandle;
 
+/* *************************************************************************
+ * static void init(void);
+ *	@brief	: Initialize LED struct array
+ * *************************************************************************/
+static void init(void)
+{
+	uint8_t i;
+	for (i = 0; i < 16; i++)
+	{
+		ledlist[i].ctl.mode   = 0;
+		ledlist[i].ctl.ctr    = 0;
+		ledlist[i].ctl.on     = 0;
+		ledlist[i].ctl.bitmsk = (1 << i);
+		ledlist[i].next = NULL; // List link
+	}
+	spisp_wr[0].u16 = 0;    // Set spi LED bits off
+	phead           = NULL; // Empty list
+	return;
+}
+/* *************************************************************************
+ * static void blink_init(struct LEDLIST* p, uint8_t mode);
+ *	@brief	: Initialize for blinking
+ * @param	: p = pointer to LED struct item to be blinked
+ * @param	: mode = blink mode code
+ * *************************************************************************/
+static void blink_init(struct LEDLIST* p, uint8_t mode)
+{
+	struct LEDLIST* p2;
+
+	/* Extending blinking if currently active. */
+	if (p->next != NULL)
+	{ // Here, this LED is on the linked list
+		p->ctl.ctr = dur_on[mode]; // Re-init count
+		return;
+	}
+
+	/* Add entry to head of list. */
+	p2        = phead; // Save ptr
+	phead     = p;     // Head pts to this struct
+	p->next   = p2;    // Point to next in list
+
+	/* Init this LED. */
+	p->ctl.mode  = mode; // Update blink mode
+	p->ctl.ctr   = dur_on[mode]; // Init 1st duration counter
+	spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
+
+	return;
+}
+/* *************************************************************************
+ * static void blink(void);
+ *	@brief	: Do the blinking
+ * *************************************************************************/
+static void blink(void)
+{
+	struct LEDLIST* p1 = phead;
+
+	/* Traverse linked list looking for active blinkers. */
+	while (p1 != NULL)
+	{ // Here, p1 points to an active LED. */
+		
+		// Timing counter
+		if (p1->ctl.ctr != 0)
+		{ // Countdown, and stay in current led state.
+			p1->ctl.ctr -= 1;
+		}
+		else
+		{ // Here, ctr is at zero. Update led state
+			if (p1->ctl.on == 0)
+			{ // Here, led is off. Set led on & set on time ct.
+				spisp_wr[0].u16 |= p1->ctl.bitmsk; // Set spi bit on
+				p1->ctl.on = LED_ON; // LED was set to on
+				// Init duration counter of on.
+				p1->ctl.ctr = dur_on[p1->ctl.mode];
+			}
+			else
+			{ // Here, it is on. Set off & set off time ct.
+				spisp_wr[0].u16 &= ~(p1->ctl.bitmsk); // Set spi bit off
+				p1->ctl.on = LED_OFF; // LED was set to off
+				// Init duration counter for off
+				p1->ctl.ctr = dur_off[p1->ctl.mode];
+			}
+		}
+		p1 = p1->next;
+	}
+	return;
+}
+/* *************************************************************************
+ * static void blink_cancel(struct LEDLIST* p);
+ *	@brief	: Cancel blinking, if in a blink mode
+ * @param	: p = pointer into struct array 
+ * *************************************************************************/
+static void blink_cancel(struct LEDLIST* p)
+{
+	struct LEDLIST* p1 = phead;
+	struct LEDLIST* p2 = NULL;
+
+	/* Check if this LED was in a blink mode. */
+	switch (p->ctl.mode)
+	{
+	case LED_BLINKSLOW:
+	case LED_BLINKFAST:
+	case LED_BLINK1SEC:
+	// Here, it is in one of the blink modes.
+
+		/* Find previous in linked list to this one. */
+		while (p1 != p)
+		{
+			p2 = p1;
+			p1 = p1->next;
+			if (p1 >= &ledlist[16]) morse_trap(29);
+		}
+		if (p2 == NULL)
+		{
+			phead = NULL;
+		}
+		else
+		{
+			p2->next = p->next;  // Remove from list
+			p->next = 0;	// Show not active
+		}
+	}
+	return;
+}
 /* *************************************************************************
  * void StartLEDTask(void const * argument);
  *	@brief	: Task startup
@@ -79,6 +213,7 @@ osMessageQId LEDTaskQHandle;
 void StartLEDTask(void* argument)
 {
 	struct LEDREQ ledreq;
+	struct LEDLIST* p;
 	BaseType_t qret;
 	uint8_t i;
 
@@ -87,51 +222,48 @@ void StartLEDTask(void* argument)
   for(;;)
   {
 		/* Timing loop. */
-		osDelay(pdMS_TO_TICKS(4)); // Timing using FreeRTOS tick counter
+		osDelay(pdMS_TO_TICKS(16)); // Timing using FreeRTOS tick counter
 
+		/* Unload all LED change requests on queue */
 		do
-		{ // Unload all LED change requests on queue
+		{ 
 			qret = xQueueReceive(LEDTaskQHandle,&ledreq,0);
 			if (qret == pdPASS)
 			{ // Here, led request was on the queue
 				i = ledreq.bitnum; // Convenience variable
-				if (i > 15) morse_trap(86); // Bad queue bitnum
-				ledctl[i].mode = ledreq.mode; // Save mode for this led
-
-				switch (ledctl[i].mode)
-				{ // Deal with the mode requested
+				if (i > 15) morse_trap(86); // Bad queue bitnum (ignorant programmer)
+				p = &ledlist[i]; // More convenience and speed
+				
+				/* Start the mode requested. */
+				switch (ledreq.mode)
+				{ 
 				case LED_OFF: // LED off
-					spisp_wr[0].u16 &= ~(1 << i); // Set off
+					blink_cancel(p);
+					p->ctl.mode = ledreq.mode; // Update mode for this led
+					spisp_wr[0].u16 &= ~(1 << i); // Set LED off
 					break;
 
 				case LED_ON: // LED on
-					spisp_wr[0].u16 |= (1 << i); // Set on
+					blink_cancel(p);
+					p->ctl.mode = ledreq.mode; // Update mode for this led
+					spisp_wr[0].u16 |= (1 << i); // Set LED on
 					break;
 
-				// Blinking modes.
+				// Initialize blinking
 				case LED_BLINKSLOW:
+					blink_init(p,LED_BLINKSLOW);
+					break;
+
 				case LED_BLINKFAST: 
+					blink_init(p,LED_BLINKFAST);
+					break;
+
 				case LED_BLINK1SEC:
-					// Timing counter
-					if (ledctl[i].ctr != 0)
-					{ // Countdown, and stay in current led state.
-						ledctl[i].ctr -= 1;
-					}
-					else
-					{ // Here, ctr is at zero. Update led state
-						if (ledctl[i].onoff == 0)
-						{ // Here, led is off. Set led on & set on time ct.
-							spisp_wr[0].u16 |= (1 << i); // Set on
-							// Set off duration counter
-							ledctl[i].ctr = dur_on[ledctl[i].mode];
-						}
-						else
-						{ // Here, it is on. Set off & set off time ct.
-							spisp_wr[0].u16 &= ~(1 << i); // Set off
-							// Set on duration counter
-							ledctl[i].ctr = dur_off[ledctl[i].mode];
-						}
-					}
+					blink_init(p,LED_BLINK1SEC);
+					break;
+
+				case LED_BLINKWINK:
+					blink_init(p,LED_BLINKWINK);
 					break;
 
 				default:
@@ -139,7 +271,10 @@ void StartLEDTask(void* argument)
 					break;
 				}
 			}
-		} while (qret == pdPASS);
+		} while (qret == pdPASS); // Continue until queue empty
+
+		/* Blink LEDs that are on blink list */
+		blink();
 	}
 }
 /* *************************************************************************
@@ -151,8 +286,10 @@ void StartLEDTask(void* argument)
  * *************************************************************************/
 osThreadId xLEDTaskCreate(uint32_t taskpriority, uint32_t ledqsize)
 {
+	init(); // Initialized led struct array
+
 	BaseType_t ret = xTaskCreate(&StartLEDTask, "LEDTask",\
-     64, NULL, taskpriority, &LEDTaskHandle);
+     128, NULL, taskpriority, &LEDTaskHandle);
 	if (ret != pdPASS) return NULL;
 
 	LEDTaskQHandle = xQueueCreate(ledqsize, sizeof(struct LEDREQ) );

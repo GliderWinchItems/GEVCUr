@@ -965,12 +965,12 @@ void StartDefaultTask(void const * argument)
 // Without this, a hard fault takes place under some combinations of selections
 // for display. vTaskDelay w Zero ticks causes no delay, but yields to other Ready tasks.
 taskflags |= TSKBITdefaultTask;
-//vTaskDelay(0);
+vTaskDelay(0);
 taskflagssave = taskflags;
 //while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
