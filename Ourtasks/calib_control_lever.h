@@ -9,8 +9,6 @@
 
 #include <stdio.h>
 
-
-
 struct CLFUNCTION
 {
 // Min and maximum values observed for control lever

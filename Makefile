@@ -139,6 +139,7 @@ C_SOURCES += Ourtasks/dmoc_control.c
 C_SOURCES += Ourtasks/paycnvt.c
 C_SOURCES += Ourtasks/LEDTask.c
 C_SOURCES += Ourtasks/SwitchTask.c
+C_SOURCES += Ourtasks/led_chasing.c
 
 # /* USER CODE END */ 
 

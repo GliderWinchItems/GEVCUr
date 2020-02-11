@@ -88,6 +88,9 @@
 #include "lcdprintf.h"
 #include "LEDTask.h"
 #include "SwitchTask.h"
+#include "led_chasing.h"
+#include "calib_control_lever.h"
+
 
 /* USER CODE END Includes */
 
@@ -979,7 +982,7 @@ taskflagssave = taskflags;
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
 #define SHOWSERIALPARALLELSTUFF
-#define STARTUPCHASINGLEDS
+//#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
@@ -1110,7 +1113,10 @@ osDelay(1);
 		{
 			noteused |= DEFAULTTSKBIT00;
 
-			/* Update CL position on LCD. */
+			/* Check each LED until CL calibration ends. */
+			led_chasing();
+
+			/* Update CL position on LCD after CL calibration ends. */
 			lcdout();
 	
 			slowtimectr += 1;

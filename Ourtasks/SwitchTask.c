@@ -74,11 +74,11 @@ struct SWPAIR pb_zodomtr;
 uint16_t spilocal;
 
 /* Debounce counts: Number spi time tick (~50ms) counts */
-#define DB_INIT_SAFEACTIVE       3  // Switch pair: Safe|Active
-#define DB_INIT_CP_REVERSETORQ   2  // Pushbutton:  CP_REVERSETORQ
-#define DB_INIT_PB_ARM           2  // Pushbutton: 
-#define DB_INIT_PB_PREP          2  // Pushbutton: 
-#define DB_INIT_PB_ZODOMTR       2  // Pushbutton: 
+#define DB_INIT_SAFEACTIVE       6  // Switch pair: Safe|Active
+#define DB_INIT_CP_REVERSETORQ   6  // Pushbutton:  CP_REVERSETORQ
+#define DB_INIT_PB_ARM           6  // Pushbutton: 
+#define DB_INIT_PB_PREP          6  // Pushbutton: 
+#define DB_INIT_PB_ZODOMTR       6  // Pushbutton: 
 
 uint32_t spitickctr; // Running count of spi time ticks (mostly for debugging)
 uint32_t swxctr;
