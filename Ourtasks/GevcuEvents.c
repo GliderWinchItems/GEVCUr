@@ -70,11 +70,34 @@ void GevcuEvents_02(void)
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_03(void);
- * @brief	: TIMER3: Software timer 3 timeout
+ * void GevcuEvents_03(struct SWITCHPTR* psw);
+ * @brief	: Torque reversal pushbutton
+ * @param	: psw = pointer to switch struct
  * *************************************************************************/
-void GevcuEvents_03(void)
-{  // Readings failed to come in before timer timed out.
+// Debugging & test
+uint8_t ledxon;      
+uint8_t ledmode = 1; 
+struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
+extern struct SWITCHPTR* pb_reversetorq;
+extern uint16_t spilocal;
+// End debugging
+
+void GevcuEvents_03(struct SWITCHPTR* psw)
+{  // The pushbutton has changed
+
+/* Temporary. LED test */
+if (pb_reversetorq->db_on != ledxon)
+{ // Changed
+	ledxon = pb_reversetorq->db_on;
+	if (ledxon == SW_CLOSED) 
+      ledx_prev.mode = ledmode;
+	else 	
+	{
+      ledx_prev.mode = 0;
+	}
+	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
+}
+
 	return;
 }
 /* *************************************************************************
@@ -83,9 +106,6 @@ void GevcuEvents_03(void)
  * *************************************************************************/
 uint32_t dbgev04;
 
-uint8_t ledxon;
-uint8_t ledmode = 3;
-struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
 
 void GevcuEvents_04(void)
 {
@@ -97,20 +117,6 @@ void GevcuEvents_04(void)
 
 	/* Keepalive and torque command for DMOC */
 	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
-
-/* Temporary. LED test */
-if (pb_reversetorq.on != ledxon)
-{ // Changed
-	ledxon = pb_reversetorq.on;
-	if (ledxon > 0) 
-      ledx_prev.mode = ledmode;
-	else 	
-	{
-      ledx_prev.mode = 0;
-//		ledmode += 1; if (ledmode > 5) ledmode = 1;
-	}
-	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
-}
 
 	return;
 }

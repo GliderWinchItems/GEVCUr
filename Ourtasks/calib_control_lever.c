@@ -45,15 +45,15 @@
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define SPLASHDELAY (1) //(128 * 3)  // 3 seconds
+#define SPLASHDELAY (128) //(128 * 3)  // 3 seconds
 /* LCD delay following command */
-#define LCDLINEDELAY (1) // 2 * (1/128) = 15.625 ms
-#define INITDELAY2 ( 1)  // OFF (31.25 ms)
-#define INITDELAY3 ( 1)  // ON  (31.25 ms)
-#define INITDELAY4 ( 1)  // CLEAR (~400 ms)
-#define INITDELAY5 ( 1)  // BACKLIGHT  (31.25 ms)
-#define INITDELAY6 ( 1)  // MOVE CURSOR (~100 ms)
-#define INITDELAY7 ( 1)  // Clear row with 20 spaces
+#define LCDLINEDELAY (2) // 2 * (1/128) = 15.625 ms
+#define INITDELAY2 ( 3)  // OFF (31.25 ms)
+#define INITDELAY3 ( 3)  // ON  (31.25 ms)
+#define INITDELAY4 (64)  // CLEAR (~400 ms)
+#define INITDELAY5 ( 3)  // BACKLIGHT  (31.25 ms)
+#define INITDELAY6 ( 7)  // MOVE CURSOR (~100 ms)
+#define INITDELAY7 ( 2)  // Clear row with 20 spaces
 
 static uint8_t clrrowctr = 0;
 
@@ -65,8 +65,8 @@ struct CLFUNCTION clfunc;
 /* Beeper: { duration on, duration off, repeat count}; */
 static const struct BEEPQ beep1 = {200,50,1}; // Close prompt
 static const struct BEEPQ beep2 = {200,50,1}; // Full open prompt
-static const struct BEEPQ beep3 = {100,40,2}; // Success beeping
-static const struct BEEPQ beepf = {60,20,2};  // We are waiting for you prompt
+static const struct BEEPQ beep3 = {100,40,1}; // Success beeping
+static const struct BEEPQ beepf = { 60,20,1}; // We are waiting for your prompt
 
 /* uart output buffers. */
 static struct SERIALSENDTASKBCB* pbuflcd1;

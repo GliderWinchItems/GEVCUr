@@ -1,7 +1,7 @@
 /******************************************************************************
 * File Name          : shiftregbits.h
 * Date First Issued  : 11/13/2019
-* Description        : Bit assignments for in & out shift registers
+* Description        : Bit assignments for spi in & out shift registers
 *******************************************************************************/
 // SPI_LED assignements (these should become mc system parameters in rewrite)
 
@@ -48,7 +48,7 @@
 #define CP_SPARE0  (1 <<  0)  //
 */
 
-/* Sixteen LEDs from gsm CP tests. */
+/* Sixteen LEDs from gsm CP tests.
 #define LED_STOP         0 //
 #define LED_ABORT        1 //
 #define LED_RETRIEVE     2 //
@@ -65,6 +65,44 @@
 #define LED_SPARE10     13 //
 #define LED_SPARE08     14 //
 #define LED_SPAREFS     15 // *LED_CL_FS
+*/
+/* Revised 2/15/2020 
+#define LED_STOP        14 //
+#define LED_ABORT       15 //
+#define LED_RETRIEVE     0 //
+#define LED_RECOVERY     1 //
+#define LED_CLIMB        2 //
+#define LED_RAMP         3 //
+#define LED_GNDRLRTN     4 //
+#define LED_ARM          5 //
+#define LED_PREP         6 //
+#define LED_SAFE         7 //
+#define LED_ARM_PB       8 //
+#define LED_PREP_PB      9 //
+#define LED_SPARERS     10 // *LED_CL_RST
+#define LED_SPARE10     11 //
+#define LED_SPARE08     12 //
+#define LED_SPAREFS     13 // *LED_CL_FS
+*/
+
+/* Reverse ordert: 02/14/2020 */
+#define LED_STOP         6 //
+#define LED_ABORT        5 //
+#define LED_RETRIEVE     4 //
+#define LED_RECOVERY     3 //
+#define LED_CLIMB        2 //
+#define LED_RAMP         1 //
+#define LED_GNDRLRTN     0 //
+#define LED_ARM         15 //
+#define LED_PREP        14 //
+#define LED_SAFE        13 //
+#define LED_ARM_PB      12 //
+#define LED_PREP_PB     11 //
+#define LED_SPARERS     10 // *LED_CL_RST
+#define LED_SPARE10      9 //
+#define LED_SPARE08      8 //
+#define LED_SPAREFS      7 // *LED_CL_FS
+
 // * - as originally defined, but not implemented
 
 /* Result of test with Control Panel */

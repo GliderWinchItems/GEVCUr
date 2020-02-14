@@ -966,7 +966,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//$  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 // Without this, a hard fault takes place under some combinations of selections
@@ -1202,11 +1202,11 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
 
-//extern struct SWPAIR swpair_safeactive;
-extern struct SWPAIR pb_reversetorq;
+//extern struct SWITCHPTR swpair_safeactive;
+extern struct SWITCHPTR* pb_reversetorq;
 extern uint16_t spilocal;
 extern uint32_t swxctr;
-			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d %d",clfunc.curpos,pb_reversetorq.state,spilocal,swxctr,pb_reversetorq.on);
+			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d %d",clfunc.curpos,pb_reversetorq->state,spilocal,swxctr,pb_reversetorq->on);
 
 			
 #endif

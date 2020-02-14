@@ -40,6 +40,14 @@ enum SWPAIRSTATE
 	SWP_DEBOUNCE_CLOSING,
 };
 
+enum SWPBSTATE
+{
+	SWPB_OPEN,
+	SWPB_CLOSED,
+	SWPB_OPENING,
+	SWPB_CLOSING
+};
+
 /*
 #define SW_SAFE     (1 <<  7)	//	F7 77  P8-3  IN 0 H
 #define SW_ACTIVE   (1 <<  6)	//	F7 B7  P8-4  IN 1 G
@@ -63,31 +71,94 @@ enum SWPAIRSTATE
 
 /* Logical result of SW_SAFE and SW_ACTIVE */
 uint8_t sw_active;  // 1 = active; 0 = safe
-struct SWPAIR swpair_safeactive;
+struct SWITCHPTR swpair_safeactive;
 
-struct SWPAIR pb_reversetorq;
-struct SWPAIR pb_arm;
-struct SWPAIR pb_prep;
-struct SWPAIR pb_zodomtr;
-
-/* Local copy (possibly delayed slightly) of spi read word. */
+/* Reconstructed Local copy (possibly delayed slightly) of spi read word. */
 uint16_t spilocal;
 
 /* Debounce counts: Number spi time tick (~50ms) counts */
 #define DB_INIT_SAFEACTIVE       6  // Switch pair: Safe|Active
 #define DB_INIT_CP_REVERSETORQ   6  // Pushbutton:  CP_REVERSETORQ
-#define DB_INIT_PB_ARM           6  // Pushbutton: 
-#define DB_INIT_PB_PREP          6  // Pushbutton: 
-#define DB_INIT_PB_ZODOMTR       6  // Pushbutton: 
+
+/* Debounce type: */
+#define DB_INIT_PB_1ST   0 // Show on immediately & off not before period expires
+#define DB_INIT_PB_WAIT  1 // Wait until period expires.
 
 uint32_t spitickctr; // Running count of spi time ticks (mostly for debugging)
 uint32_t swxctr;
 
+/* Pushbutton linked list head pointer. */
+static struct SWITCHPTR* phdsw = NULL; // Pointer link head: switches instantiated
+static struct SWITCHPTR* phddb = NULL; // Pointer link head: active debouncing
+
+/* Array of pointers to instantiated switch structs, indexed by switch bit position. */
+static struct SWITCHPTR* pchange[NUMSWS] = {0};
+
+/* *************************************************************************
+ * static void debouncing_add(struct SWITCHPTR* p);
+ *	@brief	: Add 'this' switch to the list that is active debouncing.
+ * @param	: p = pointer to struct for this pushbutton 
+ * *************************************************************************/
+static void debouncing_add(struct SWITCHPTR* p)
+{
+	struct SWITCHPTR* p1 = phddb; // Pointer head debounce list
+
+	if (p1 == NULL)
+	{ // Here, no switches are debouncing active
+		phddb = p; // Point debounce head to this switch struct
+		p->pdbnx = NULL; // This switch is the last on the list
+	}
+	else
+	{ // Here, one or more on list
+		while (p1->pdbnx != NULL)
+		{
+			p1 = p1->pdbnx; // Get next
+		}
+		// Here, p1 points to last on list
+		p1->pdbnx = p;   // Add to list
+		p->pdbnx = NULL; // Newly added item is now last
+	}
+	return;
+}
+/* *************************************************************************
+ * static void debouncing_remove(struct SWITCHPTR* p);
+ *	@brief	: Remove a pointer from list of active debouncing sws
+ * @param	: p = pointer to struct for this pushbutton 
+ * *************************************************************************/
+static void debouncing_remove(struct SWITCHPTR* p)
+{
+	struct SWITCHPTR* p1 = phddb; // List head
+	struct SWITCHPTR* p2;
+
+	/* If we ask to remove, then it should be on the list! */
+	if (p1 == NULL) morse_trap(521); // List was empty!
+
+	/* Most likely situation. Just one item on list */
+	if (p1->pdbnx == NULL)
+	{ // First item on list should(!) be 'p'
+		if (p1 != p) morse_trap(522);
+		phddb = NULL; // Debounce list is now empty
+		return;
+	}
+
+	/* Here, one or more on list. Search for 'this' sw. */
+	do
+	{
+		p2 = p1; // Save  previous
+		p1 = p1->pdbnx; // Get next
+		if (p1 == p)
+		{
+			p2->pdbnx = p->pdbnx;
+			return;
+		}
+	}	while (p1 != NULL);
+	morse_trap(523);
+}
 /*******************************************************************************
 Inline assembly.  Hacked from code at the following link--
 http://balau82.wordpress.com/2011/05/17/inline-assembly-instructions-in-gcc/
 *******************************************************************************/
-static inline __attribute__((always_inline)) unsigned int arm_clz(unsigned int v) 
+static inline __attribute__((always_inline)) uint32_t arm_clz(uint32_t v) 
 {
   unsigned int d;
   asm ("CLZ %[Rd], %[Rm]" : [Rd] "=r" (d) : [Rm] "r" (v));
@@ -95,91 +166,225 @@ static inline __attribute__((always_inline)) unsigned int arm_clz(unsigned int v
 }
 
 /* *************************************************************************
- * static void swinit(void);
- *	@brief	: 
+ * struct SWITCHPTR* switch_pb_add(osThreadId tskhandle, uint32_t notebit, 
+	 uint32_t switchbit,
+	 uint8_t db_mode, 
+	 uint8_t dur_closing,
+	 uint8_t dur_opening);
+ *
+ *	@brief	: Add a single on/off (e.g. pushbutton) switch on a linked list
+ * @param	: tskhandle = Task handle; NULL to use current task; 
+ * @param	: notebit = notification bit; 0 = no notification
+ * @param	: switchbit = bit position in spi read word for this switch
+ * @param	: db_mode = debounce mode: 0 = immediate; 1 = wait debounce
+ * @param	: dur_closing = number of spi time tick counts for debounce
+ * @param	: dur_opening = number of spi time tick counts for debounce
+ * @return	: Pointer to struct for this switch
  * *************************************************************************/
-static void sw_init(void)
+struct SWITCHPTR* switch_pb_add(osThreadId tskhandle, uint32_t notebit, 
+	uint32_t switchbit,
+	uint8_t db_mode, 
+	uint8_t dur_closing,
+	uint8_t dur_opening)
 {
-	/* Debounce spi ticks. */
-	pb_reversetorq.db_init = DB_INIT_CP_REVERSETORQ; 
-	pb_arm.db_init         = DB_INIT_PB_ARM;
-	pb_prep.db_init        = DB_INIT_PB_PREP;
-	pb_zodomtr.db_init     = DB_INIT_PB_ZODOMTR;
+	struct SWITCHPTR* p1 = phdsw;
+	struct SWITCHPTR* p2;
+	uint32_t n,nn;
+	
+taskENTER_CRITICAL();
 
-	return;
+	if (p1 == NULL)
+	{ // Here, get first item for list
+		p2 = (struct SWITCHPTR*)calloc(1, sizeof(struct SWITCHPTR));
+		if (p2 == NULL){taskEXIT_CRITICAL(); morse_trap(524);}
+
+		p1    = p2;		
+		phdsw = p1;
+	}
+	else
+	{ // One or more on linked list
+
+// TODO Error-check if switch already on linked list
+
+		while (p1->pnext != NULL) // Find last item
+		{
+			p1 = p1->pnext;
+		}
+		p2 = (struct SWITCHPTR*)calloc(1, sizeof(struct SWITCHPTR));
+		if (p2 == NULL){taskEXIT_CRITICAL(); morse_trap(525);}
+
+		// Point previous last item to newly added item.
+		p1->pnext = p2; 
+	}
+
+	/* Active debounce linkage. */
+	p2->pdbnx = NULL; // Not active debouncing
+
+	/* Initialize linked list switch struct */
+	if (tskhandle == NULL) // Use calling task?
+		 tskhandle = xTaskGetCurrentTaskHandle();
+	p2->tskhandle = tskhandle;
+	p2->notebit   = notebit;   // Notification bit to use
+	p2->switchbit = switchbit; // Bit position in spi word
+	p2->on        = 0;
+	p2->db_on     = 0;
+	p2->db_ctr    = 0;
+	p2->state     = 0; // ### Initial state needs some thought
+	p2->db_dur_closing = dur_closing; // spi tick count
+	p2->db_dur_opening = dur_opening; // spi tick count
+	p2->db_mode        = db_mode;     // "now" or "after" debounce
+
+	/* Map switch bit position (of xor'd changes) to this new struct. */
+	n = arm_clz(p2->switchbit); // Count leading zeros
+	if (n == 32) morse_trap(526);
+	nn = 31 - n; // n=31 is bit position 0; n=0 is bit pos 31
+	if (nn > (SPISERIALPARALLELSIZE*8)) morse_trap(527); 
+	pchange[nn] = p2; // Bit position pointer to new struct
+		
+taskEXIT_CRITICAL();
+	return p2;
 }
 
 /* *************************************************************************
- * static void pbtick(struct SWPAIR* p);
+ * static void pbtick(struct SWITCHPTR* p);
  *	@brief	: spi time tick debouncing for pushbutton type switches
- * @param	: p = pointer to struct for this pushbutton 
+ * @param	: p = pointer to struct for a pushbutton on the debounce linked list
  * *************************************************************************/
-static void pbtick(struct SWPAIR* p)
+static void pbtick(struct SWITCHPTR* p)
 {
-		if (p->state == SWP_DEBOUNCE_OPENING)
+	/* Ignore if debounce time complete. */
+	if (p->db_ctr == 0) 
+	{ // Here this shouldn't happen, but JIC ...
+		debouncing_remove(p);
+		return;
+	}
+
+	/* Countdown debounce timing. */
+	p->db_ctr -= 1;
+	if (p->db_ctr != 0) return; // Still timinig
+
+	/* Here, the end of the debounce duration. */
+	if (p->db_mode == SW_NOW)
+	{ // Here, mode is show change immediately. Prevent reversion during debounce
+		switch(p->state)
 		{
-			if (p->db_ctr > 0)
-			{
-				p->db_ctr -= 1;
-				if (p->db_ctr == 0)
-				{
-					p->state = SWP_NO;
-					p->on = SW_OFF;
-				}
+		case SWPB_OPENING: // Switch is in process of opening
+			if (p->on == SW_CLOSED)
+			{ // Here, sw closed during a sw opening debounce period
+				p->db_on = SW_CLOSED;
+				p->state = SWPB_CLOSED;
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
 			}
-		}
-		if (p->state == SWP_DEBOUNCE_CLOSING)
-		{
-			if (p->db_ctr > 0)
-			{
-				p->db_ctr -= 1;
-				if (p->db_ctr == 0)
-				{
-					p->state = SWP_NO;
-					p->on    = SW_ON;
-				}
+			else
+			{ // 
+				p->state = SWPB_OPEN;
 			}
+			break;		
+
+		case SWPB_CLOSING: // Switch is in process of closing
+			if (p->on != SW_CLOSED)			
+			{ // Here, sw opened during the debounce duration
+				p->db_on = SW_OPEN;   // Show representation sw open
+				p->state = SWPB_OPEN; // We are back to open state
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+			else
+			{ // Here, debounce complete and sw still closed
+				p->state = SWPB_CLOSED;				
+			}
+			break;
 		}
+	}
+	else
+	{ // Here, mode is delay until debounce expires
+	}
+
+	/* Remove this switch from the active debouncing list. */
+	debouncing_remove(p);
+
 	return;
 }
 /* *************************************************************************
- * static void pbxor(uint16_t spixor, struct SWPAIR* p, uint16_t bitmask);
+ * static void pbxor(struct SWITCHPTR* p);
  *	@brief	: logic for pushbutton bit changed
- * @param	: spixor = spi half-word xor'd with previous, i.e. sws changed
  * @param	: p = pointer to struct for this pushbutton 
- * @param	: bitmask = pushbutton bit mask
  * *************************************************************************/
-static void pbxor(uint16_t spixor, struct SWPAIR* p, uint16_t bitmask)
+static void pbxor(struct SWITCHPTR* p)
 {
-	if ((spixor & bitmask) != 0) // Any change to pushbutton?
-	{ // Here, yes.
-swxctr += 1;
-		switch (p->state)
+	/* Save present contact state: 1 = open, 0 = closed. */
+	p->on = p->switchbit & spilocal; 
+
+	if (p->db_mode == SW_NOW)
+	{ // Here, register sw now, but don't change until debounce expires
+
+		switch(p->state)
 		{
-		case SWP_UNDEFINED:
-		case SWP_NO:
-		case SWP_NC:
-				if ( (spilocal & bitmask) == 0)
-				{ // Here, pushbutton closed
-					p->state = SWP_DEBOUNCE_CLOSING;
-					p->on    = SW_ON; // Switch is ON
+		case SWPB_OPEN: // Current debounce state: open
+			if (p->on == SW_CLOSED)
+			{ // Here, change: open state -> closed contact
+				if (p->db_dur_closing == 0) // Debounce count?
+				{ // Special case: instantaneous state change
+					p->db_on = SW_CLOSED;
+					p->state = SWPB_CLOSED;
 				}
 				else
-				{ // Here, pushbutton opened
-					p->state = SWP_DEBOUNCE_OPENING;
-					p->on    = SW_OFF; // Switch is OFF
+				{ // One or more debounce ticks required.
+						p->db_on = SW_CLOSED;
+						p->state = SWPB_CLOSING;
+						p->db_ctr = p->db_dur_closing;
+						debouncing_add(p); // Add to linked list
 				}
-				// Ignore changes until debounce duration expires
-				p->db_ctr = p->db_init; 
+			}
+			else
+			{ // Here, change: open state -> open contact (what!?)
+				p->db_on = SW_OPEN;
+			}
+			if (p->notebit != 0)
+				xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			break;
 
-				// Notify Task switch has changed.
-				xTaskNotify(GevcuTaskHandle, GEVCUBIT03, eSetBits);
-				break;			
+		case SWPB_CLOSED: // Current debounce state: closed
+			if (p->on != SW_CLOSED) // Not closed?
+			{ // Here, change: closed state -> open contact
+				if (p->db_dur_opening == 0) // Debounce count?
+				{ // Special case: instantaneous state change
+					p->db_on = SW_OPEN;
+					p->state = SWPB_OPEN;
+				}
+				else
+				{ // One or more debounce ticks required.
+						p->db_on = SW_OPEN;
+						p->state = SWPB_OPENING;
+						p->db_ctr = p->db_dur_opening;
+						debouncing_add(p); // Add to linked list
+				}
+			}
+			else
+			{ // Here, change: open state -> open contact (what!?)
+				p->db_on = SW_OPEN;
+			}
+			if (p->notebit != 0)
+				xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			break;
+	
+		case SWPB_OPENING: // sw changed during debounce period
+			// spi tick handling will complete this
+			break;
 
-		case SWP_DEBOUNCE_OPENING:
-		case SWP_DEBOUNCE_CLOSING:
-				break;
+		case SWPB_CLOSING: // sw changed during debounce period
+			// spi tick handling will complete this
+			break;			
+
+		default:
+			morse_trap(544); // Programming error
 		}
+	}
+	else
+	{ // Here, SW_WAIT
+
+
 	}
 	return;
 }
@@ -189,7 +394,7 @@ swxctr += 1;
  * *************************************************************************/
 static void spitick(void)
 {
-		spitickctr += 1; // Debugging
+		spitickctr += 1; // Mostly for Debugging & Test
 
 /* =========== SWITCH PAIR: SAFE/ACTIVE logic. ========== */
 		if (swpair_safeactive.state == SWP_DEBOUNCE)
@@ -206,25 +411,26 @@ static void spitick(void)
 		}
 
 /* ========== PUSHBUTTONS ========== */	
-		pbtick(&pb_reversetorq);
-		
-		pbtick(&pb_arm);
+	/* Traverse linked list for pushbuttons actively debouncing. */
+	struct SWITCHPTR* p = phddb;
 
-		pbtick(&pb_prep);
-
-		pbtick(&pb_zodomtr);
+	while (p != NULL)
+	{
+		pbtick(p); // Do The Debounce step
+		p = p->pnext;
+	}
 
 	return;
 }
 /* *************************************************************************
  * static void swchanges(uint16_t spixor);
- *	@brief	: 
+ *	@brief	: The queue'd word is not zero, meaning one or more sws changed
  * *************************************************************************/
 static void swchanges(uint16_t spixor)
 {
 	uint16_t swb;
 
-/* Not so elegant handling. */
+/* Not so elegant handling of a switch pair. */
 /* =========== SAFE/ACTIVE logic. ========== */
 	// Any changes to this switch pair?	
 	if ((spixor & (SW_SAFE | SW_ACTIVE)) != 0) 
@@ -246,7 +452,7 @@ static void swchanges(uint16_t spixor)
 			// Here, sws are 10: safe sw is open (1) active closed (0)
 			swpair_safeactive.db_ctr = DB_INIT_SAFEACTIVE;
 			swpair_safeactive.state  = SWP_DEBOUNCE;
-			swpair_safeactive.on     = SW_ON;
+			swpair_safeactive.on     = SW_CLOSED;
 
 			// Notify GevcuTask switches changed to ACTIVE
 			xTaskNotify(GevcuTaskHandle, GEVCUBIT01, eSetBits);
@@ -255,35 +461,52 @@ static void swchanges(uint16_t spixor)
 			if ((swb & SW_SAFE) == 0)
 			{ // Here, safe sw made contact! Exit active state now.
 				swpair_safeactive.state = SWP_NC;
-				swpair_safeactive.on    = SW_OFF;
+				swpair_safeactive.on    = SW_OPEN;
 
 				// Notify GevcuTask that switches changed to SAFE
 				xTaskNotify(GevcuTaskHandle, GEVCUBIT02, eSetBits);
 			}
 			break;
 
-
 		case SWP_NO: // In active state
 				break; // break: 10 remain in active state
 
 			// Here, 11,10,00, i.e. not (ACTIVE closed AND safe open)	
 			swpair_safeactive.state = SWP_NC;
-			swpair_safeactive.on    = SW_OFF;
+			swpair_safeactive.on    = SW_OPEN;
 		
 			// Notify GevcuTask that switches changed to SAFE
 			xTaskNotify(GevcuTaskHandle, GEVCUBIT02, eSetBits);
 			break;
 		}
 	}
-/* ======== PUSHBUTTONS ===================== */
-		pbxor(spixor, &pb_reversetorq, CP_REVERSETORQ);
+/* ======== ON/OFF (pushbutton) CHANGES ===================== */
+	uint32_t n,nn;            // Leading zeros, Bit positions
+	uint32_t xortmp = spixor; // Working word of change bits
+	struct SWITCHPTR* p;
 
-		pbxor(spixor, &pb_arm, PB_ARM);
+	/* Deal with only switches that have a change. */
+	while (xortmp != 0)
+	{
+		/* Get bit position of changed bit w asm instruction. */
+		n = arm_clz(xortmp); // Count leading zeros
+		if (n == 32) morse_trap(528); // Shouldn't happen
 
-		pbxor(spixor, &pb_prep, PB_PREP);
+		nn = (31 - n); // n=31 is bit position 0; n=0 is bit pos 31
+		if (nn >= (SPISERIALPARALLELSIZE*8)) morse_trap(529); 
 
-		pbxor(spixor, &pb_zodomtr, CP_ZODOMTR);
+		/* Point to struct for this switch */
+		p = pchange[nn]; 
 
+		/* Switches not instantiated have pullups and shows a 1. */
+		if (p != NULL) // Skip switches not instantiated
+		{	/* Update this switch */
+			pbxor(p);
+		}
+
+		/* Clear change-bit for this switch */
+		xortmp = (xortmp & ~(1 << nn) );
+	}
 
 	return;
 }
@@ -301,13 +524,13 @@ void StartSwitchTask(void* argument)
    {
 		qret = xQueueReceive( SwitchTaskQHandle,&spixor,portMAX_DELAY);
 		if (qret == pdPASS)
-		{ // Here we have a value from the queue
+		{ // Here spi interrupt loaded a xor'd read-word onto the queue
 			if (spixor == 0)
-			{ // Here, spi interrupt time tick
+			{ // Here, spi interrupt countdown "time" tick
 				spitick();
 			}
 			else
-			{ // Deal with changes
+			{ // Deal with switch bit changes
 				spilocal = (spilocal ^ spixor); // Update local copy
 				swchanges(spixor);
 			}
@@ -328,8 +551,6 @@ osThreadId xSwitchTaskCreate(uint32_t taskpriority)
 
 	SwitchTaskQHandle = xQueueCreate(SWITCHQSIZE, sizeof(uint16_t) );
 	if (SwitchTaskQHandle == NULL) return NULL;
-
-	sw_init();
 
 	return SwitchTaskHandle;
 }

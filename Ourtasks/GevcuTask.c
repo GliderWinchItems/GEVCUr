@@ -26,7 +26,8 @@
 #include "morse.h"
 #include "getserialbuf.h"
 #include "yprintf.h"
-
+#include "SwitchTask.h"
+#include "shiftregbits.h"
 
 
 /* From 'main.c' */
@@ -64,6 +65,8 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * void StartGevcuTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+struct SWITCHPTR* pb_reversetorq; // Debugging
+
 void StartGevcuTask(void const * argument)
 {
 taskflags |= TSKBITGevcuTask ;
@@ -89,7 +92,20 @@ taskflags |= TSKBITGevcuTask ;
 #ifndef GATEWAYTASKINCLUDED
 	gevcu_func_init_canfilter(&gevcufunction);
 #endif
-      
+
+	/* Instantiate switches used by this task. */
+	// Pushbutton to reverse torque
+	struct SWITCHPTR* psw_z_tension = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		GEVCUBIT03,      /* Task notification bit      */
+		CP_REVERSETORQ,  /* See shiftregbits.h.        */
+	 	SW_NOW, /* Immediate recongition  SW_WAITDB,        1 Wait until debounce ends */
+	 	2,               /* Debounce ct: closing       */
+	   2);              /* Debounce ct: opening       */    
+	if (psw_z_tension == NULL) morse_trap(57); // (Not needed)
+
+pb_reversetorq = psw_z_tension; // Debugging
+
 	/* Create timer. Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
@@ -140,8 +156,8 @@ taskflags |= TSKBITGevcuTask ;
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)
-		{ // spare (notification not expected)
-//			GevcuEvents_03();			
+		{ // Torque reversal pushbutton
+			GevcuEvents_03(psw_z_tension);			
 			noteuse |= GEVCUBIT03;
 		}
 		if ((noteval & GEVCUBIT04) != 0)
