@@ -100,8 +100,8 @@ taskflags |= TSKBITGevcuTask ;
 		GEVCUBIT03,      /* Task notification bit      */
 		CP_REVERSETORQ,  /* See shiftregbits.h.        */
 	 	SW_NOW, /* Immediate recongition  SW_WAITDB,        1 Wait until debounce ends */
-	 	2,               /* Debounce ct: closing       */
-	   2);              /* Debounce ct: opening       */    
+	 	30,               /* Debounce ct: closing       */
+	   0);              /* Debounce ct: opening       */    
 	if (psw_z_tension == NULL) morse_trap(57); // (Not needed)
 
 pb_reversetorq = psw_z_tension; // Debugging
