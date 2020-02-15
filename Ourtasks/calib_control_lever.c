@@ -96,14 +96,14 @@ enum CLSTATE
 };
 
 /* ***********************************************************************************************************
- * void calib_control_lever_init();
+ * static void init(void);
  * @brief	: Prep for CL calibration
  ************************************************************************************************************* */
 /*
 This initialization is what would be in a file 'calib_control_lever_idx_v_struct.[ch]' if
 the CL would become a separate function.
 */
-void calib_control_lever_init()
+static void init(void)
 {
 	clfunc.min    = 65521;
    clfunc.max    = 0;
@@ -181,6 +181,7 @@ float calib_control_lever(void)
 		switch (clfunc.state)
 		{ // The following is a one-time only sequenceSPLASHDELAY
 		case INITLCD: // Half-second delay for splash screen to clear
+			init(); // #### Initialize ####
 			clfunc.timx = gevcufunction.swtim1ctr + SPLASHDELAY;
 			clfunc.state = INITLCD1;
 //			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line

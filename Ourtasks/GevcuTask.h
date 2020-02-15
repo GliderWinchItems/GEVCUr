@@ -55,12 +55,9 @@ SENT by GEVCUr function:
  heartbeat (sent in absence of keep-alive msgs)
  (5)  "cid_hb1" Same as (2) above
  (6)  "cid_hb2" Same as (3) above
-
 =========================================    
 NOTES:
-
 */
-
 
 /* Task notification bit assignments for GevcuTask. */
 #define GEVCUBIT00	(1 << 0)  // ADCTask has new readings (SKIP!)
@@ -80,7 +77,6 @@ NOTES:
 #define GEVCUBIT13 ( 1 << 13) // cid_dmoc_hv_status
 #define GEVCUBIT14 ( 1 << 14) // cid_dmoc_hv_temps
 #define GEVCUBIT15 ( 1 << 15) // cid_gevcur_keepalive_i
-
 
 /* Event status bit assignments (CoNtaCTor EVent ....) */
 #define EVSWTIM1TICK (1 << 0) // 1 = timer1 timed out: counter incremented
@@ -105,14 +101,10 @@ NOTES:
 #define CNCTOUT07KAw (1 << 7) // 1 = contactor #2 energized & pwm'ed
 #define CNCTOUTUART3 (1 << 8) // 1 = uart3 rx with high voltage timer timed out
 
-
 /* Number of different CAN id msgs this function sends. */
 #define NUMCANMSGS 6
 /* Indices for array below of "struct CANTXQMSG canmsg[NUMCANMSGS];" */
 #define CID_GEVCUR_KEEPALIVE_R 0 // cid_gevcur_keepalive_r
-
-
-
 
 /* States */
 enum GEVCU_STATE
@@ -124,17 +116,13 @@ enum GEVCU_STATE
 	PC_PARAMS,
 	IDLE,
 	CL_ACTIVE,
-	
 };
 
 /* Fault codes */
 enum GEVCU_FAULTCODE
 {
 	NOFAULT,
-
 };
-
-
 
 /* Function command response payload codes. */
 enum GEVCU_CMD_CODES

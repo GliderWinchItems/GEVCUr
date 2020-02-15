@@ -103,6 +103,25 @@
 #define LED_SPARE08      8 //
 #define LED_SPAREFS      7 // *LED_CL_FS
 
+
+/* 2/15/2020 RETRIEVE was GNDRLRTN 
+#define LED_STOP        10 //
+#define LED_ABORT        9 //
+#define LED_RETRIEVE     8 //
+#define LED_RECOVERY     7 //
+#define LED_CLIMB        6 //
+#define LED_RAMP         5 //
+#define LED_GNDRLRTN     4 //
+#define LED_ARM          3 //
+#define LED_PREP         2 //
+#define LED_SAFE         1 //
+#define LED_ARM_PB       0 //
+#define LED_PREP_PB     15 //
+#define LED_SPARERS     14 // *LED_CL_RST
+#define LED_SPARE10     13 //
+#define LED_SPARE08     12 //
+#define LED_SPAREFS     11 // *LED_CL_FS
+*/
 // * - as originally defined, but not implemented
 
 /* Result of test with Control Panel */

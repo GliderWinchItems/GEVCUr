@@ -76,7 +76,6 @@ void GevcuEvents_02(void)
  * *************************************************************************/
 // Debugging & test
 uint8_t ledxon;      
-uint8_t ledmode = 1; 
 struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
 extern struct SWITCHPTR* pb_reversetorq;
 extern uint16_t spilocal;
@@ -89,12 +88,12 @@ void GevcuEvents_03(struct SWITCHPTR* psw)
 if (pb_reversetorq->db_on != ledxon)
 { // Changed
 	ledxon = pb_reversetorq->db_on;
+
 	if (ledxon == SW_CLOSED) 
-      ledx_prev.mode = ledmode;
+      ledx_prev.mode = 1;
 	else 	
-	{
       ledx_prev.mode = 0;
-	}
+
 	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
 }
 

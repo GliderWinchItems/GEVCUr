@@ -40,6 +40,7 @@ enum SWPAIRSTATE
 	SWP_DEBOUNCE_CLOSING,
 };
 
+/* Pushbutton states. */
 enum SWPBSTATE
 {
 	SWPB_OPEN,
@@ -168,6 +169,7 @@ static inline __attribute__((always_inline)) uint32_t arm_clz(uint32_t v)
 /* *************************************************************************
  * struct SWITCHPTR* switch_pb_add(osThreadId tskhandle, uint32_t notebit, 
 	 uint32_t switchbit,
+	 uint32_t switchbit1,
 	 uint8_t db_mode, 
 	 uint8_t dur_closing,
 	 uint8_t dur_opening);
@@ -175,17 +177,19 @@ static inline __attribute__((always_inline)) uint32_t arm_clz(uint32_t v)
  *	@brief	: Add a single on/off (e.g. pushbutton) switch on a linked list
  * @param	: tskhandle = Task handle; NULL to use current task; 
  * @param	: notebit = notification bit; 0 = no notification
- * @param	: switchbit = bit position in spi read word for this switch
+ * @param	: switchbit  = bit position in spi read word for this switch
+ * @param	: switchbit1 = bit position for 2nd switch if a switch pair
  * @param	: db_mode = debounce mode: 0 = immediate; 1 = wait debounce
  * @param	: dur_closing = number of spi time tick counts for debounce
  * @param	: dur_opening = number of spi time tick counts for debounce
  * @return	: Pointer to struct for this switch
  * *************************************************************************/
 struct SWITCHPTR* switch_pb_add(osThreadId tskhandle, uint32_t notebit, 
-	uint32_t switchbit,
-	uint8_t db_mode, 
-	uint8_t dur_closing,
-	uint8_t dur_opening)
+	 uint32_t switchbit,
+	 uint32_t switchbit1,
+	 uint8_t db_mode, 
+	 uint8_t dur_closing,
+	 uint8_t dur_opening)
 {
 	struct SWITCHPTR* p1 = phdsw;
 	struct SWITCHPTR* p2;
@@ -221,15 +225,16 @@ taskENTER_CRITICAL();
 	p2->pdbnx = NULL; // Not active debouncing
 
 	/* Initialize linked list switch struct */
-	if (tskhandle == NULL) // Use calling task?
-		 tskhandle = xTaskGetCurrentTaskHandle();
-	p2->tskhandle = tskhandle;
-	p2->notebit   = notebit;   // Notification bit to use
-	p2->switchbit = switchbit; // Bit position in spi word
-	p2->on        = 0;
-	p2->db_on     = 0;
-	p2->db_ctr    = 0;
-	p2->state     = 0; // ### Initial state needs some thought
+	if (tskhandle == NULL) // Use calling task handle?
+		 tskhandle  = xTaskGetCurrentTaskHandle();
+	p2->tskhandle  = tskhandle;
+	p2->notebit    = notebit;   // Notification bit to use
+	p2->switchbit  = switchbit; // Bit position in spi word
+	p2->switchbit1 = switchbit1;// 2nd for switch pair
+	p2->on         = 0;
+	p2->db_on      = 0;
+	p2->db_ctr     = 0;
+	p2->state      = SWPB_CLOSED; // variables initially zero, so closed
 	p2->db_dur_closing = dur_closing; // spi tick count
 	p2->db_dur_opening = dur_opening; // spi tick count
 	p2->db_mode        = db_mode;     // "now" or "after" debounce
@@ -254,61 +259,73 @@ static void pbtick(struct SWITCHPTR* p)
 {
 	/* Ignore if debounce time complete. */
 	if (p->db_ctr == 0) 
-	{ // Here this shouldn't happen, but JIC ...
+	{ // Here, must be the special zero-debouncing situation
 		debouncing_remove(p);
 		return;
 	}
 
 	/* Countdown debounce timing. */
 	p->db_ctr -= 1;
-	if (p->db_ctr != 0) return; // Still timinig
+	if (p->db_ctr != 0) return; // Still timing
 
 	/* Here, the end of the debounce duration. */
-	if (p->db_mode == SW_NOW)
-	{ // Here, mode is show change immediately. Prevent reversion during debounce
-		switch(p->state)
-		{
-		case SWPB_OPENING: // Switch is in process of opening
-			if (p->on == SW_CLOSED)
-			{ // Here, sw closed during a sw opening debounce period
-				p->db_on = SW_CLOSED;
-				p->state = SWPB_CLOSED;
+	switch(p->state)
+	{
+	case SWPB_OPENING: // Switch is in process of opening
+		if (p->on == SW_CLOSED)
+		{ // Here, sw closed during a sw opening debounce period
+			p->state = SWPB_CLOSED;
+			if (p->db_mode == SW_NOW)
+			{
+				p->db_on = SW_CLOSED; // Show representation sw closed
 				if (p->notebit != 0)
 					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
 			}
-			else
-			{ // 
-				p->state = SWPB_OPEN;
-			}
-			break;		
-
-		case SWPB_CLOSING: // Switch is in process of closing
-			if (p->on != SW_CLOSED)			
-			{ // Here, sw opened during the debounce duration
-				p->db_on = SW_OPEN;   // Show representation sw open
-				p->state = SWPB_OPEN; // We are back to open state
-				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
-			}
-			else
-			{ // Here, debounce complete and sw still closed
-				p->state = SWPB_CLOSED;				
-			}
-			break;
 		}
-	}
-	else
-	{ // Here, mode is delay until debounce expires
+		else
+		{ // Here, sw is open and state is opening (from closed)
+			p->state = SWPB_OPEN; // Set constant open state
+			if (p->db_mode == SW_WAITDB)
+			{ // Here, mode is wait until debounce completes
+				p->db_on = SW_OPEN;   // Show representation sw open
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+		}
+		break;		
+
+	case SWPB_CLOSING: // Switch is in process of closing
+		if (p->on != SW_CLOSED)			
+		{ // Here, sw opened during the debounce duration
+			p->state = SWPB_OPEN; // We are back to open state
+			if (p->db_mode == SW_NOW)
+			{
+				p->db_on = SW_OPEN;   // Show representation sw open
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+	//    else{ // mode is delay/wait, so db_on remains unchanged}
+		}
+		else
+		{ // Here, debounce complete and sw still closed
+			p->state = SWPB_CLOSED;				
+			if (p->db_mode == SW_WAITDB)
+			{
+				p->db_on = SW_CLOSED;
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+		}
+		break;
 	}
 
 	/* Remove this switch from the active debouncing list. */
 	debouncing_remove(p);
-
 	return;
 }
 /* *************************************************************************
  * static void pbxor(struct SWITCHPTR* p);
- *	@brief	: logic for pushbutton bit changed
+ *	@brief	: logic for pushbutton bit *changed*
  * @param	: p = pointer to struct for this pushbutton 
  * *************************************************************************/
 static void pbxor(struct SWITCHPTR* p)
@@ -316,75 +333,76 @@ static void pbxor(struct SWITCHPTR* p)
 	/* Save present contact state: 1 = open, 0 = closed. */
 	p->on = p->switchbit & spilocal; 
 
-	if (p->db_mode == SW_NOW)
-	{ // Here, register sw now, but don't change until debounce expires
-
-		switch(p->state)
-		{
-		case SWPB_OPEN: // Current debounce state: open
-			if (p->on == SW_CLOSED)
-			{ // Here, change: open state -> closed contact
-				if (p->db_dur_closing == 0) // Debounce count?
-				{ // Special case: instantaneous state change
+	switch(p->state)
+	{
+	case SWPB_OPEN: // Current debounce state: open
+		if (p->on == SW_CLOSED)
+		{ // Here, change: open state -> closed contact
+			if (p->db_dur_closing == 0) // Debounce count?
+			{ // Special case: instantaneous state change, no debounce
+				p->db_on = SW_CLOSED;    // Debounced: representative of sw
+				p->state = SWPB_CLOSED;  // New sw state
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+			else
+			{ // One or more debounce ticks required.
+				if (p->db_mode == SW_NOW)
+				{ // Debounced sw representation shows new contact state "now"
 					p->db_on = SW_CLOSED;
-					p->state = SWPB_CLOSED;
+					if (p->notebit != 0) // Notify new state, if indicated
+						xTaskNotify(p->tskhandle, p->notebit, eSetBits);
 				}
-				else
-				{ // One or more debounce ticks required.
-						p->db_on = SW_CLOSED;
-						p->state = SWPB_CLOSING;
-						p->db_ctr = p->db_dur_closing;
-						debouncing_add(p); // Add to linked list
-				}
+				p->state = SWPB_CLOSING; // New state: closing is in process
+				p->db_ctr = p->db_dur_closing; // Debounce count
+				debouncing_add(p); // Add to debounce active linked list
 			}
-			else
-			{ // Here, change: open state -> open contact (what!?)
-				p->db_on = SW_OPEN;
-			}
-			if (p->notebit != 0)
-				xTaskNotify(p->tskhandle, p->notebit, eSetBits);
-			break;
-
-		case SWPB_CLOSED: // Current debounce state: closed
-			if (p->on != SW_CLOSED) // Not closed?
-			{ // Here, change: closed state -> open contact
-				if (p->db_dur_opening == 0) // Debounce count?
-				{ // Special case: instantaneous state change
-					p->db_on = SW_OPEN;
-					p->state = SWPB_OPEN;
-				}
-				else
-				{ // One or more debounce ticks required.
-						p->db_on = SW_OPEN;
-						p->state = SWPB_OPENING;
-						p->db_ctr = p->db_dur_opening;
-						debouncing_add(p); // Add to linked list
-				}
-			}
-			else
-			{ // Here, change: open state -> open contact (what!?)
-				p->db_on = SW_OPEN;
-			}
-			if (p->notebit != 0)
-				xTaskNotify(p->tskhandle, p->notebit, eSetBits);
-			break;
-	
-		case SWPB_OPENING: // sw changed during debounce period
-			// spi tick handling will complete this
-			break;
-
-		case SWPB_CLOSING: // sw changed during debounce period
-			// spi tick handling will complete this
-			break;			
-
-		default:
-			morse_trap(544); // Programming error
 		}
-	}
-	else
-	{ // Here, SW_WAIT
+		else
+		{ // Here, change: open state -> open contact (what!?)
+			p->db_on = SW_OPEN;
+		}
+		break;
 
+	case SWPB_CLOSED: // Current debounce state: closed
+		if (p->on != SW_CLOSED) // Not closed?
+		{ // Here, change: closed state -> open contact
+			if (p->db_dur_opening == 0) // Debounce count?
+			{ // Special case: instantaneous state change
+				p->db_on = SW_OPEN;
+				p->state = SWPB_OPEN;
+				if (p->notebit != 0)
+					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			}
+			else
+			{ // One or more debounce ticks required.
+				if (p->db_mode == SW_NOW)
+				{
+					p->db_on = SW_OPEN;
+					if (p->notebit != 0)
+						xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+				}
+				p->state = SWPB_OPENING;
+				p->db_ctr = p->db_dur_opening; // Set debounce time counter
+				debouncing_add(p); // Add to linked list
+			}
+		}
+		else
+		{ // Here, change: open state -> open contact (what!?)
+			p->db_on = SW_OPEN;
+		}
+		break;
 
+	case SWPB_OPENING: // sw changed during debounce period
+		p->db_ctr = p->db_dur_opening; // Extend debounce time counter
+		break;
+
+	case SWPB_CLOSING: // sw changed during debounce period
+		p->db_ctr = p->db_dur_closing; // Extend debounce count
+		break;			
+
+	default:
+		morse_trap(544); // Programming error
 	}
 	return;
 }

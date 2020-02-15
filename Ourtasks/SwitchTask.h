@@ -26,30 +26,44 @@
 /* Each on/off switch used has one of these added to a linked list. */
 struct SWITCHPTR
 {
+	// Linked list pointers
 	struct SWITCHPTR* pnext; // Points to next sw; Last is NULL
 	struct SWITCHPTR* pdbnx; // Points to next active debounce sw
+
+   // Task notification
 	osThreadId tskhandle; // Task handle (NULL = use calling task)
 	uint32_t notebit;     // notification bit; 0 = no notification
+
+	// Switch bit position(s). 
 	uint32_t switchbit;   // Switch bit position in spi read word
-	uint8_t on;           // 0 = sw is off, 1 = sw is on
-	uint8_t db_on;        // sw representation (debounce logic executed)
-	uint8_t db_mode;      // Debounce type 0 = on 1st; 1 = wait 
-	uint8_t state;        // Switch state
-	 int8_t db_ctr;         // Debounce: counter
-	 int8_t db_dur_closing; // Debounce: spi ticks for debouncing
-	 int8_t db_dur_opening; // Debounce: spi ticks for debouncing
+	uint32_t switchbit1;  // If not null: 2nd for switch pair
+
+	// Switch status (w pullups): SW_OPEN (1), SW_CLOSED (0)
+	uint8_t on;           // Latest spi reading
+	uint8_t db_on;        // Debounced representation
+
+	// Debouncing 
+	uint8_t db_mode;        // Debounce type: SW_NOW, SW_WAITDB
+	 int8_t db_ctr;         // Countdown working counter
+	 int8_t db_dur_closing; // spi ticks for countdown
+	 int8_t db_dur_opening; // spi ticks for countdown
+
+	uint8_t state;          // Switch state	
 };	
+
 /* *************************************************************************/
 struct SWITCHPTR* switch_pb_add(osThreadId tskhandle, uint32_t notebit, 
 	 uint32_t switchbit,
+	 uint32_t switchbit1,
 	 uint8_t db_mode, 
 	 uint8_t dur_closing,
 	 uint8_t dur_opening);
 /*
  *	@brief	: Add a single on/off (e.g. pushbutton) switch on a linked list
  * @param	: tskhandle = Task handle; NULL to use current task; 
- * @param	: notebit = notification bit; NULL = no notification
- * @param	: switchbit = bit position in spi read word for this switch
+ * @param	: notebit = notification bit; 0 = no notification
+ * @param	: switchbit  = bit position in spi read word for this switch
+ * @param	: switchbit1 = bit position for 2nd switch if a switch pair
  * @param	: db_mode = debounce mode: 0 = immediate; 1 = wait debounce
  * @param	: dur_closing = number of spi time tick counts for debounce
  * @param	: dur_opening = number of spi time tick counts for debounce

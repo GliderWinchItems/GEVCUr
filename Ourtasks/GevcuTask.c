@@ -93,29 +93,28 @@ taskflags |= TSKBITGevcuTask ;
 	gevcu_func_init_canfilter(&gevcufunction);
 #endif
 
-	/* Instantiate switches used by this task. */
+	/* Instantiate switches used by this task.        */
+	/* Pointer returned points to struct with status. */
 	// Pushbutton to reverse torque
 	struct SWITCHPTR* psw_z_tension = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		CP_REVERSETORQ,  /* See shiftregbits.h.        */
-	 	SW_NOW,          /* Immediate recognition      */
-	 	30,              /* Debounce ct: closing       */
-	   0);              /* Debounce ct: opening       */    
+		0,               /* Not a switch pair          */
+	 	SW_WAITDB,       /* Recognition mode           */
+	 	3,               /* Debounce ct: closing       */
+	   1);              /* Debounce ct: opening       */    
 	if (psw_z_tension == NULL) morse_trap(57); // (Not needed)
 
-pb_reversetorq = psw_z_tension; // Debugging
+pb_reversetorq = psw_z_tension; // Debugging aid
 
-	/* Create timer. Auto-reload/periodic */
+	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
 	if (gevcufunction.swtimer1 == NULL) {morse_trap(40);}
 
-	/* Control Lever init. */
-	calib_control_lever_init();
-
 	/* Initial startup state */
-	gevcufunction.state = 0;
+	gevcufunction.state = GEVCU_INIT;
 
 	/* Some initialization for contactor control. */
 	contactor_control_init();
