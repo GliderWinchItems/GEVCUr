@@ -61,8 +61,8 @@ NOTES:
 
 /* Task notification bit assignments for GevcuTask. */
 #define GEVCUBIT00	(1 << 0)  // ADCTask has new readings (SKIP!)
-#define GEVCUBIT01	(1 << 1)  // Switches changed to ACTIVE
-#define GEVCUBIT02	(1 << 2)  // Switches changed to SAFE
+#define GEVCUBIT01	(1 << 1)  // SAFE/ACTIVE switch changed state
+#define GEVCUBIT02	(1 << 2)  // CP_ZODOMTR switch changed state
 #define GEVCUBIT03	(1 << 3)  // ZTENSION pb changed
 #define GEVCUBIT04	(1 << 4)  // swtim1 (periodic timer)
 #define GEVCUBIT05	(1 << 5)  // spare

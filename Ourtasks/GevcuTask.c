@@ -99,14 +99,41 @@ taskflags |= TSKBITGevcuTask ;
 	struct SWITCHPTR* psw_z_tension = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
-		CP_REVERSETORQ,  /* See shiftregbits.h.        */
-		0,               /* Not a switch pair          */
-	 	SW_WAITDB,       /* Recognition mode           */
-	 	3,               /* Debounce ct: closing       */
-	   1);              /* Debounce ct: opening       */    
-	if (psw_z_tension == NULL) morse_trap(57); // (Not needed)
+		CP_REVERSETORQ,  /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_NOW,      /* Debounce mode              */
+	 	20,               /* Debounce ct: closing       */
+	   2);              /* Debounce ct: opening       */    
 
 pb_reversetorq = psw_z_tension; // Debugging aid
+
+#define USEZODOMTRSW
+#ifdef USEZODOMTRSW
+	struct SWITCHPTR* psw_z_odomtr = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		GEVCUBIT02,      /* Task notification bit      */
+		CP_ZODOMTR,      /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	21,               /* Debounce ct: closing       */
+	   2);              /* Debounce ct: opening       */    
+#endif
+
+#define USESAFEACTIVE
+#ifdef USESAFEACTIVE
+	// SAFE/ACTIVE switch (switch pair)
+	struct SWITCHPTR* psw_safeactive = switch_pb_add(
+		NULL,           /* task handle = this task    */
+		GEVCUBIT01,     /* Task notification bit      */
+		SW_SAFE,        /* 1st sw see shiftregbits.h  */
+		SW_ACTIVE,      /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PAIR,    /* switch on/off or pair      */
+	 	SWMODE2_RS,     /* Debounce mode              */
+	 	0,              /* Debounce ct: 00            */
+	   0);             /* Debounce ct: 11            */    
+#endif
 
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
@@ -145,13 +172,13 @@ pb_reversetorq = psw_z_tension; // Debugging aid
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
-		{ // Switches changed to ACTIVE
+		{ // SAFE/ACTIVE switch changed state
 //			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)
-		{ // Switches changed to SAFE
-//			GevcuEvents_02();
+		{ //  switch changed state
+			GevcuEvents_02(psw_z_odomtr);
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)

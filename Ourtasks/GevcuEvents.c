@@ -62,11 +62,21 @@ void GevcuEvents_01(void)
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_02(void);
- * @brief	: (spare)
+ * void GevcuEvents_02(struct SWITCHPTR* psw);
+ * @brief	: Z_ODOMTR
+ * @param	: psw = pointer to switch struct
  * *************************************************************************/
-void GevcuEvents_02(void)
+struct LEDREQ led02 = {LED_CLIMB,0};
+
+void GevcuEvents_02(struct SWITCHPTR* psw)
 {
+/* Debugging test of multiple pushbuttons. */
+	if (psw->db_on == SW_CLOSED)
+		led02.mode = 1;
+	else
+		led02.mode = 0;	
+	xQueueSendToBack(LEDTaskQHandle,&led02,portMAX_DELAY);
+
 	return;
 }
 /* *************************************************************************
@@ -75,27 +85,19 @@ void GevcuEvents_02(void)
  * @param	: psw = pointer to switch struct
  * *************************************************************************/
 // Debugging & test
-uint8_t ledxon;      
-struct LEDREQ ledx_prev = {LED_RETRIEVE,0};
-extern struct SWITCHPTR* pb_reversetorq;
-extern uint16_t spilocal;
+struct LEDREQ led03 = {LED_RETRIEVE,0};
+
 // End debugging
 
 void GevcuEvents_03(struct SWITCHPTR* psw)
 {  // The pushbutton has changed
 
 /* Temporary. LED test */
-if (pb_reversetorq->db_on != ledxon)
-{ // Changed
-	ledxon = pb_reversetorq->db_on;
-
-	if (ledxon == SW_CLOSED) 
-      ledx_prev.mode = 1;
+	if (psw->db_on == SW_CLOSED) 
+      led03.mode = 1;
 	else 	
-      ledx_prev.mode = 0;
-
-	xQueueSendToBack(LEDTaskQHandle,&ledx_prev,portMAX_DELAY);
-}
+      led03.mode = 0;
+	xQueueSendToBack(LEDTaskQHandle,&led03,portMAX_DELAY);
 
 	return;
 }

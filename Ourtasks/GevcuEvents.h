@@ -17,7 +17,7 @@
 
 void GevcuEvents_00(void);
 void GevcuEvents_01(void);
-void GevcuEvents_02(void);
+void GevcuEvents_02(struct SWITCHPTR* psw); //psw = pointer to switch struct
 void GevcuEvents_03(struct SWITCHPTR* psw); //psw = pointer to switch struct
 void GevcuEvents_04(void);
 void GevcuEvents_05(void);
