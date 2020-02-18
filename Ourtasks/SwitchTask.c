@@ -82,26 +82,19 @@ struct SWITCHPTR* pchange[NUMSWS]  = {0};
  * *************************************************************************/
 static void debouncing_add(struct SWITCHPTR* p)
 {
-	struct SWITCHPTR* p1 = phddb; // Pointer head debounce list
-
-	if (p1 == NULL)
-	{ // Here, no switches are debouncing active
-		phddb = p; // Point debounce head to this switch struct
+	if (phddb == NULL)
+	{ // Here, no switches are active debouncing 
+		phddb = p;       // Point debounce head to this switch struct
 		p->pdbnx = NULL; // This switch is the last on the debouncing list
 	}
 	else
 	{ // Here, one or more on debouncing list
-		while (p1->pdbnx != NULL)
-		{
-			p1 = p1->pdbnx; // Get next
-		}
-		// Here, p1 points to last on list
-		p1->pdbnx = p;   // Add to list
-		p->pdbnx = NULL; // Newly added item is now last
+		// Add to head of list
+		p->pdbnx = phddb;
+		phddb = p;
 	}
 	return;
 }
-
 /*******************************************************************************
 Inline assembly.  Hacked from code at the following link--
 http://balau82.wordpress.com/2011/05/17/inline-assembly-instructions-in-gcc/
