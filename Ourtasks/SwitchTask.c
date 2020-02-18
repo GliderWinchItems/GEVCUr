@@ -49,10 +49,6 @@ enum SWPBSTATE
 	SWPB_CLOSING
 };
 
-/* Logical result of SW_SAFE and SW_ACTIVE */
-uint8_t sw_active;  // 1 = active; 0 = safe
-struct SWITCHPTR swpair_safeactive;
-
 /* Reconstructed Local copy (possibly delayed slightly) of spi read word. */
 uint16_t spilocal;
 
