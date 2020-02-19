@@ -130,7 +130,7 @@ C_SOURCES += Ourtasks/GevcuUpdates.c
 C_SOURCES += Ourtasks/gevcu_idx_v_struct.c
 C_SOURCES += Ourtasks/gevcu_func_init.c
 C_SOURCES += Ourtasks/iir_filter_lx.c
-C_SOURCES += Ourtasks/spiserialparallel.c
+C_SOURCES += Ourtasks/spiserialparallelSW.c
 C_SOURCES += Ourtasks/SpiOutTask.c
 C_SOURCES += Ourtasks/calib_control_lever.c
 C_SOURCES += Ourtasks/4x20lcd.c
@@ -138,7 +138,7 @@ C_SOURCES += Ourtasks/contactor_control.c
 C_SOURCES += Ourtasks/dmoc_control.c
 C_SOURCES += Ourtasks/paycnvt.c
 C_SOURCES += Ourtasks/LEDTask.c
-C_SOURCES += Ourtasks/SwitchTask.c
+#C_SOURCES += Ourtasks/SwitchTask.c
 C_SOURCES += Ourtasks/led_chasing.c
 
 # /* USER CODE END */ 

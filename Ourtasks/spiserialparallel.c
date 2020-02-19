@@ -98,16 +98,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 			xQueueSendToBackFromISR(SwitchTaskQHandle,&spinotebits,&hptw);
 		}
 	}
-	else
-	{ // Here no changes in switches. Queue a "zero" periodically
-		if (spinotifyctr >= SPINCNOTIFYCTR)
-		{ // Here, we have gone approximately 100ms without a switch change
-			spinotifyctr  = 0; // Reset timing counter
-			/* (We are under interrupt) trigger a task to deal with this. */
-			if (SwitchTaskQHandle != NULL)
-			{ // Here, a task handle has been supplied
-				xQueueSendToBackFromISR(SwitchTaskQHandle,&spinotebits,&hptw);
-			}
+   // Here no changes in switches. Queue a "zero" periodically
+	if (spinotifyctr >= SPINCNOTIFYCTR)
+	{ // Here, we have gone approximately 100ms without a switch change
+		spinotifyctr  = 0; // Reset timing counter
+		/* (We are under interrupt) trigger a task to deal with this. */
+		if (SwitchTaskQHandle != NULL)
+		{ // Here, a task handle has been supplied
+			xQueueSendToBackFromISR(SwitchTaskQHandle,&spinotebits,&hptw);
 		}
 	}
 	spisp_rd_prev[0].u16 = spisp_rd[0].u16; // Update previous

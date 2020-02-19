@@ -403,8 +403,8 @@ DiscoveryF4 LEDs --
 #endif
 
 	/* Switch logic from queue loaded by Spi interrupts. */
-	Thrdret = xSwitchTaskCreate(1);
-	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+//	Thrdret = xSwitchTaskCreate(1);
+//	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Spi shift register task. */
 	Thrdret = xSpiOutTaskCreate(0);
@@ -1136,7 +1136,7 @@ extern uint32_t lcddbg;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 14; showctr++)
+for (showctr = 0; showctr < 13; showctr++)
 {
 			switch (showctr)
 			{
@@ -1153,9 +1153,9 @@ case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,"SpiOutTask---");break;
 case  9: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
 case 10: stackwatermark_show(BeepTaskHandle,   &pbuf3,"BeepTask-----");break;
 case 11: stackwatermark_show(LEDTaskHandle,    &pbuf4,"LEDTask------");break;
-case 12: stackwatermark_show(SwitchTaskHandle, &pbuf1,"SwitchTask---");break;
+//case 12: stackwatermark_show(SwitchTaskHandle, &pbuf1,"SwitchTask---");break;
 
-case 13:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;

@@ -1,31 +1,41 @@
 /******************************************************************************
-* File Name          : SwitchTask.c
-* Date First Issued  : 02/042020
-* Description        : Updating switches from spi shift register
+* File Name          : spiserialparallelSW.c
+* Date First Issued  : 10/13/2019
+* Description        : SPI serial<->parallel extension with switch debounce
 *******************************************************************************/
 
 #include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
 #include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
+#include "spiserialparallelSW.h"
 #include "malloc.h"
-
-#include "SwitchTask.h"
-#include "spiserialparallel.h"
-#include "SpiOutTask.h"
-#include "shiftregbits.h"
-#include "GevcuTask.h"
 #include "morse.h"
 
-/* Theoretical: 10 spi cycles per millisecond, and each has a switch change
-   that puts a uint16_t word on the queue. Obviously, something wrong with
-   shift-register and switches. 128 words would be about 12.8 ms before there
-   would be a queue overrun. */
-#define SWITCHQSIZE 128
+static uint16_t spinotifyctr; // Count interrupts, reset to zero
 
-osThreadId SwitchTaskHandle    = NULL;
-osMessageQId SwitchTaskQHandle = NULL;
+/**
+  * @brief  Transmit and Receive an amount of data in non-blocking mode with Interrupt.
+  * @param  hspi pointer to a SPI_HandleTypeDef structure that contains
+  *               the configuration information for SPI module.
+  * @param  pTxData pointer to transmission data buffer
+  * @param  pRxData pointer to reception data buffer
+  * @param  Size amount of data to be sent and received
+  * @retval HAL status
+  */
+//HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size)
 
+/* Input and Output mirror of hw registers. */
+union SPISP spisp_rd[SPISERIALPARALLELSIZE/2];
+union SPISP spisp_wr[SPISERIALPARALLELSIZE/2];
+
+/* Previous 'read' word, used to check for switch changes. */
+static union SPISP spisp_rd_prev[SPISERIALPARALLELSIZE/2];
+
+uint32_t spispctr; // spi interrupt counter for debugging.
+
+static SPI_HandleTypeDef *pspix;
+
+static uint16_t spinotebits;
 
 /* NOTE: Switch i/o pins have pull-ups and closing the switch pulls the
    pin to ground, hence, a zero bit represents a closed contact. */
@@ -48,6 +58,10 @@ enum SWPBSTATE
 	SWPB_OPENING,
 	SWPB_CLOSING
 };
+
+/* Logical result of SW_SAFE and SW_ACTIVE */
+uint8_t sw_active;  // 1 = active; 0 = safe
+struct SWITCHPTR swpair_safeactive;
 
 /* Reconstructed Local copy (possibly delayed slightly) of spi read word. */
 uint16_t spilocal;
@@ -204,6 +218,7 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 static void dbends(struct SWITCHPTR* p)
 {
+	BaseType_t xHPT = pdFALSE;
 	/* Here, the end of the debounce duration. */
 	switch(p->state)
 	{
@@ -215,7 +230,7 @@ static void dbends(struct SWITCHPTR* p)
 			{
 				p->db_on = SW_CLOSED; // Show representation sw closed
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
 		else
@@ -225,7 +240,7 @@ static void dbends(struct SWITCHPTR* p)
 			{ // Here, mode is wait until debounce completes
 				p->db_on = SW_OPEN;   // Show representation sw open
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
 		break;		
@@ -238,7 +253,7 @@ static void dbends(struct SWITCHPTR* p)
 			{
 				p->db_on = SW_OPEN;   // Show representation sw open
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 	//    else{ // mode is delay/wait, so db_on remains unchanged}
 		}
@@ -249,7 +264,7 @@ static void dbends(struct SWITCHPTR* p)
 			{
 				p->db_on = SW_CLOSED;
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
 		break;
@@ -264,8 +279,10 @@ static void dbends(struct SWITCHPTR* p)
  * *************************************************************************/
 static void pbxor(struct SWITCHPTR* p)
 {
+	BaseType_t xHPT = pdFALSE;
+
 	/* Save present contact state: 1 = open, 0 = closed. */
-	p->on = p->switchbit & spilocal; 
+	p->on = p->switchbit & spisp_rd[0].u16; 
 
 	switch(p->state)
 	{
@@ -277,7 +294,10 @@ static void pbxor(struct SWITCHPTR* p)
 				p->db_on = SW_CLOSED;    // Debounced: representative of sw
 				p->state = SWPB_CLOSED;  // New sw state
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+				{
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+					portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+				}
 			}
 			else
 			{ // One or more debounce ticks required.
@@ -285,7 +305,10 @@ static void pbxor(struct SWITCHPTR* p)
 				{ // Debounced sw representation shows new contact state "now"
 					p->db_on = SW_CLOSED;
 					if (p->notebit != 0) // Notify new state, if indicated
-						xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					{
+						xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+						portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+					}
 				}
 				p->state = SWPB_CLOSING; // New state: closing is in process
 				p->db_ctr = p->db_dur_closing; // Debounce count
@@ -306,7 +329,10 @@ static void pbxor(struct SWITCHPTR* p)
 				p->db_on = SW_OPEN;
 				p->state = SWPB_OPEN;
 				if (p->notebit != 0)
-					xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+				{
+					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+					portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+				}
 			}
 			else
 			{ // One or more debounce ticks required.
@@ -314,7 +340,10 @@ static void pbxor(struct SWITCHPTR* p)
 				{
 					p->db_on = SW_OPEN;
 					if (p->notebit != 0)
-						xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+					{
+						xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+						portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+					}
 				}
 				p->state = SWPB_OPENING;
 				p->db_ctr = p->db_dur_opening; // Set debounce time counter
@@ -348,11 +377,13 @@ static void pbxor(struct SWITCHPTR* p)
  * *************************************************************************/
 static void p2xor(struct SWITCHPTR* p)
 {
+	BaseType_t xHPT = pdFALSE;
+
 	/* Convert sw pair status to a two bit value. */
 	p->on = 0x0; // Both sws c;psed
-	if ((p->switchbit & spilocal) != SW_CLOSED)
+	if ((p->switchbit & spisp_rd[0].u16) != SW_CLOSED)
 		p->on |= 0x1; // 1st sw open
-	if ((p->switchbit1 & spilocal) != SW_CLOSED)
+	if ((p->switchbit1 & spisp_rd[0].u16) != SW_CLOSED)
 		p->on |= 0x2; // 2nd sw open
 
 	switch (p->on)
@@ -363,13 +394,19 @@ static void p2xor(struct SWITCHPTR* p)
 		if (p->db_on == p->on) break;
 		p->db_on = p->on;
 			if (p->notebit != 0) // Notify task?
-				xTaskNotify(p->tskhandle, p->notebit, eSetBits);	
+			{
+				xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+				portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+			}
 		break;	
 	case 2: // 1st closed: 2nd open
 		if (p->db_on == p->on) break;
 		p->db_on = p->on;
 			if (p->notebit != 0) // Notify task?
-				xTaskNotify(p->tskhandle, p->notebit, eSetBits);
+			{
+				xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
+				portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
+			}
 		break;	
 	case 3: // Both open: indeterminant, no change
 		break;	
@@ -378,156 +415,165 @@ static void p2xor(struct SWITCHPTR* p)
 }
 
 /* *************************************************************************
- * static void spitick(void);
- *	@brief	: Debounce timing
+ * HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi);
+ *	@brief	: Init pins & start SPI running
+ * @return	: success = HAL_OK
  * *************************************************************************/
-static void spitick(void)
+static volatile int dly;
+HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
-	spitickctr += 1; // Mostly for Debugging & Test
+	pspix = phspi;	// Save pointer to spi contol block
 
-	/* Traverse linked list of pushbuttons actively debouncing. */
-	struct SWITCHPTR* p = phddb;
-	struct SWITCHPTR* p2;
+	/* Enable output shift register pins. */
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_6,GPIO_PIN_RESET); // Not OE pins
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
 
-	while (p != NULL)
-	{
-		/* Countdown debounce timing. */
-		if (p->db_ctr != 0)
-		{ // Here still counting down 
-			p->db_ctr -= 1;
-			if (p->db_ctr == 0) 
-			{ // Here, debounced ended with this tick
-				dbends(p); // Do debounce logic
-		
-		/* Remove from debounce list */
-				if (p->pdbnx == NULL)
-				{ // Here, 'p' is last on list
-					if (p == phddb)
-					{ // Here, it was the only one on the list
-						phddb = NULL; // Set head: list empty
-					}
-					else
-					{ // Previous list item is now last
-						p2->pdbnx = NULL; 
-					}
-				}
-				else
-				{ // Here, 'p' is not last
-					if (p == phddb)
-					{ // Here, it is the first 
-						phddb = p->pdbnx; // Head points where 1st pointed to
-					}
-					else
-					{ // Here, somewhere in the middle
-						p2->pdbnx = p->pdbnx; // Set new next for previous
-					}
-				}
-			}
-		}
-		p2 = p; // Save "previous"
-		p = p->pnext; // Get next in list
-	}
-	return;
+	/* Start SPI running. */
+	return HAL_SPI_TransmitReceive_IT(phspi, 
+		&spisp_wr[0].u8[0], 
+		&spisp_rd[0].u8[0], 
+		SPISERIALPARALLELSIZE);
 }
 /* *************************************************************************
- * static void swchanges(uint16_t spixor);
- *	@brief	: The queue'd word is not zero, meaning one or more sws changed
+ * void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
+ *	@brief	: HAL spin interrupt callback processing.
  * *************************************************************************/
-static void swchanges(uint16_t spixor)
+/**
+  * @brief Tx and Rx Transfer completed callback.
+  * @param  hspi pointer to a SPI_HandleTypeDef structure that contains
+  *               the configuration information for SPI module.
+  * @retval None
+  */
+// __weak void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	struct SWITCHPTR* p;
+	struct SWITCHPTR* p2;
+
 	uint32_t n,nn;            // Leading zeros, counts
-	uint32_t xortmp = spixor; // Working word of change bits
+	uint32_t xortmp;
 
-	/* Deal with switches that have a change. */
-	while (xortmp != 0)
-	{
-		/* Get bit position of changed bit w asm instruction. */
-		n = arm_clz(xortmp); // Count leading zeros
-		if (n == 32) morse_trap(528); // Shouldn't happen
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_SET);
 
-		nn = (31 - n); // n=31 is bit position 0; n=0 is bit pos 31
-		if (nn >= (SPISERIALPARALLELSIZE*8)) morse_trap(529); 
+/* NOTE: A delay is needed between the set and reset of the 
+   I/O pin. Otherwise it is too fast for the pins to follow.
+   The following has statements that could be in the 'if',
+   outside the 'if' so that they add to the delay when the 'if'
+   is not taken.
+*/
+	spispctr += 1;     // Debugging ctr
 
-		/* Point to struct for this switch */
-		p = pchange[nn]; // Point to struct for this sw or sw pair
+	/* Set the bits that changed in the notification word. */
+	spinotebits = (spisp_rd_prev[0].u16 ^ spisp_rd[0].u16);
+	spisp_rd_prev[0].u16 = spisp_rd[0].u16; // Update previous
+	
+	/* If any bits change, notify a task. */
+	if (spinotebits != 0)
+	{ // Input (read) word has changed
+// =========== void swchanges(uint16_t spixor);======================================
+		xortmp = spinotebits; // Working word of change bits
 
-		/* If p == NULL, then it would be a non-instantiated sw, 
-         which with pullups are ones, but initial vars zero, so
-         we end up here with a NULL ptr. */
-		if (p != NULL)
-		{ // 
-			if (p->type == SWTYPE_PB)
-			{ // Here, a pushbutton type
-				pbxor(p);
-				xortmp = (xortmp & ~(p->switchbit) );
-			}
-			else
-			{ // Here, not a pushbutton type
-				if (p->type == SWTYPE_PAIR)
-				{ // Here, a switch pair
-					p2xor(p);
-					/* If by chance both sw bits show changed in the spi word
-					   then, p2xor will deal with both correctly, and thus
-					   both bits are cleared from the spixor word. */
-					xortmp = (xortmp & ~(p->switchbit|p->switchbit1) );
+spilocal = spinotebits; //Debugging
+
+		/* Deal with switches that have a change. */
+		while (xortmp != 0)
+		{
+			/* Get bit position of changed bit w asm instruction. */
+			n = arm_clz(xortmp); // Count leading zeros
+			if (n == 32) morse_trap(528); // Shouldn't happen
+
+			nn = (31 - n); // n=31 is bit position 0; n=0 is bit pos 31
+			if (nn >= (SPISERIALPARALLELSIZE*8)) morse_trap(529); 
+
+			/* Point to struct for this switch */
+			p = pchange[nn]; // Point to struct for this sw or sw pair
+
+			/* If p == NULL, then it would be a non-instantiated sw, 
+	         which with pullups are ones, but initial vars zero, so
+	         we end up here with a NULL ptr. */
+			if (p != NULL)
+			{ // 
+				if (p->type == SWTYPE_PB)
+				{ // Here, a pushbutton type
+					pbxor(p);
+					xortmp = (xortmp & ~(p->switchbit) );
 				}
 				else
-				{ // Program error (morse assert?)
-					morse_trap(534);
+				{ // Here, not a pushbutton type
+					if (p->type == SWTYPE_PAIR)
+					{ // Here, a switch pair
+						p2xor(p);
+						/* If by chance both sw bits show changed in the spi word
+						   then, p2xor will deal with both correctly, and thus
+						   both bits are cleared from the spixor word. */
+						xortmp = (xortmp & ~(p->switchbit|p->switchbit1) );
+					}
+					else
+					{ // Program error (morse assert?)
+						morse_trap(534);
+					}
 				}
 			}
-		}
-		else
-		{ // Clear bit for non-instantiated sw
-			xortmp = (xortmp & ~(1 << nn) );
+			else
+			{ // Clear bit for non-instantiated sw
+				xortmp = (xortmp & ~(1 << nn) );
+			}
 		}
 	}
+	// Count spi interrupt to yield a reasonable time rate for deboucing
+	spinotifyctr += 1; // SwitchTask update timer ctr
+	if (spinotifyctr >= SPINCNOTIFYCTR)
+	{ // Here, we have gone approximately 50ms
+		spinotifyctr  = 0; // Reset time tick counter
+		/* Traverse linked list of pushbuttons actively debouncing. */
+		p = phddb;
+		p2=p;
+		while (p != NULL) // End of list?
+		{ /* Countdown debounce timing. */
+			if (p->db_ctr != 0) 
+			{ // Here still counting down 
+				p->db_ctr -= 1;
+				if (p->db_ctr == 0) 
+				{ // Here, debounced ended with this tick
+					dbends(p); // Do debounce logic
+		
+					/* Remove from debounce list */
+					if (p->pdbnx == NULL)
+					{ // Here, 'p' is last on list
+						if (p == phddb)
+						{ // Here, it was the only one on the list
+							phddb = NULL; // Set head: list empty
+						}
+						else
+						{ // Previous list item is now last
+							p2->pdbnx = NULL; 
+						}
+					}
+					else
+					{ // Here, 'p' is not last
+						if (p == phddb)
+						{ // Here, it is the first 
+							phddb = p->pdbnx; // Head points where 1st pointed to
+						}
+						else
+						{ // Here, somewhere in the middle
+							p2->pdbnx = p->pdbnx; // Set new next for previous
+						}
+					}
+				}
+			}
+			p2 = p; // Save "previous"
+			p = p->pnext; // Get next in list
+		}
+	}
+
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
+
+	/* Re-trigger another xmit/rcv cycle. */
+	HAL_SPI_TransmitReceive_IT(pspix, 
+		&spisp_wr[0].u8[0], 
+		&spisp_rd[0].u8[0], 
+		SPISERIALPARALLELSIZE);
+
 	return;
 }
-/* *************************************************************************
- * void StartSwitchTask(void const * argument);
- *	@brief	: Task startup
- * *************************************************************************/
-void StartSwitchTask(void* argument)
-{
-	BaseType_t qret;
-	uint16_t spixor; // spi read-in difference
-
-   /* Infinite loop */
-   for(;;)
-   {
-		qret = xQueueReceive( SwitchTaskQHandle,&spixor,portMAX_DELAY);
-		if (qret == pdPASS)
-		{ // Here spi interrupt loaded a xor'd read-word onto the queue
-			if (spixor == 0)
-			{ // Here, spi interrupt countdown "time" tick
-				spitick();
-			}
-			else
-			{ // Deal with switch bit changes
-				spilocal = (spilocal ^ spixor); // Update local copy
-				swchanges(spixor);
-			}
-		}
-   }
-}
-/* *************************************************************************
- * osThreadId xSwitchTaskCreate(uint32_t taskpriority);
- * @brief	: Create task; task handle created is global for all to enjoy!
- * @param	: taskpriority = Task priority (just as it says!)
- * @return	: SwitchTaskHandle, or NULL if queue or task creation failed
- * *************************************************************************/
-osThreadId xSwitchTaskCreate(uint32_t taskpriority)
-{
-	BaseType_t ret = xTaskCreate(&StartSwitchTask, "SwitchTask",\
-     80, NULL, taskpriority, &SwitchTaskHandle);
-	if (ret != pdPASS) return NULL;
-
-	SwitchTaskQHandle = xQueueCreate(SWITCHQSIZE, sizeof(uint16_t) );
-	if (SwitchTaskQHandle == NULL) return NULL;
-
-	return SwitchTaskHandle;
-}
-
-
