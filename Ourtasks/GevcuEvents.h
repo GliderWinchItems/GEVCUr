@@ -13,12 +13,13 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 #include "adc_idx_v_struct.h"
-#include "SwitchTask.h"
+//#include "SwitchTask.h"
+#include "spiserialparallelSW.h"
 
 void GevcuEvents_00(void);
 void GevcuEvents_01(void);
-void GevcuEvents_02(struct SWITCHPTR* psw); //psw = pointer to switch struct
-void GevcuEvents_03(struct SWITCHPTR* psw); //psw = pointer to switch struct
+void GevcuEvents_02(void);
+void GevcuEvents_03(void);
 void GevcuEvents_04(void);
 void GevcuEvents_05(void);
 void GevcuEvents_06(void);

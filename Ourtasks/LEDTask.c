@@ -11,7 +11,7 @@
 #include "malloc.h"
 
 #include "LEDTask.h"
-#include "spiserialparallel.h"
+#include "spiserialparallelSW.h"
 #include "SpiOutTask.h"
 #include "shiftregbits.h"
 #include "morse.h"

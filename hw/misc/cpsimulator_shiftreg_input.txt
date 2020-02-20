@@ -115,5 +115,16 @@ shift register interconnect
 #define CP_GUILLO  (1 <<  9)  // Guillotine   P8-12 IN  9 G pur
 #define CP_BRAKE   (1 <<  8)  // Brake        P8-11 IN  8 H blu
 
+// 02/21/2020 sim pushbuttons & switches
 
+Pushbuttons sw box  sr box
+1 Z_TENSION  brn     grn
+2 Z_ODOMTR   red     yel
+3 PREP_PB    org     blu
+4 ARM_PB     yel     pur
 
+Switches
+1 Pair1: SAFE (NC)
+2 Pair1: ARM  (NO)
+3 -
+4 -

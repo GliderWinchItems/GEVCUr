@@ -9,7 +9,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "spiserialparallel.h"
+#include "spiserialparallelSW.h"
 
 struct SPIOUTREQUEST
 {

@@ -35,7 +35,9 @@ uint32_t spispctr; // spi interrupt counter for debugging.
 
 static SPI_HandleTypeDef *pspix;
 
-static uint16_t spinotebits;
+static uint16_t spinotebits; // Shift0reg bits that changed
+static int8_t srinit = 3;	// Initialization cycle ctr
+
 
 /* NOTE: Switch i/o pins have pull-ups and closing the switch pulls the
    pin to ground, hence, a zero bit represents a closed contact. */
@@ -59,15 +61,10 @@ enum SWPBSTATE
 	SWPB_CLOSING
 };
 
-/* Logical result of SW_SAFE and SW_ACTIVE */
-uint8_t sw_active;  // 1 = active; 0 = safe
-struct SWITCHPTR swpair_safeactive;
-
 /* Reconstructed Local copy (possibly delayed slightly) of spi read word. */
 uint16_t spilocal;
 
 uint32_t spitickctr; // Running count of spi time ticks (mostly for debugging)
-uint32_t swxctr;
 
 // TODO make these static after debugging
 /* Pushbutton linked list head pointer. */
@@ -424,6 +421,8 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block
 
+	srinit = 3;	// Allow a few cycles for the hardware shift-regs to init.
+
 	/* Enable output shift register pins. */
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_6,GPIO_PIN_RESET); // Not OE pins
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
@@ -434,6 +433,8 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 		&spisp_rd[0].u8[0], 
 		SPISERIALPARALLELSIZE);
 }
+uint16_t sr1;
+uint16_t srdiff1;
 /* *************************************************************************
  * void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
  *	@brief	: HAL spin interrupt callback processing.
@@ -457,23 +458,29 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 /* NOTE: A delay is needed between the set and reset of the 
    I/O pin. Otherwise it is too fast for the pins to follow.
-   The following has statements that could be in the 'if',
-   outside the 'if' so that they add to the delay when the 'if'
-   is not taken.
+	With the elimination SwitchTask, and the code in that task
+   implemented here, there is plenty of time delay.
 */
-	spispctr += 1;     // Debugging ctr
+
+	/* Allow a couple of cycles for the hardware shift-regs. */
+	if (srinit > 0)
+	{ // Here, do another spi cycle before "real work".
+  		srinit -= 1;
+		goto startnextcycle; // ## WHAT?! ##(old FORTRAN programmer at work)
+	}
+
+	spispctr += 1; // Debugging ctr (useful for checking rate)
 
 	/* Set the bits that changed in the notification word. */
 	spinotebits = (spisp_rd_prev[0].u16 ^ spisp_rd[0].u16);
 	spisp_rd_prev[0].u16 = spisp_rd[0].u16; // Update previous
-	
-	/* If any bits change, notify a task. */
+
+	/* ===== switch contact change. ========================= */
 	if (spinotebits != 0)
 	{ // Input (read) word has changed
-// =========== void swchanges(uint16_t spixor);======================================
 		xortmp = spinotebits; // Working word of change bits
 
-spilocal = spinotebits; //Debugging
+spilocal = spinotebits; // Save for Debugging
 
 		/* Deal with switches that have a change. */
 		while (xortmp != 0)
@@ -520,6 +527,7 @@ spilocal = spinotebits; //Debugging
 			}
 		}
 	}
+	/* ===== Timing for debouncing. ============================== */
 	// Count spi interrupt to yield a reasonable time rate for deboucing
 	spinotifyctr += 1; // SwitchTask update timer ctr
 	if (spinotifyctr >= SPINCNOTIFYCTR)
@@ -566,7 +574,8 @@ spilocal = spinotebits; //Debugging
 			p = p->pnext; // Get next in list
 		}
 	}
-
+	/* ========== Start next spi cycle ==================== */
+startnextcycle:
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_12,GPIO_PIN_RESET);
 
 	/* Re-trigger another xmit/rcv cycle. */

@@ -9,18 +9,17 @@
 #include <string.h>
 #include "4x20lcd.h"
 #include "adcparams.h"
-#include "GevcuTask.h"
-#include "shiftregbits.h"
-#include "SpiOutTask.h"
 #include "BeepTask.h"
-#include "lcdprintf.h"
-#include "gevcu_idx_v_struct.h"
+#include "GevcuTask.h"
 #include "SpiOutTask.h"
+#include "gevcu_idx_v_struct.h"
 #include "main.h"
 #include "morse.h"
 #include "getserialbuf.h"
 #include "yprintf.h"
 #include "lcdprintf.h"
+#include "shiftregbits.h"
+#include "spiserialparallelSW.h"
 
 /* LCD display row  */
 #define CLROW 1  // Row (0 - 3)
@@ -124,6 +123,30 @@ static void init(void)
 #ifdef SENDLCDPOSITIONTOUART
    pbufmon1 = getserialbuf(&HUARTMON,48);
 #endif
+
+	/* Initialize switches for debouncing. */
+
+	// Control Lever Fullscale Normally open. */
+	struct SWITCHPTR* psw_cl_fs_no = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		0,               /* Task notification bit      */
+		CL_FS_NO,        /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	SWDBMS(20),      /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */ 
+
+	// Control Lever Fullscale Normally open. */
+	struct SWITCHPTR* psw_cl_rst_n0 = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		0,               /* Task notification bit      */
+		CL_RST_N0,       /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	SWDBMS(20),      /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	return;
 }

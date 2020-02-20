@@ -10,8 +10,7 @@
 #include "cmsis_os.h"
 #include "malloc.h"
 
-#include "SwitchTask.h"
-#include "spiserialparallel.h"
+#include "spiserialparallelSW.h"
 #include "SpiOutTask.h"
 #include "shiftregbits.h"
 #include "GevcuTask.h"
@@ -56,11 +55,12 @@ Prep PB
 */
 
 /* Map of LED sequence for CP panel. */
-static const uint8_t ledmap[16] = 
+static const uint8_t ledmap[] = 
 {
 	LED_STOP,
 	LED_ABORT,
 	LED_RETRIEVE,
+	LED_PREP,
 	LED_RECOVERY,
 	LED_CLIMB,
 	LED_RAMP,
@@ -74,6 +74,7 @@ static const uint8_t ledmap[16] =
 	LED_SPARE10,  
 	LED_SPARE08, 
 	LED_SPAREFS, 
+	0xFF	/* End of sequence */
 };
 
 struct LEDREQ spiledx      = {LED_STOP   ,0}; // Current LED ON
@@ -106,7 +107,7 @@ void led_chasing(void)
 	
 			/* Step to next LED to be displayed. */
 			seqctr += 1;   // Advance sequence ctr
-			if (seqctr >= 16) seqctr = 0;
+			if (ledmap[seqctr] == 0xFF) seqctr = 0;
 			spiledx.bitnum = ledmap[seqctr]; // Map LED
 		}
 		break;

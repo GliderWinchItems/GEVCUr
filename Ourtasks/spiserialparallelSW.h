@@ -14,7 +14,11 @@
 
 #define SPISERIALPARALLELSIZE 2 // Number of bytes write/read (EVEN)
 #define NUMSWS (SPISERIALPARALLELSIZE*8)	// Number of possible switches
-#define SPINCNOTIFYCTR 500	// Number of spi interrupts for a spi time tick
+#define SPINCNOTIFYCTR 100	// Number of spi interrupts for a spi time tick
+#define SPICTPERMS 10      // Approximate number of spi interrupts per ms
+
+/* Convert millseconds to spi tick counts. Minimum of 1. */
+#define SWDBMS(ct) (((ct*SPICTPERMS)/SPINCNOTIFYCTR) + 1)
 
 union SPISP
 {

@@ -106,6 +106,15 @@ NOTES:
 /* Indices for array below of "struct CANTXQMSG canmsg[NUMCANMSGS];" */
 #define CID_GEVCUR_KEEPALIVE_R 0 // cid_gevcur_keepalive_r
 
+/* Number of Pushbuttons for GEVCU task */
+#define NUMGEVCUPUSHBUTTONS 4
+// Indices for pushbutton struct pointers
+#define PSW_ZTENSION 0
+#define PSW_ZODOMTR  1
+#define PSW_PB_ARM   2
+#define PSW_PB_PREP  3
+
+
 /* States */
 enum GEVCU_STATE
 {
@@ -227,6 +236,7 @@ void StartGevcuTask(void const * argument);
 
 extern struct GEVCUFUNCTION gevcufunction;
 extern osThreadId GevcuTaskHandle;
+extern struct SWITCHPTR* psw[NUMGEVCUPUSHBUTTONS];
 
 #endif
 

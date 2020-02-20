@@ -26,8 +26,8 @@
 #include "morse.h"
 #include "getserialbuf.h"
 #include "yprintf.h"
-#include "SwitchTask.h"
 #include "shiftregbits.h"
+#include "spiserialparallelSW.h"
 
 
 /* From 'main.c' */
@@ -38,6 +38,9 @@ extern UART_HandleTypeDef huart3;
 osThreadId GevcuTaskHandle;
 
 struct GEVCUFUNCTION gevcufunction;
+
+/* Pointers to instantiated pushbutton structs. */
+struct SWITCHPTR* psw[NUMGEVCUPUSHBUTTONS];
 
 /* *************************************************************************
  * void swtim1_callback(TimerHandle_t tm);
@@ -65,7 +68,9 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * void StartGevcuTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
-struct SWITCHPTR* pb_reversetorq; // Debugging
+struct SWITCHPTR* pb_reversetorq;  // Debugging
+struct SWITCHPTR* psw_z_odomtrx;   // Debugging
+struct SWITCHPTR* psw_safeactivex; // Debugging
 
 void StartGevcuTask(void const * argument)
 {
@@ -95,45 +100,67 @@ taskflags |= TSKBITGevcuTask ;
 
 	/* Instantiate switches used by this task.        */
 	/* Pointer returned points to struct with status. */
+
 	// Pushbutton to reverse torque
-	struct SWITCHPTR* psw_z_tension = switch_pb_add(
+	psw[PSW_ZTENSION] = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		CP_REVERSETORQ,  /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_NOW,      /* Debounce mode              */
-	 	20,               /* Debounce ct: closing       */
-	   2);              /* Debounce ct: opening       */    
+	 	SWDBMS(1000),    /* Debounce ms: closing       */
+	   SWDBMS(50));     /* Debounce ms: opening       */    
 
-pb_reversetorq = psw_z_tension; // Debugging aid
+pb_reversetorq = psw[PSW_ZTENSION]; // Debugging aid
 
-#define USEZODOMTRSW
-#ifdef USEZODOMTRSW
-	struct SWITCHPTR* psw_z_odomtr = switch_pb_add(
+	// Pushbutton for zeroing odometer
+	psw[PSW_ZODOMTR] = switch_pb_add(
 		NULL,            /* task handle = this task    */
-		GEVCUBIT02,      /* Task notification bit      */
+		GEVCUBIT03,      /* Task notification bit      */
 		CP_ZODOMTR,      /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	21,               /* Debounce ct: closing       */
-	   2);              /* Debounce ct: opening       */    
-#endif
+	 	SWDBMS(1020),    /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */ 
+  
+psw_z_odomtrx = psw[PSW_PB_ARM]; // Debugging aid
 
-#define USESAFEACTIVE
-#ifdef USESAFEACTIVE
+	// Pushbutton: arm
+	psw[PSW_PB_ARM] = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		GEVCUBIT03,      /* Task notification bit      */
+		PB_ARM,          /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	SWDBMS(20),      /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */ 
+
+	//Pushbutton: prep
+	psw[PSW_PB_PREP] = switch_pb_add(
+		NULL,            /* task handle = this task    */
+		GEVCUBIT03,      /* Task notification bit      */
+		PB_PREP,         /* 1st sw see shiftregbits.h  */
+		0,               /* 2nd sw (0 = not sw pair)   */
+      SWTYPE_PB,       /* switch on/off or pair      */
+	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	SWDBMS(20),      /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */ 
+
 	// SAFE/ACTIVE switch (switch pair)
 	struct SWITCHPTR* psw_safeactive = switch_pb_add(
-		NULL,           /* task handle = this task    */
-		GEVCUBIT01,     /* Task notification bit      */
-		SW_SAFE,        /* 1st sw see shiftregbits.h  */
-		SW_ACTIVE,      /* 2nd sw (0 = not sw pair)   */
-      SWTYPE_PAIR,    /* switch on/off or pair      */
-	 	SWMODE2_RS,     /* Debounce mode              */
-	 	0,              /* Debounce ct: 00            */
-	   0);             /* Debounce ct: 11            */    
-#endif
+		NULL,         /* task handle = this task    */
+		GEVCUBIT01,   /* Task notification bit      */
+		SW_SAFE,      /* 1st sw see shiftregbits.h  */
+		SW_ACTIVE,    /* 2nd sw of a pair           */
+      SWTYPE_PAIR,  /* switch on/off or pair      */
+	 	SWMODE2_RS,   /* Debounce mode              */
+	 	0,            /* Debounce ct: 00            */
+	   0);           /* Debounce ct: 11            */ 
+
+psw_safeactivex = psw_safeactive;   
 
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
@@ -178,12 +205,12 @@ pb_reversetorq = psw_z_tension; // Debugging aid
 		}
 		if ((noteval & GEVCUBIT02) != 0)
 		{ //  switch changed state
-			GevcuEvents_02(psw_z_odomtr);
+//			GevcuEvents_02();
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)
-		{ // Torque reversal pushbutton
-			GevcuEvents_03(psw_z_tension);			
+		{ // Pushbutton notifications come here
+			GevcuEvents_03();			
 			noteuse |= GEVCUBIT03;
 		}
 		if ((noteval & GEVCUBIT04) != 0)

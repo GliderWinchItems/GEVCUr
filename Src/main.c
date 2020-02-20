@@ -81,13 +81,12 @@
 #include "MailboxTask.h"
 #include "GatewayTask.h"
 #include "iir_f2.h"
-#include "spiserialparallel.h"
+#include "spiserialparallelSW.h"
 #include "cdc_txbuff.h"
 #include "SpiOutTask.h"
 #include "BeepTask.h"
 #include "lcdprintf.h"
 #include "LEDTask.h"
-#include "SwitchTask.h"
 #include "led_chasing.h"
 #include "calib_control_lever.h"
 
@@ -420,6 +419,10 @@ DiscoveryF4 LEDs --
 
 	/* ADC summing, calibration, etc. */
 	xADCTaskCreate(3); // (arg) = priority
+
+	/* Start SPI for switch/led shift register. */
+	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
+
 
   /* init code for USB_DEVICE */
 //  MX_USB_DEVICE_Init();
@@ -1020,9 +1023,7 @@ taskflagssave = taskflags;
 #endif
 
 	/* Start SPI with interrupts restarting transfer. */
-	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
-	if (pbuf4 == NULL) morse_trap(19);
-
+//	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
@@ -1153,7 +1154,6 @@ case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,"SpiOutTask---");break;
 case  9: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
 case 10: stackwatermark_show(BeepTaskHandle,   &pbuf3,"BeepTask-----");break;
 case 11: stackwatermark_show(LEDTaskHandle,    &pbuf4,"LEDTask------");break;
-//case 12: stackwatermark_show(SwitchTaskHandle, &pbuf1,"SwitchTask---");break;
 
 case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
@@ -1170,7 +1170,6 @@ yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
 			xQueueSendToBack(BeepTaskQHandle,&beepqtest,portMAX_DELAY);
 
 #endif
-
 
 #ifdef  SENDCANTESTMSGSINABURST
 			/* ==== CAN MSG sending test ===== */
@@ -1204,11 +1203,13 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 
 //extern struct SWITCHPTR swpair_safeactive;
 extern struct SWITCHPTR* pb_reversetorq;
-extern uint16_t spilocal;
-extern uint32_t swxctr;
-			yprintf(&pbuf4,"\tcurpos %5.1f %d %04X %5d %d",clfunc.curpos,pb_reversetorq->state,spilocal,swxctr,pb_reversetorq->on);
-
-			
+extern struct SWITCHPTR* psw_z_odomtrx;
+extern struct SWITCHPTR* psw_safeactivex;
+			yprintf(&pbuf4,"\tcurpos %5.1f %d %d %d %d",clfunc.curpos,
+					pb_reversetorq->db_on,
+					psw_z_odomtrx->db_on,
+					psw_safeactivex->on,
+					psw_safeactivex->db_on);
 #endif
 
 #ifdef STARTUPCHASINGLEDS

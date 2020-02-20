@@ -17,7 +17,7 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "adctask.h"
 
 #include "gevcu_idx_v_struct.h"
-#include "GevcuTask.h"
+#include "GevcuEvents.h"
 #include "morse.h"
 
 #include "SerialTaskReceive.h"
@@ -30,7 +30,6 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "contactor_control.h"
 #include "dmoc_control.h"
 #include "LEDTask.h"
-#include "SwitchTask.h"
 #include "shiftregbits.h"
 
 #include "main.h"
@@ -62,42 +61,57 @@ void GevcuEvents_01(void)
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_02(struct SWITCHPTR* psw);
+ * void GevcuEvents_02(void);
  * @brief	: Z_ODOMTR
  * @param	: psw = pointer to switch struct
  * *************************************************************************/
-struct LEDREQ led02 = {LED_CLIMB,0};
 
-void GevcuEvents_02(struct SWITCHPTR* psw)
+void GevcuEvents_02(void)
 {
-/* Debugging test of multiple pushbuttons. */
-	if (psw->db_on == SW_CLOSED)
-		led02.mode = 1;
-	else
-		led02.mode = 0;	
-	xQueueSendToBack(LEDTaskQHandle,&led02,portMAX_DELAY);
-
 	return;
 }
 /* *************************************************************************
- * void GevcuEvents_03(struct SWITCHPTR* psw);
+ * void GevcuEvents_03(void);
  * @brief	: Torque reversal pushbutton
  * @param	: psw = pointer to switch struct
  * *************************************************************************/
 // Debugging & test
-struct LEDREQ led03 = {LED_RETRIEVE,0};
+struct LEDREQ led_climb    = {LED_CLIMB,   0};
+struct LEDREQ led_retrieve = {LED_RETRIEVE,0};
+struct LEDREQ led_arm_pb   = {LED_ARM_PB,  0};
+struct LEDREQ led_prep_pb  = {LED_PREP_PB, 0};
 
-// End debugging
+void GevcuEvents_03(void)
+{  // One or more pushbuttons have changed
 
-void GevcuEvents_03(struct SWITCHPTR* psw)
-{  // The pushbutton has changed
-
-/* Temporary. LED test */
-	if (psw->db_on == SW_CLOSED) 
-      led03.mode = 1;
+/* Update all four LEDs even though only one PB changed. */
+	struct SWITCHPTR* p = psw[PSW_ZTENSION];
+	if (p->db_on == SW_CLOSED) 
+      led_climb.mode = 1;
 	else 	
-      led03.mode = 0;
-	xQueueSendToBack(LEDTaskQHandle,&led03,portMAX_DELAY);
+      led_climb.mode = 0;
+	xQueueSendToBack(LEDTaskQHandle,&led_climb,portMAX_DELAY);
+
+	p = psw[PSW_ZODOMTR];
+	if (p->db_on == SW_CLOSED)
+		led_retrieve.mode = 1;
+	else
+		led_retrieve.mode = 0;	
+	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
+
+	p = psw[PSW_PB_ARM];
+	if (p->db_on == SW_CLOSED)
+		led_arm_pb.mode = 1;
+	else
+		led_arm_pb.mode = 0;	
+	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
+
+	p = psw[PSW_PB_PREP];
+	if (p->db_on == SW_CLOSED)
+		led_prep_pb.mode = 1;
+	else
+		led_prep_pb.mode = 0;	
+	xQueueSendToBack(LEDTaskQHandle,&led_prep_pb,portMAX_DELAY);
 
 	return;
 }
