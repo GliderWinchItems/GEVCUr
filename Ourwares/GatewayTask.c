@@ -84,7 +84,7 @@ void StartGatewayTask(void const * argument)
 {
 taskflags |= TSKBITGatewayTask;
 
-//osDelay(100);
+//osDelay(100); // Debugging
 
 	int i;
 

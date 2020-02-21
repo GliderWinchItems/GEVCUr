@@ -24,6 +24,7 @@ struct CLFUNCTION
 	/* Control Lever full close and full open zones. */
 	float deadr;     // Dead zone for rest position (pct)
 	float deadf;     // Dead zone for full position (pct) 
+	float range_er;  // Mininum range before releasing calibration
 	uint32_t timx;	  // GevcuTask timer tick for next state
 	uint16_t toctr;  // Prompt timeOut counter
 	uint8_t state;   // Calibration state; 

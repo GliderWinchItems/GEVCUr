@@ -421,7 +421,7 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block
 
-	srinit = 3;	// Allow a few cycles for the hardware shift-regs to init.
+	srinit = 30;	// Allow a few cycles for the hardware shift-regs to init.
 
 	/* Enable output shift register pins. */
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_6,GPIO_PIN_RESET); // Not OE pins
@@ -466,6 +466,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 	if (srinit > 0)
 	{ // Here, do another spi cycle before "real work".
   		srinit -= 1;
+sr1 = spisp_rd[0].u16;
+srdiff1 = spisp_rd_prev[0].u16;
 		goto startnextcycle; // ## WHAT?! ##(old FORTRAN programmer at work)
 	}
 

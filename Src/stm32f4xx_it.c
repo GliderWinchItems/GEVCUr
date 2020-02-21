@@ -142,6 +142,10 @@ of this function. */
         " str r9, [r2, 20]    \n\t"
         " str r10, [r2, 24]   \n\t"
         " str r11, [r2, 28]   \n\t"
+        " movs	r0, #111       \n\t"
+        " ldr r2, handler4_address_const   \n\t"
+       " bx r2                            \n\t"
+        " handler4_address_const: .word morse_trap \n\t"
         " handler3_address_const: .word reg_r4 \n\t"
     );
 

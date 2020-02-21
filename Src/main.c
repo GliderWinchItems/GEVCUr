@@ -281,8 +281,6 @@ DiscoveryF4 LEDs --
  GPIOD, GPIO_PIN_14 RED
  GPIOD, GPIO_PIN_15 BLUE
 */
-
-
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -313,22 +311,25 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384+128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 /* =================================================== */
+  /* init code for USB_DEVICE */
+//$  MX_USB_DEVICE_Init();
+
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
 	xSerialTaskSendCreate(0);	// Create task and set Task priority
-
 
 	/* Create serial receiving task. */
 	xSerialTaskReceiveCreate(0);
 
 	/* Setup semaphore for yprint and sprintf et al. */
 	yprintf_init();
+
 
 	/* USB-CDC buffering */
 	#define NUMCDCBUFF 4	// Number of CDC task local buffers
@@ -423,9 +424,8 @@ DiscoveryF4 LEDs --
 	/* Start SPI for switch/led shift register. */
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
-
   /* init code for USB_DEVICE */
-//  MX_USB_DEVICE_Init();
+//$  MX_USB_DEVICE_Init();
 
 
 /* =================================================== */
@@ -969,7 +969,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//$  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 // Without this, a hard fault takes place under some combinations of selections
@@ -1021,9 +1021,6 @@ taskflagssave = taskflags;
 	uint32_t lcdret = 0;
 	
 #endif
-
-	/* Start SPI with interrupts restarting transfer. */
-//	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 	int ctr = 0; // Running count
@@ -1102,7 +1099,7 @@ lcdflag = 1;
 
 uint32_t slowtimectr = 0;
 
-osDelay(1);
+//osDelay(1);
 
 // ===== BEGIN FOR LOOP ==============================
 
@@ -1203,14 +1200,21 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
 
 //extern struct SWITCHPTR swpair_safeactive;
-extern struct SWITCHPTR* pb_reversetorq;
-extern struct SWITCHPTR* psw_z_odomtrx;
 extern struct SWITCHPTR* psw_safeactivex;
-			yprintf(&pbuf4,"\tcurpos %5.1f %d %d %d %d",clfunc.curpos,
-					pb_reversetorq->db_on,
-					psw_z_odomtrx->db_on,
+extern struct SWITCHPTR* psw_cl_fs_no;
+extern struct SWITCHPTR* psw_cl_rst_n0;
+extern uint16_t sr1;
+extern uint16_t srdiff1;
+			yprintf(&pbuf4,"\tcurpos %5.1f %d %d %d %d %d %d  %d %d %04X %04X",clfunc.curpos,
+					psw[PSW_ZTENSION]->db_on,
+					psw[PSW_ZODOMTR]->db_on,
+					psw[PSW_PB_PREP]->db_on,
+					psw[PSW_PB_ARM]->db_on,
+					psw_cl_fs_no->db_on,
+					psw_cl_rst_n0->db_on,
 					psw_safeactivex->on,
-					psw_safeactivex->db_on);
+					psw_safeactivex->db_on,
+					sr1, srdiff1);
 #endif
 
 #ifdef STARTUPCHASINGLEDS

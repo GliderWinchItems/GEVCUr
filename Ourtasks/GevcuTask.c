@@ -68,8 +68,6 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * void StartGevcuTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
-struct SWITCHPTR* pb_reversetorq;  // Debugging
-struct SWITCHPTR* psw_z_odomtrx;   // Debugging
 struct SWITCHPTR* psw_safeactivex; // Debugging
 
 void StartGevcuTask(void const * argument)
@@ -112,8 +110,6 @@ taskflags |= TSKBITGevcuTask ;
 	 	SWDBMS(1000),    /* Debounce ms: closing       */
 	   SWDBMS(50));     /* Debounce ms: opening       */    
 
-pb_reversetorq = psw[PSW_ZTENSION]; // Debugging aid
-
 	// Pushbutton for zeroing odometer
 	psw[PSW_ZODOMTR] = switch_pb_add(
 		NULL,            /* task handle = this task    */
@@ -125,8 +121,6 @@ pb_reversetorq = psw[PSW_ZTENSION]; // Debugging aid
 	 	SWDBMS(1020),    /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
   
-psw_z_odomtrx = psw[PSW_PB_ARM]; // Debugging aid
-
 	// Pushbutton: arm
 	psw[PSW_PB_ARM] = switch_pb_add(
 		NULL,            /* task handle = this task    */

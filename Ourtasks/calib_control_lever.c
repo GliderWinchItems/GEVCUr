@@ -94,6 +94,9 @@ enum CLSTATE
 	SEQDONE1
 };
 
+struct SWITCHPTR* psw_cl_fs_no;
+struct SWITCHPTR* psw_cl_rst_n0;
+
 /* ***********************************************************************************************************
  * static void init(void);
  * @brief	: Prep for CL calibration
@@ -116,6 +119,8 @@ static void init(void)
 	clfunc.hysteresis = 0.5; // Hysteresis pct +/- around curpos
 	clfunc.curpos_h   = 1E5; // Impossible rest position (reading)
 
+	clfunc.range_er = 25000; // Minimum range for calbirated CL
+
 	/* lcdprintf buffer */
 	pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (pbuflcd1 == NULL) morse_trap(81);
@@ -127,25 +132,25 @@ static void init(void)
 	/* Initialize switches for debouncing. */
 
 	// Control Lever Fullscale Normally open. */
-	struct SWITCHPTR* psw_cl_fs_no = switch_pb_add(
+	psw_cl_fs_no = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		0,               /* Task notification bit      */
 		CL_FS_NO,        /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(20),      /* Debounce ms: closing       */
+	 	SWDBMS(500),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	// Control Lever Fullscale Normally open. */
-	struct SWITCHPTR* psw_cl_rst_n0 = switch_pb_add(
+	psw_cl_rst_n0 = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		0,               /* Task notification bit      */
 		CL_RST_N0,       /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(20),      /* Debounce ms: closing       */
+	 	SWDBMS(1000),    /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	return;
@@ -281,6 +286,18 @@ float calib_control_lever(void)
 
 		/* Lever calbiration: Move lever to stops and collect ADC readings. */
 		case OPEN1:	
+			
+			/* Both limit switches should not be ON at the same time! */
+			if ((psw_cl_fs_no->on == 0) && (psw_cl_rst_n0->on == 0))	
+			{  //                           01234567890123456789  
+				lcdprintf(&pbuflcd1,CLROW,0,"CL ERR: BOTH SWS ON ");
+				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+				clfunc.state = INITLCD1;
+				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*2; 		
+				break;
+			}		
+
+
 			lcdprintf(&pbuflcd1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
 			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
@@ -288,11 +305,12 @@ float calib_control_lever(void)
 			break;
 
 		case OPEN1WAIT:
-			if ((spisp_rd[0].u16 & CL_FS_NO) != 0)
+//			if ((spisp_rd[0].u16 & CL_FS_NO) != 0) // Non-debounced
+			if (psw_cl_fs_no->db_on != 0) // Debounced
 			{ // Here, sw for forward position is not closed
 				if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 				{ // Time out waiting. Alert Op again.
-					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+//					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 					clfunc.state = OPEN1; // Timed out--re-beep the Op
 				}
 				break;
@@ -312,28 +330,32 @@ float calib_control_lever(void)
 				lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			}
-			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) break;				
+//			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) // Non-debounced
+			if (psw_cl_fs_no->db_on == 0) // Debounced
+				break;				
 			// Here, sw for forward position has gone open
 
 		/* CL is moving to rest postion. */
 		case CLOSE1:
-			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
+//			xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = CLOSE1WAIT;
 //			break;
 
 		case CLOSE1WAIT:
-			if ((spisp_rd[0].u16 & CL_RST_N0) != 0)
+//			if ((spisp_rd[0].u16 & CL_RST_N0) != 0) Non-debounced
+			if (psw_cl_rst_n0->db_on != 0)
 			{ // Here, sw for rest position is not closed
 				if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 				{
-					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+//					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 					lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}
 				break;
 			}
 			clfunc.state = CLOSE1MAX;
+			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 
 		/* Find minimum reading. */
 		case CLOSE1MAX:
@@ -342,14 +364,17 @@ float calib_control_lever(void)
 			{ // Save new and larger reading
 				clfunc.min = (float)adc1.abs[0].adcfil;
 			}
+//			if ((spisp_rd[0].u16 & CL_RST_N0) == 0) // Non-debounced
+			if (psw_cl_rst_n0->db_on == 0)
+				clfunc.state = SEQDONE;
+				break;
+
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
-//                                       01234567890123456789
-				lcdprintf(&pbuflcd1,CLROW,0,"MOVE A BIT FORWARD ");
-				clfunc.timx = gevcufunction.swtim1ctr + CLRESEND; 
+				lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
+				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT; 
 			}
-			if ((spisp_rd[0].u16 & CL_RST_N0) == 0) 
-				break; // Rest position switch is still closed
+			break;
 
 			/* === CL ADC readings have been determined. === */
 
@@ -357,11 +382,21 @@ float calib_control_lever(void)
 			/* Total travel of CL in terms of ADC readings. */
 			frange = (clfunc.max - clfunc.min);
 
+			/* Sanity check. */
+			if (frange < clfunc.range_er)
+			{
+				lcdprintf(&pbuflcd1,CLROW,0,"CL RANGE ERROR %0.1f",frange);
+				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+				clfunc.state = INITLCD1;
+				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*2; 		
+				break;		
+			}
+
 			/* ADC reading below minends will be set to zero. */
-			clfunc.minends   = (clfunc.min + frange*(float)0.01*clfunc.deadr);
+			clfunc.minends   = (clfunc.min + frange * (float)0.01 * clfunc.deadr);
 
 			/* ADC readings above maxbegins will be set to 100.0 */
-			clfunc.maxbegins = (clfunc.max - frange*(float)0.01*clfunc.deadf);
+			clfunc.maxbegins = (clfunc.max - frange * (float)0.01 * clfunc.deadf);
 
 			/* This scales the effective range for the CL */ 			
 			clfunc.rcp_range = (float)100.0/(clfunc.maxbegins - clfunc.minends);
@@ -370,7 +405,7 @@ float calib_control_lever(void)
 			clfunc.h_diff = 0.01 * clfunc.hysteresis * (clfunc.maxbegins - clfunc.minends);
 
 			/* Some fluff for the Op. */
-			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
+//			xQueueSendToBack(BeepTaskQHandle,&beep3,portMAX_DELAY);
 
 			lcdclearrow(CLROW); // Send 20 spaces to clear line
 			clfunc.timx = gevcufunction.swtim1ctr + CLLINEDELAY;
