@@ -57,9 +57,8 @@ struct SWITCHPTR
 	uint32_t switchbit;   // Switch bit position in spi read word
 	uint32_t switchbit1;  // If not null: 2nd for switch pair
 	uint8_t type;         // 
-		// 0 = Pushbutton; Not 0 = switch pair
-		// 1 = switch pair 1st sw
-		// 2 = switch pair 2nd sw
+		// 0 = Pushbutton
+		// 1 = switch pair
 
 	// Switch status (w pullups): SW_OPEN (1), SW_CLOSED (0)
 	uint8_t on;           // Latest spi reading

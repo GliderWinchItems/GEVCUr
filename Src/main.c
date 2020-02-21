@@ -353,7 +353,7 @@ DiscoveryF4 LEDs --
 	/* Setup CAN hardware filters to default to accept all ids. */
 	HAL_StatusTypeDef Cret;
 	Cret = canfilter_setup_first(0, &hcan1, 15); // CAN1
-//$	if (Cret == HAL_ERROR) morse_trap(9);
+	if (Cret == HAL_ERROR) morse_trap(9);
 
 #ifdef CONFIGCAN2
 	Cret = canfilter_setup_first(1, &hcan2, 15); // CAN2
@@ -969,7 +969,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//$  MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 // Without this, a hard fault takes place under some combinations of selections
@@ -1163,6 +1163,7 @@ default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); 
 }
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
+
 
 #endif
 
