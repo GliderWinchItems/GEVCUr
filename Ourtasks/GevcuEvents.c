@@ -54,10 +54,24 @@ void GevcuEvents_00(void)
 }
 /* *************************************************************************
  * void GevcuEvents_01(void);
- * @brief	: (spare)
+ * @brief	: Switch pair: SAFE/ACTIVE
  * *************************************************************************/
+// Debugging & test
+struct LEDREQ led_safe    = {LED_SAFE,   0};
 void GevcuEvents_01(void)
 {
+	struct SWITCHPTR* p = psw[PSW_PR_SAFE];
+	switch (p->db_on)
+	{
+	case 1:
+      led_safe.mode = 1;
+		break;
+			
+	case 2:
+      led_safe.mode = 0;
+		break;
+	}
+	xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
 	return;
 }
 /* *************************************************************************
@@ -87,7 +101,7 @@ void GevcuEvents_03(void)
 /* Update all four LEDs even though only one PB changed. */
 	struct SWITCHPTR* p = psw[PSW_ZTENSION];
 	if (p->db_on == SW_CLOSED) 
-      led_climb.mode = 1;
+      led_climb.mode = LED_BLINKFAST;
 	else 	
       led_climb.mode = 0;
 	xQueueSendToBack(LEDTaskQHandle,&led_climb,portMAX_DELAY);
@@ -108,7 +122,7 @@ void GevcuEvents_03(void)
 
 	p = psw[PSW_PB_PREP];
 	if (p->db_on == SW_CLOSED)
-		led_prep_pb.mode = 1;
+		led_prep_pb.mode = LED_BLINKWINK;
 	else
 		led_prep_pb.mode = 0;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep_pb,portMAX_DELAY);

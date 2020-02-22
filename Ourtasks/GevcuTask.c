@@ -143,8 +143,8 @@ taskflags |= TSKBITGevcuTask ;
 	 	SWDBMS(20),      /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
-	// SAFE/ACTIVE switch (switch pair)
-	struct SWITCHPTR* psw_safeactive = switch_pb_add(
+	// Switch pair: SAFE/ACTIVE switch 
+	psw[PSW_PR_SAFE] = switch_pb_add(
 		NULL,         /* task handle = this task    */
 		GEVCUBIT01,   /* Task notification bit      */
 		SW_SAFE,      /* 1st sw see shiftregbits.h  */
@@ -153,8 +153,6 @@ taskflags |= TSKBITGevcuTask ;
 	 	SWMODE2_RS,   /* Debounce mode              */
 	 	0,            /* Debounce ct: 00            */
 	   0);           /* Debounce ct: 11            */ 
-
-psw_safeactivex = psw_safeactive;   
 
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
@@ -194,7 +192,7 @@ psw_safeactivex = psw_safeactive;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
 		{ // SAFE/ACTIVE switch changed state
-//			GevcuEvents_01();
+			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)

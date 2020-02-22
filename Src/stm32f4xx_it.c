@@ -93,65 +93,12 @@ extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN EV */
-volatile uint32_t reg_r0;
-volatile uint32_t reg_r1;
-volatile uint32_t reg_r2;
-volatile uint32_t reg_r3;
-volatile uint32_t reg_r12;
-volatile uint32_t reg_lr; /* Link register. */
-volatile uint32_t reg_pc; /* Program counter. */
-volatile uint32_t reg_psr;/* Program status register. */
 
-volatile uint32_t reg_r4;
-volatile uint32_t reg_r5;
-volatile uint32_t reg_r6;
-volatile uint32_t reg_r7;
-volatile uint32_t reg_r8;
-volatile uint32_t reg_r9;
-volatile uint32_t reg_r10;
-volatile uint32_t reg_r11;
+/* Registers from Hard Fault */
 
-
-void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
-{
-/* These are volatile to try and prevent the compiler/linker optimising them
-away as the variables never actually get used.  If the debugger won't show the
-values of the variables, make them global my moving their declaration outside
-of this function. */
-
-
-    reg_r0 = pulFaultStackAddress[ 0 ];
-    reg_r1 = pulFaultStackAddress[ 1 ];
-    reg_r2 = pulFaultStackAddress[ 2 ];
-    reg_r3 = pulFaultStackAddress[ 3 ];
-
-    reg_r12 = pulFaultStackAddress[ 4 ];
-    reg_lr = pulFaultStackAddress[ 5 ];
-    reg_pc = pulFaultStackAddress[ 6 ];
-    reg_psr = pulFaultStackAddress[ 7 ];
-
-
-// Store the remaining register in case morse_trap uses them
-	asm (
-        " ldr r2, handler3_address_const \n\t"
-        " str r4, [r2, 0]     \n\t"
-        " str r5, [r2, 4]     \n\t"
-        " str r6, [r2, 8]     \n\t"
-        " str r7, [r2, 12]    \n\t"
-        " str r8, [r2, 16]    \n\t"
-        " str r9, [r2, 20]    \n\t"
-        " str r10, [r2, 24]   \n\t"
-        " str r11, [r2, 28]   \n\t"
-        " movs	r0, #111       \n\t"
-        " ldr r2, handler4_address_const   \n\t"
-       " bx r2                            \n\t"
-        " handler4_address_const: .word morse_trap \n\t"
-        " handler3_address_const: .word reg_r4 \n\t"
-    );
-
-    /* When the following line is hit, the variables contain the register values. */
-    morse_trap(111);
-}
+/* Saved registers -- in the following order:
+  0, 1, 2, 3, 12, lr, pc, psr, 4, 5, 6, 7, 8, 9, 10 */
+volatile uint32_t reg_stack[16];
 
 /* USER CODE END EV */
 
@@ -188,17 +135,44 @@ prvGetRegistersFromStack(). */
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-    __asm volatile
-    (
-        " tst lr, #4                       \n\t"
-        " ite eq                           \n\t"
-        " mrseq r0, msp                    \n\t"
-        " mrsne r0, psp                    \n\t"
-        " ldr r1, [r0, #24]                \n\t"
-        " ldr r2, handler2_address_const   \n\t"
-        " bx r2                            \n\t"
-        " handler2_address_const: .word prvGetRegistersFromStack \n\t"
-    );
+ __asm volatile
+ (
+   " tst lr, #4                       \n\t" 
+   " ite eq                           \n\t"
+   " mrseq r0, msp                    \n\t"
+   " mrsne r0, psp                    \n\t"
+   " ldr r1, [r0, #24]                \n\t"
+   " ldr r2, handler2_address_const   \n\t"
+   " ldr r3, [r1, 0]                  \n\t" /* r0  */
+	" str r3, [r2, 0]                  \n\t" 			
+   " ldr r3, [r1, 4]                  \n\t" /* r1  */
+	" str r3, [r2, 4]                  \n\t"  
+   " ldr r3, [r1, 8]                  \n\t" /* r2  */
+	" str r3, [r2, 8]                  \n\t" 				
+   " ldr r3, [r1, 12]                 \n\t" /* r3  */			 
+	" str r3, [r2, 12]                 \n\t" 				
+   " ldr r3, [r1, 16]                 \n\t" /* r12 */
+	" str r3, [r2, 16]                 \n\t"
+   " ldr r3, [r1, 20]                 \n\t" /* lr  */
+	" str r3, [r2, 20]                 \n\t"
+   " ldr r3, [r1, 24]                 \n\t" /* pc  */
+	" str r3, [r2, 24]                 \n\t"
+   " ldr r3, [r1, 28]                 \n\t" /* psr */
+	" str r3, [r2, 28]                 \n\t"
+   " str r4, [r2, 32]     \n\t" /* r4 */
+   " str r5, [r2, 36]     \n\t" /* r5 */
+   " str r6, [r2, 40]     \n\t" /* r6 */
+   " str r7, [r2, 48]     \n\t" /* r7 */
+   " str r8, [r2, 52]     \n\t" /* r8 */
+   " str r9, [r2, 56]     \n\t" /* r9 */
+   " str r10, [r2, 60]    \n\t" /* r10 */
+   " str r11, [r2, 64]    \n\t" /* r11 */
+   " movs	r0, #111      \n\t"    /* Flash LEDs */
+   " ldr r2, handler4_address_const   \n\t"
+   " bx r2                            \n\t"
+   " handler4_address_const: .word morse_trap \n\t"
+   " handler2_address_const: .word reg_stack \n\t"
+ );
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -219,6 +193,7 @@ void MemManage_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+
     /* USER CODE END W1_MemoryManagement_IRQn 0 */
   }
 }

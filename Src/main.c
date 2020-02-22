@@ -425,8 +425,7 @@ DiscoveryF4 LEDs --
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
   /* init code for USB_DEVICE */
-//$  MX_USB_DEVICE_Init();
-
+  MX_USB_DEVICE_Init();
 
 /* =================================================== */
 
@@ -1200,7 +1199,6 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 //			yprintf(&pbuf2,"\tcurpos %5.1f %5d %5d",clfunc.curpos,adc1.chan[0].sum,adc1.abs[0].adcfil);
 
 //extern struct SWITCHPTR swpair_safeactive;
-extern struct SWITCHPTR* psw_safeactivex;
 extern struct SWITCHPTR* psw_cl_fs_no;
 extern struct SWITCHPTR* psw_cl_rst_n0;
 extern uint16_t sr1;
@@ -1212,8 +1210,8 @@ extern uint16_t srdiff1;
 					psw[PSW_PB_ARM]->db_on,
 					psw_cl_fs_no->db_on,
 					psw_cl_rst_n0->db_on,
-					psw_safeactivex->on,
-					psw_safeactivex->db_on,
+					psw[PSW_PR_SAFE]->db_on,
+					psw[PSW_PR_SAFE]->on,
 					sr1, srdiff1);
 #endif
 

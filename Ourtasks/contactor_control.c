@@ -95,7 +95,7 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 		break;
 
 	default:
-		morse_trap(34); // Never should happen.
+		morse_trap(343); // Never should happen.
 		break;
 	}
 

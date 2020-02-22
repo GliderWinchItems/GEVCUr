@@ -139,7 +139,7 @@ static void init(void)
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(500),     /* Debounce ms: closing       */
+	 	SWDBMS(300),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	// Control Lever Fullscale Normally open. */
@@ -150,7 +150,7 @@ static void init(void)
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(1000),    /* Debounce ms: closing       */
+	 	SWDBMS(400),    /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	return;
@@ -299,7 +299,7 @@ float calib_control_lever(void)
 
 
 			lcdprintf(&pbuflcd1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
-			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
+//			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = OPEN1WAIT;
 			break;

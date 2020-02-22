@@ -66,19 +66,19 @@ static const uint16_t dur_off[] =
 { /* Blinking: OFF timing count. */
 	 0,
 	 0,
-	64, /* Blink slow */
-	16, /* Blink fast */
+	32, /* Blink slow */
+	 5, /* Blink fast */
 	64, /* Blink 1sec */
-  112  /* Blink short wink */
+   64  /* Blink short wink */
 };
 static const uint16_t dur_on[] = 
 { /* Blinking: ON timing count. */
 	 0,
 	 0,
-	64, /* Blink slow */
-	 4, /* Blink fast */
+	32, /* Blink slow */
+	 3, /* Blink fast */
 	64, /* Blink 1sec */
-   16  /* Blink short wink */
+    8  /* Blink short wink */
 };
 
 osMessageQId LEDTaskQHandle;
@@ -111,11 +111,12 @@ static void init(void)
 static void blink_init(struct LEDLIST* p, uint8_t mode)
 {
 	struct LEDLIST* p2;
+	struct LEDLIST* p1;
 
 	/* Extending blinking if currently active. */
 	if (p->next != NULL)
 	{ // Here, this LED is on the linked list
-		p->ctl.ctr = dur_on[mode]; // Re-init count
+//$		p->ctl.ctr = dur_on[mode]; // Re-init count
 		return;
 	}
 
@@ -185,6 +186,7 @@ static void blink_cancel(struct LEDLIST* p)
 	case LED_BLINKSLOW:
 	case LED_BLINKFAST:
 	case LED_BLINK1SEC:
+	case LED_BLINKWINK:
 	// Here, it is in one of the blink modes.
 
 		/* Find previous in linked list to this one. */

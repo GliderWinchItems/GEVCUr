@@ -106,13 +106,14 @@ NOTES:
 /* Indices for array below of "struct CANTXQMSG canmsg[NUMCANMSGS];" */
 #define CID_GEVCUR_KEEPALIVE_R 0 // cid_gevcur_keepalive_r
 
-/* Number of Pushbuttons for GEVCU task */
-#define NUMGEVCUPUSHBUTTONS 4
-// Indices for pushbutton struct pointers
-#define PSW_ZTENSION 0
-#define PSW_ZODOMTR  1
-#define PSW_PB_ARM   2
-#define PSW_PB_PREP  3
+/* Number of switches for GEVCU task */
+#define NUMGEVCUPUSHBUTTONS 5
+// Indices for switch struct pointers
+#define PSW_ZTENSION 0 // Pushbutton
+#define PSW_ZODOMTR  1 // Pushbutton
+#define PSW_PB_ARM   2 // Pushbutton
+#define PSW_PB_PREP  3 // Pushbutton
+#define PSW_PR_SAFE  4 // Switch pair (SAFE/ACTIVE)
 
 
 /* States */

@@ -29,6 +29,8 @@ union SPISP
 #define SW_CLOSED 0
 #define SW_OPEN   1
 #define SW_ERROR  2 // Logically an error
+#define SWP_1     2 // Switch pair 1st of pair closed
+#define SWP_2     3 // Switch pair 2nd of pair closed
 
 /* PB Debounce modes. */
 #define SWMODE_NOW      0 // Immediate, w debounce minimum 
