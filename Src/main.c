@@ -411,7 +411,7 @@ DiscoveryF4 LEDs --
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
-	Thrdret = xBeepTaskCreate(-1, 32);
+	Thrdret = xBeepTaskCreate(-2, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* LED task (taskpriority, max queued items) .*/

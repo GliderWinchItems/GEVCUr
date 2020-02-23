@@ -110,20 +110,33 @@ static void init(void)
  * *************************************************************************/
 static void blink_init(struct LEDLIST* p, uint8_t mode)
 {
+p->ctl.mode  = mode; // Update blink mode
+p->ctl.ctr   = dur_on[mode]; // Init 1st duration counter
+spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
+return;
+
 	struct LEDLIST* p2;
 	struct LEDLIST* p1;
 
 	/* Extending blinking if currently active. */
 	if (p->next != NULL)
-	{ // Here, this LED is on the linked list
-//$		p->ctl.ctr = dur_on[mode]; // Re-init count
+	{ // Here, this LED is already on the linked list
+		// Maybe it is a shift to a different type of blink
 		return;
 	}
-
+	/* Here, p is not list. */
+	if (phead == NULL)
+	{ // Here, p is 1st and last on list
+		phead = p;   // head points to p
+		p->next = p; // p is also last on list
+		return;
+	}
+	
 	/* Add entry to head of list. */
 	p2        = phead; // Save ptr
 	phead     = p;     // Head pts to this struct
 	p->next   = p2;    // Point to next in list
+
 
 	/* Init this LED. */
 	p->ctl.mode  = mode; // Update blink mode
@@ -140,10 +153,17 @@ static void blink(void)
 {
 	struct LEDLIST* p1 = phead;
 
+//	if (p1 == NULL) return; // Empty list
+
 	/* Traverse linked list looking for active blinkers. */
-	while (p1 != NULL)
+int i;
+	for (i = 0; i < 16; i++)
 	{ // Here, p1 points to an active LED. */
-		
+		p1 = &ledlist[i];	
+
+		if (p1->ctl.mode > 1)
+	 {
+	
 		// Timing counter
 		if (p1->ctl.ctr != 0)
 		{ // Countdown, and stay in current led state.
@@ -166,8 +186,10 @@ static void blink(void)
 				p1->ctl.ctr = dur_off[p1->ctl.mode];
 			}
 		}
-		p1 = p1->next;
+    }
+// 		p1 = p1->next;
 	}
+//	} while (p1 != p1->next);
 	return;
 }
 /* *************************************************************************
@@ -177,8 +199,12 @@ static void blink(void)
  * *************************************************************************/
 static void blink_cancel(struct LEDLIST* p)
 {
-	struct LEDLIST* p1 = phead;
+return;
+
 	struct LEDLIST* p2 = NULL;
+	struct LEDLIST* p1 = phead;
+
+	if (p1 == NULL) return; // List is empty
 
 	/* Check if this LED was in a blink mode. */
 	switch (p->ctl.mode)
@@ -189,15 +215,17 @@ static void blink_cancel(struct LEDLIST* p)
 	case LED_BLINKWINK:
 	// Here, it is in one of the blink modes.
 
+
 		/* Find previous in linked list to this one. */
-		while (p1 != p)
+		do
 		{
 			p2 = p1;
 			p1 = p1->next;
 			if (p1 >= &ledlist[16]) morse_trap(29);
-		}
-		if (p2 == NULL)
-		{
+		} while (p1 != p) ;
+
+		if (p2 == p1)
+		{ // Here, empty list
 			phead = NULL;
 		}
 		else
