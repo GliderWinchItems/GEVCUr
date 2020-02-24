@@ -64,11 +64,11 @@ void GevcuEvents_01(void)
 	switch (p->db_on)
 	{
 	case 1:
-      led_safe.mode = 1;
+      led_safe.mode = 0;
 		break;
 			
 	case 2:
-      led_safe.mode = 0;
+      led_safe.mode = 1;
 		break;
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);

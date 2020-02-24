@@ -17,6 +17,8 @@
 #include "morse.h"
 #include "calib_control_lever.h"
 #include "LEDTask.h"
+#include "BeepTask.h"
+
 
 /* email: Tue, 11 Feb 2020 03:14:30 +0000 (02/10/2020 10:14:30 PM)
 
@@ -34,6 +36,21 @@ Prep
 Save
 Arm PB
 Prep PB
+
+02/23/2020 Desired seq:
+Safe
+Prep
+Armed
+Groundroll
+Ramp
+Climb
+Recovery
+Prep
+Retrieve
+Abort
+Stop
+Prep PB
+Arm PB
 
  Sixteen LEDs from gsm CP tests. 
 #define LED_STOP         0 //
@@ -53,35 +70,48 @@ Prep PB
 #define LED_SPARE08     14 //
 #define LED_SPAREFS     15 // *LED_CL_FS
 */
-
+/* 02/23/2020 Intended chase sequence
+Safe
+Prep
+Armed
+Groundroll
+Ramp
+Climb
+Recovery
+Prep
+Retrieve
+Abort
+Stop
+Prep PB
+Arm PB
+*/
 /* Map of LED sequence for CP panel. */
 static const uint8_t ledmap[] = 
 {
-	LED_STOP,
-	LED_ABORT,
-	LED_RETRIEVE,
-	LED_PREP,
-	LED_RECOVERY,
-	LED_CLIMB,
-	LED_RAMP,
-	LED_GNDRLRTN,
-	LED_ARM,
-	LED_PREP,
 	LED_SAFE,
-	LED_ARM_PB,
+	LED_PREP,
+	LED_ARM,
+	LED_GNDRLRTN,
+	LED_RAMP,
+	LED_CLIMB,
+	LED_RECOVERY,
+	LED_PREP,
+	LED_RETRIEVE,
+	LED_ABORT,
+	LED_STOP,
 	LED_PREP_PB,
-	LED_SPARERS, 
-	LED_SPARE10,  
-	LED_SPARE08, 
-	LED_SPAREFS, 
+	LED_ARM_PB,
 	0xFF	/* End of sequence */
 };
 
-struct LEDREQ spiledx      = {LED_STOP   ,0}; // Current LED ON
-struct LEDREQ spiledx_prev = {LED_SPAREFS,1}; // Previous LED (to be turned OFF)
+struct LEDREQ spiledx      = {LED_SAFE   ,0}; // Current LED ON
+struct LEDREQ spiledx_prev = {LED_ARM_PB ,1}; // Previous LED (to be turned OFF)
 
 static uint8_t chasectr = 0; // Counter for slowing down output rate
 static uint8_t seqctr   = 0; // (0 - 15) sequence
+
+static uint8_t led_chasing_state = 0;
+static const struct BEEPQ beep1 = {200,50,1}; // End of sequence
 
 /* *************************************************************************
  * void led_chasing(void);
@@ -92,23 +122,74 @@ void led_chasing(void)
 	switch (flag_clcalibed)
 	{
 	case 0:
-		chasectr += 1;
-		if (chasectr > 1)
-		{
-			chasectr = 0;
-			/* Send a lit LED down the row, over and over. */
-			spiledx.mode = LED_ON; // Turn current LED on
-			xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
 
-			spiledx_prev.mode = LED_OFF; // Turn previous LED off
-			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-			
-			spiledx_prev = spiledx; // Update previous
+		switch (led_chasing_state)
+		{
+		case 0: // Turn all LEDs on
+			spisp_wr[0].u16 = 0xffff; // Set all LEDs ON
+			chasectr = 0;
+			led_chasing_state = 1;
+			break;
+
+		case 1: // Time all LEDs on
+			chasectr += 1; // Timing counter
+			if (chasectr <=10) break;
+
+			// Turn all LEDs off and time
+			spisp_wr[0].u16 = 0x0000; // Set all LEDs OFF
+			chasectr = 0;
+			led_chasing_state = 2;
+			break;
+
+		case 2:
+			chasectr += 1; // Timing counter
+			if (chasectr <= 10) break;
+			seqctr = 0;
+			spiledx.bitnum = ledmap[0]; // First one in sequence
+			spiledx_prev.bitnum = ledmap[2]; // Use not the first one
+			chasectr = 0;
+			led_chasing_state = 3;
+			break;
+
+		case 3:
+			chasectr += 1; // Timing counter
+			if (chasectr > 1)
+			{ // Next step
+				chasectr = 0; // Reset time counter
+
+				/* Send a lit LED down the row, over and over. */
+				spiledx.mode = LED_ON; // Turn current LED on
+				xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
 	
-			/* Step to next LED to be displayed. */
-			seqctr += 1;   // Advance sequence ctr
-			if (ledmap[seqctr] == 0xFF) seqctr = 0;
-			spiledx.bitnum = ledmap[seqctr]; // Map LED
+				spiledx_prev.mode = LED_OFF; // Turn previous LED off
+				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
+				
+				spiledx_prev = spiledx; // Update previous
+		
+				/* Step to next LED to be displayed. */
+				seqctr += 1;   // Advance sequence ctr
+				if (ledmap[seqctr] == 0xFF) 
+				{
+					xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
+					seqctr = 0;
+					led_chasing_state = 4;
+					break;
+				}
+				spiledx.bitnum = ledmap[seqctr]; // Map LED
+			}
+			break;
+
+		case 4:
+			chasectr += 1; // Timing counter
+			if (chasectr > 1)
+			{
+				chasectr = 0; // Reset time counter
+				spiledx_prev.mode = LED_OFF; // Turn previous LED off
+				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
+				led_chasing_state = 2;
+			}
+			break;
+
 		}
 		break;
 

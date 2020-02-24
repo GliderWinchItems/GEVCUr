@@ -58,8 +58,14 @@ struct LEDLIST
 };
 
 /* Entry for each possible LED. */
+// Not on list:  p->next == NULL
+// Last on list: p->next == point to self
+// Empty list:     phead == NULL
 static struct LEDLIST* phead;
 static struct LEDLIST ledlist[17];
+
+/* Define to do bone head when linke list not working! */
+#define USELEDLISTARRAYSCAN
 
 /* Preset counter ticks for blink modes. */
 static const uint16_t dur_off[] = 
@@ -108,13 +114,16 @@ static void init(void)
  * @param	: p = pointer to LED struct item to be blinked
  * @param	: mode = blink mode code
  * *************************************************************************/
+
+
 static void blink_init(struct LEDLIST* p, uint8_t mode)
 {
-p->ctl.mode  = mode; // Update blink mode
-p->ctl.ctr   = dur_on[mode]; // Init 1st duration counter
-spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
-return;
-
+#ifdef USELEDLISTARRAYSCAN
+	p->ctl.mode  = mode; // Update blink mode
+	p->ctl.ctr   = dur_on[mode]; // Init 1st duration counter
+	spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
+	return;
+#else
 	struct LEDLIST* p2;
 	struct LEDLIST* p1;
 
@@ -144,6 +153,7 @@ return;
 	spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
 
 	return;
+#endif
 }
 /* *************************************************************************
  * static void blink(void);
@@ -153,17 +163,15 @@ static void blink(void)
 {
 	struct LEDLIST* p1 = phead;
 
-//	if (p1 == NULL) return; // Empty list
+#ifdef USELEDLISTARRAYSCAN
 
 	/* Traverse linked list looking for active blinkers. */
 int i;
+		p1 = &ledlist[0];	
 	for (i = 0; i < 16; i++)
 	{ // Here, p1 points to an active LED. */
-		p1 = &ledlist[i];	
-
 		if (p1->ctl.mode > 1)
 	 {
-	
 		// Timing counter
 		if (p1->ctl.ctr != 0)
 		{ // Countdown, and stay in current led state.
@@ -187,10 +195,44 @@ int i;
 			}
 		}
     }
-// 		p1 = p1->next;
+	 p1 += 1;
 	}
-//	} while (p1 != p1->next);
 	return;
+#else
+	if (p1 == NULL) return; // List empty
+
+	do
+	{ // Here, p1 points to an active LED. */
+		if (p1->ctl.mode > 1)
+	 	{ // Here, one of the blinking modes
+			// Timing counter
+			if (p1->ctl.ctr != 0)
+			{ // Countdown, and stay in current led state.
+				p1->ctl.ctr -= 1;
+			}
+			else
+			{ // Here, ctr is at zero. Update led state
+				if (p1->ctl.on == 0)
+				{ // Here, led is off. Set led on & set on time ct.
+					spisp_wr[0].u16 |= p1->ctl.bitmsk; // Set spi bit on
+					p1->ctl.on = LED_ON; // LED was set to on
+					// Init duration counter of on.
+					p1->ctl.ctr = dur_on[p1->ctl.mode];
+				}
+				else
+				{ // Here, it is on. Set off & set off time ct.
+					spisp_wr[0].u16 &= ~(p1->ctl.bitmsk); // Set spi bit off
+					p1->ctl.on = LED_OFF; // LED was set to off
+					// Init duration counter for off
+					p1->ctl.ctr = dur_off[p1->ctl.mode];
+				}
+			}
+		}
+		p1 = p1->next;
+		if (p1 == NULL) morse_trap(292);
+	} while (p1->next != p1);
+	return;
+#endif
 }
 /* *************************************************************************
  * static void blink_cancel(struct LEDLIST* p);
@@ -199,7 +241,9 @@ int i;
  * *************************************************************************/
 static void blink_cancel(struct LEDLIST* p)
 {
-return;
+#ifdef USELEDLISTARRAYSCAN
+	return;
+#else
 
 	struct LEDLIST* p2 = NULL;
 	struct LEDLIST* p1 = phead;
@@ -235,6 +279,7 @@ return;
 		}
 	}
 	return;
+#endif
 }
 /* *************************************************************************
  * void StartLEDTask(void const * argument);

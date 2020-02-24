@@ -28,44 +28,6 @@
 #define LED_ARM_PB       0 // 0x0001
 */
 
-/* The following commented-out defines are the original
-//	Sixteen control panel switch mapping
-#define SW_SAFE    (1 << 15)	//	active low
-#define SW_ACTIVE  (1 << 14)	//	active low
-#define PB_ARM     (1 << 13)	//	active low
-#define PB_PREP    (1 << 12)	//	active low
-#define CL_RST_N0  (1 << 11)	//	Control Lever:Rest switch (low) 
-#define CP_SPARE3  (1 << 10)  //
-#define CP_SPARE10 (1 <<  9)  //
-#define CL_FS_NO   (1 <<  8)	// Control Lever:Forward switch (low)
-#define CP_BRAKE   (1 <<  7)  // Brake
-#define CP_GUILLO  (1 <<  6)  // Guillotine
-#define CP_JOGLEFT (1 <<  5)  // Joggle Left
-#define CP_JOGRITE (1 <<  4)  // Joggle Right
-#define CP_ZODOMTR (1 <<  3)  // Zero Odometer
-#define CP_ZTENSION (1 << 2) // Zero tension
-#define CP_SPARE1  (1 <<  1)  //
-#define CP_SPARE0  (1 <<  0)  //
-*/
-
-/* Sixteen LEDs from gsm CP tests.
-#define LED_STOP         0 //
-#define LED_ABORT        1 //
-#define LED_RETRIEVE     2 //
-#define LED_RECOVERY     3 //
-#define LED_CLIMB        4 //
-#define LED_RAMP         5 //
-#define LED_GNDRLRTN     6 //
-#define LED_ARM          7 //
-#define LED_PREP         8 //
-#define LED_SAFE         9 //
-#define LED_ARM_PB      10 //
-#define LED_PREP_PB     11 //
-#define LED_SPARERS     12 // *LED_CL_RST
-#define LED_SPARE10     13 //
-#define LED_SPARE08     14 //
-#define LED_SPAREFS     15 // *LED_CL_FS
-*/
 /* Revised 2/15/2020 
 #define LED_STOP        14 //
 #define LED_ABORT       15 //
@@ -85,43 +47,25 @@
 #define LED_SPAREFS     13 // *LED_CL_FS
 */
 
-/* Reverse ordert: 02/14/2020 */
-#define LED_STOP         6 //
-#define LED_ABORT        5 //
-#define LED_RETRIEVE     4 //
-#define LED_RECOVERY     3 //
+/* 2/23/2020 gsm CP panel testing */
+#define LED_STOP        14 //
+#define LED_ABORT       15 //
+#define LED_RETRIEVE     0 //
+#define LED_RECOVERY     1 //
 #define LED_CLIMB        2 //
-#define LED_RAMP         1 //
-#define LED_GNDRLRTN     0 //
-#define LED_ARM         15 //
-#define LED_PREP        14 //
-#define LED_SAFE        13 //
-#define LED_ARM_PB      12 //
-#define LED_PREP_PB     11 //
-#define LED_SPARERS     10 // *LED_CL_RST
-#define LED_SPARE10      9 //
-#define LED_SPARE08      8 //
-#define LED_SPAREFS      7 // *LED_CL_FS
-
-
-/* 2/15/2020 RETRIEVE was GNDRLRTN 
-#define LED_STOP        10 //
-#define LED_ABORT        9 //
-#define LED_RETRIEVE     8 //
-#define LED_RECOVERY     7 //
-#define LED_CLIMB        6 //
-#define LED_RAMP         5 //
+#define LED_RAMP         3 //
 #define LED_GNDRLRTN     4 //
-#define LED_ARM          3 //
-#define LED_PREP         2 //
-#define LED_SAFE         1 //
-#define LED_ARM_PB       0 //
-#define LED_PREP_PB     15 //
-#define LED_SPARERS     14 // *LED_CL_RST
-#define LED_SPARE10     13 //
-#define LED_SPARE08     12 //
-#define LED_SPAREFS     11 // *LED_CL_FS
-*/
+#define LED_ARM          5 //
+#define LED_PREP         6 //
+#define LED_SAFE         7 //
+#define LED_ARM_PB       8 //
+#define LED_PREP_PB      9 //
+#define LED_SPARERS     10 // *LED_CL_RST
+#define LED_SPARE11     11 //
+#define LED_SPARE12     12 //
+#define LED_SPARE13     13 // *LED_CL_FS
+
+
 // * - as originally defined, but not implemented
 
 /* Result of test with Control Panel */
