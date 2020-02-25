@@ -1215,6 +1215,12 @@ extern uint16_t srdiff1;
 					sr1, srdiff1);
 #endif
 
+#define SHOWMAILBOXGEVCU07
+#ifdef SHOWMAILBOXGEVCU07
+extern struct MAILBOXCAN* pdbg07mbx;
+yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pdbg07mbx->ncan.can.cd.uc[0]);
+#endif
+
 #ifdef STARTUPCHASINGLEDS
 		if (flag_clcalibed == 0)
 		{

@@ -76,10 +76,6 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 	switch(cntctrctl.state)
 	{
 	case CLEARFAULT:
-		if ((int)(cntctrctl.nextctr - ctr)  > 0) return;
-
-		cntctrctl.sendflag = 1;       // Trigger sending
-		cntctrctl.nextctr = ctr + CNCTR_KATICKS; // Time to send next KA msg
 
 		if ((cntctrctl.cmdrcv & CMDRESET) != 0)
 		{
@@ -91,14 +87,15 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 		break;
 
 	case CONNECTED:
-		// Here we don't respond to received msgs.
+		// Here no need to respond to received msgs.
+		// 'contactor_control_time' will continue to send CONNECT msgs
 		break;
 
 	default:
 		morse_trap(343); // Never should happen.
 		break;
 	}
-
+	cntctrctl.nextctr = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
 	return;
 }
 /* ***********************************************************************************************************

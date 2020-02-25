@@ -154,10 +154,15 @@ taskflags |= TSKBITGevcuTask ;
 	 	0,            /* Debounce ct: 00            */
 	   0);           /* Debounce ct: 11            */ 
 
+	
+	/* lcdprintf buffer */
+	gevcufunction.pbuflcd1 = getserialbuf(&HUARTLCD,32);
+	if (gevcufunction.pbuflcd1 == NULL) morse_trap(401);
+
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
-	if (gevcufunction.swtimer1 == NULL) {morse_trap(40);}
+	if (gevcufunction.swtimer1 == NULL) {morse_trap(403);}
 
 	/* Initial startup state */
 	gevcufunction.state = GEVCU_INIT;
@@ -170,7 +175,7 @@ taskflags |= TSKBITGevcuTask ;
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
-	if (bret != pdPASS) {morse_trap(44);}
+	if (bret != pdPASS) {morse_trap(404);}
 
   /* Infinite loop */
   for(;;)
@@ -221,7 +226,7 @@ taskflags |= TSKBITGevcuTask ;
 			noteuse |= GEVCUBIT06;
 		}
 		if ((noteval & GEVCUBIT07) != 0) 
-		{ // CAN: 
+		{ // CAN: cid_cntctr_keepalive_r (contactor cmd response)
 			GevcuEvents_07();
 			noteuse |= GEVCUBIT07;
 		}
@@ -274,12 +279,21 @@ taskflags |= TSKBITGevcuTask ;
 		case GEVCU_INIT:
 			break;
 
+		case GEVCU_SAFE:
+			break;
+
+		case GEVCU_ACTIVE:
+			break;
+
+		case GEVCU_PREP:
+			break;
+
 		default:
 			break;
 		}
   /* ========= Update outputs ======================= */
 		GevcuUpdates();
   }
-while(1==1);
+// Never should come here
 }
 

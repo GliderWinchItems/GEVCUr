@@ -44,7 +44,7 @@
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define SPLASHDELAY (128) // (128 = 1 sec)
+#define SPLASHDELAY (80) // (128 = 1 sec)
 /* LCD delay following command */
 #define LCDLINEDELAY (2) // 2 * (1/128) = 15.625 ms
 #define INITDELAY2 ( 3)  // OFF (31.25 ms)
@@ -139,7 +139,7 @@ static void init(void)
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(300),     /* Debounce ms: closing       */
+	 	SWDBMS(250),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	// Control Lever Fullscale Normally open. */
@@ -150,7 +150,7 @@ static void init(void)
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(400),    /* Debounce ms: closing       */
+	 	SWDBMS(250),    /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	return;

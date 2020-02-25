@@ -217,9 +217,14 @@ struct GEVCUFUNCTION
 	struct MAILBOXCAN* pmbx_cid_dmoc_hv_temps;   // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
 	struct MAILBOXCAN* pmbx_cid_gps_sync; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 
+	/* LCD buffer(s) */
+	struct SERIALSENDTASKBCB* pbuflcd1;
+
 	uint8_t state;      // Gevcu main state
-	uint8_t substateC;  // State within CONNECTING (0-15)
-	uint8_t substateX;  // spare substate (0-15)
+	uint8_t substateA;  // 
+	uint8_t substateB;  // spare substate 
+
+
 
 	/* CAN msgs */
 	struct CANTXQMSG canmsg[NUMCANMSGS];

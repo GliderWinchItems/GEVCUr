@@ -170,8 +170,13 @@ void GevcuEvents_06(void)
  * void GevcuEvents_07(void);
  * @brief	: CAN: cid_cntctr_keepalive_r
  * *************************************************************************/
+struct MAILBOXCAN* pdbg07mbx;
+
 void GevcuEvents_07(void)
 {
+// Copy mailbox for defaultTask display
+pdbg07mbx = gevcufunction.pmbx_cid_cntctr_keepalive_r; 
+
 	gevcufunction.evstat |= EVCANCNTCTR; // Show New Contactor CAN msg 
 	
 	/* Send pointer to CAN msg to contactor control routine */

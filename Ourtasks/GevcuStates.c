@@ -17,8 +17,29 @@
 #include "morse.h"
 #include "adcparamsinit.h"
 
+enum GEVCU_INIT_SUBSTATEA
+{
+	GISA_SAFE,  /* Cycle Safe/Active sw. */
+
+
+};
+
 /* *************************************************************************
- * void GevcuStates_(void);
- * @brief	: CAN: cid_dmoc_critical_f,NULL,GEVCUBIT12,0,NONE);
+ * void GevcuStates_GEVCU_INIT(void);
+ * @brief	: Initialization sequence
  * *************************************************************************/
+void GevcuStates_GEVCU_INIT(void)
+{
+	switch (gevcufunction.substateA)
+	{
+	case GISA_SAFE: // Cycle Safe/Active sw.
+
+		break;
+
+
+
+		default:
+			break;
+	}
+}
 

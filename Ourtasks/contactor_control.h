@@ -8,7 +8,6 @@
 #define __CONTACTOR_CONTROL
 
 #include <stdio.h>
-
 #include <string.h>
 #include "GevcuTask.h"
 #include "gevcu_idx_v_struct.h"
@@ -17,6 +16,7 @@
 #include "common_can.h"
 
 #define CNCTR_KATICKS (128/3)
+#define CNCTR_KAQUICKTIC (25)	
 
 enum CONTACTOR_CONTROL_STATE
 {
@@ -24,7 +24,6 @@ enum CONTACTOR_CONTROL_STATE
 	CLEARFAULT,
 	CONNECTED
 };
-
 
 /*
      payload[0]
@@ -39,13 +38,10 @@ struct CNTCTRCTL
 {
 	struct CANTXQMSG canka; // CAN keepalive msg
 	uint32_t nextctr;
-
 	uint8_t state;    // State machine
 	uint8_t cmdrcv;   // Latest payload[0] with command
 	uint8_t cmdsend;  // Command we send
 	uint8_t sendflag; // 1 = send CAN msg, 0 = skip
-
-
 };
 
 /* ***********************************************************************************************************/

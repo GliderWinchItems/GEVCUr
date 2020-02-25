@@ -36,7 +36,7 @@ uint32_t spispctr; // spi interrupt counter for debugging.
 static SPI_HandleTypeDef *pspix;
 
 static uint16_t spinotebits; // Shift0reg bits that changed
-static int8_t srinit = 3;	// Initialization cycle ctr
+static int8_t srinit;	// Initialization cycle ctr
 
 
 /* NOTE: Switch i/o pins have pull-ups and closing the switch pulls the
@@ -136,7 +136,7 @@ static inline __attribute__((always_inline)) uint32_t arm_clz(uint32_t v)
 	struct SWITCHPTR* p1 = phdsw;
 	struct SWITCHPTR* p2;
 	uint16_t n,nn;
-	
+
 taskENTER_CRITICAL();
 
 	if (p1 == NULL)
@@ -203,7 +203,7 @@ taskENTER_CRITICAL();
 		if (nn > (SPISERIALPARALLELSIZE*8)) morse_trap(527); // Bit pos out-of-range
 		pchange[nn] = p2; // Bit position pointer for 2nd switch
 	}
-
+	
 taskEXIT_CRITICAL();
 	return p2; // Return pointer to first switch (in case of a pair)
 }
@@ -377,7 +377,7 @@ static void p2xor(struct SWITCHPTR* p)
 	BaseType_t xHPT = pdFALSE;
 
 	/* Convert sw pair status to a two bit value. */
-	p->on = 0x0; // Both sws c;psed
+	p->on = 0x0; // Both sws closed
 	if ((p->switchbit & spisp_rd[0].u16) != SW_CLOSED)
 		p->on |= 0x1; // 1st sw open
 	if ((p->switchbit1 & spisp_rd[0].u16) != SW_CLOSED)
