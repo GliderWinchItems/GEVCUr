@@ -77,7 +77,7 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 	{
 	case CTL_CLEARFAULT:
 
-		if (pcan->cd.uc[1] != 0)
+		if ((pcan->cd.uc[0] & 0xf) != 0)
 		{ // A fault is showing
 			cntctrctl.ctr += 1;
 			if (cntctrctl.ctr < 4)
@@ -92,14 +92,15 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 		break;
 
 	case CTL_CONNECTING:
-		if (pcan->cd.uc[2] != 0)
+		if ((pcan->cd.uc[0] & 0xf) != CONNECTED)
 		{
 			cntctrctl.ctr += 1;
-			if (cntctrctl.ctr < 30)
+			if (cntctrctl.ctr > 30)
 			{ // It is taking too long. Re-start
 				cntctrctl.state = CTL_INITTIM;
 				break;
 			}
+			break;
 		}
 		cntctrctl.state = CTL_CONNECTED;
 		break;
