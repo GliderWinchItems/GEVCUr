@@ -45,7 +45,7 @@ void GevcuEvents_00(void)
 	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
 
 	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
-	fclpos = calib_control_lever();
+//	fclpos = calib_control_lever();
 
 	/* Convert control level position into torque request for DMOC #1. */
 	dmoc_control_throttlereq(&dmocctl[0], fclpos);

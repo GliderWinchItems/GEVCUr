@@ -16,30 +16,32 @@
 #include "shiftregbits.h"
 #include "morse.h"
 
+/* Define to do bone head when linked list not working! */
+// Comment out to use linked list method
+#define USELEDLISTARRAYSCAN
+
 osThreadId LEDTaskHandle = NULL;
 osMessageQId LEDTaskQHandle;
 
 /* Each LED gets one of these. */
 /*
-static struct SPIOUTREQUEST spiout[] = 
 { // Bit number, on/off set to off. 
- {LED_STOP      , 0}, //    0 //
- {LED_ABORT     , 0}, //    1 //
- {LED_RETRIEVE  , 0}, //    2 //
- {LED_RECOVERY  , 0}, //    3 //
- {LED_CLIMB     , 0}, //    4 //
- {LED_RAMP      , 0}, //    5 //
- {LED_GNDRLRTN  , 0}, //    6 //
- {LED_ARM       , 0}, //    7 //
- {LED_PREP      , 0}, //    8 //
- {LED_SAFE      , 0}, //    9 //
- {LED_ARM_PB    , 0}, //   10 //
- {LED_PREP_PB   , 0}, //   11 //
- {LED_SPARERS   , 0}, //   12 // *LED_CL_RST
- {LED_SPARE10   , 0}, //   13 //
- {LED_SPARE08   , 0}, //   14 //
- {LED_SPAREFS   , 0}, //   15 // *LED_CL_FS
-};
+#define LED_STOP        14 //
+#define LED_ABORT       15 //
+#define LED_RETRIEVE     0 //
+#define LED_RECOVERY     1 //
+#define LED_CLIMB        2 //
+#define LED_RAMP         3 //
+#define LED_GNDRLRTN     4 //
+#define LED_ARM          5 //
+#define LED_PREP         6 //
+#define LED_SAFE         7 //
+#define LED_ARM_PB       8 //
+#define LED_PREP_PB      9 //
+#define LED_SPARERS     10 // *LED_CL_RST
+#define LED_SPARE11     11 //
+#define LED_SPARE12     12 //
+#define LED_SPARE13     13 // *LED_CL_FS
 */         
 
 struct LEDCTL
@@ -51,21 +53,24 @@ struct LEDCTL
 };
 
 /* Linked list for LEDs currently in blink mode. */
+// next = NULL: Last on linked list
+// next = 1: Not on linked list
+// next = not above: points to next on linked list
+// prev = points to struct that points to us.
+// prev = NULL 1st item on list
+// phead = NULL: list empty
+// phead = not NULL: points to first on list
+#define NOTONLIST 1 // 'next' value for not on linked list
 struct LEDLIST
 {
 	struct LEDLIST* next;
+	struct LEDLIST* prev;
 	struct LEDCTL ctl;
 };
 
 /* Entry for each possible LED. */
-// Not on list:  p->next == NULL
-// Last on list: p->next == point to self
-// Empty list:     phead == NULL
 static struct LEDLIST* phead;
 static struct LEDLIST ledlist[17];
-
-/* Define to do bone head when linke list not working! */
-#define USELEDLISTARRAYSCAN
 
 /* Preset counter ticks for blink modes. */
 static const uint16_t dur_off[] = 
@@ -102,7 +107,9 @@ static void init(void)
 		ledlist[i].ctl.ctr    = 0;
 		ledlist[i].ctl.on     = 0;
 		ledlist[i].ctl.bitmsk = (1 << i);
-		ledlist[i].next = NULL; // List link
+		ledlist[i].next = (struct LEDLIST*)NOTONLIST; // Not on list
+		ledlist[i].prev = NULL; // List link
+	
 	}
 	spisp_wr[0].u16 = 0;    // Set spi LED bits off
 	phead           = NULL; // Empty list
@@ -119,33 +126,37 @@ static void init(void)
 static void blink_init(struct LEDLIST* p, uint8_t mode)
 {
 #ifdef USELEDLISTARRAYSCAN
+/* Scan array method. */
 	p->ctl.mode  = mode; // Update blink mode
 	p->ctl.ctr   = dur_on[mode]; // Init 1st duration counter
 	spisp_wr[0].u16 |= p->ctl.bitmsk; // Set LED on
 	return;
+
 #else
+/* Linked list method. */
 	struct LEDLIST* p2;
-	struct LEDLIST* p1;
 
-	/* Extending blinking if currently active. */
-	if (p->next != NULL)
+	/* If currently on list nothing needs to be done. */
+	if (p->next != (struct LEDLIST*)NOTONLIST)
 	{ // Here, this LED is already on the linked list
-		// Maybe it is a shift to a different type of blink
+		// It could be a shift to a different type of blink
 		return;
 	}
-	/* Here, p is not list. */
-	if (phead == NULL)
-	{ // Here, p is 1st and last on list
+	/* Here, p is not on the list. */
+	if (phead == NULL) // List empty?
+	{ // Yes, p is 1st and also last on list
 		phead = p;   // head points to p
-		p->next = p; // p is also last on list
-		return;
+		p->next = NULL; // p is also last on list
+		p->prev = NULL; // phead is previous
 	}
-	
-	/* Add entry to head of list. */
-	p2        = phead; // Save ptr
-	phead     = p;     // Head pts to this struct
-	p->next   = p2;    // Point to next in list
-
+	else
+	{	/* Add entry to head of list. */
+		p2        = phead; // Save current ptr to 1st entry
+		phead     = p;     // Head now pts to new entry
+		p->next   = p2;    // Point to next in list (could be NULL)
+		p->prev   = NULL;  // Previous for new entry is always phead
+		p2->prev  = p;     // New entry now precedes old 1st entry
+	}
 
 	/* Init this LED. */
 	p->ctl.mode  = mode; // Update blink mode
@@ -164,11 +175,10 @@ static void blink(void)
 	struct LEDLIST* p1 = phead;
 
 #ifdef USELEDLISTARRAYSCAN
+/* Go through array looking and handle active blinkers. */
 
-	/* Traverse linked list looking for active blinkers. */
-int i;
-		p1 = &ledlist[0];	
-	for (i = 0; i < 16; i++)
+	p1 = &ledlist[0];	
+	while (p1 != &ledlist[16])
 	{ // Here, p1 points to an active LED. */
 		if (p1->ctl.mode > 1)
 	 {
@@ -198,12 +208,17 @@ int i;
 	 p1 += 1;
 	}
 	return;
-#else
+
+#else /* Linked list method. */
+
 	if (p1 == NULL) return; // List empty
 
+if (p1 == (struct LEDLIST*)NOTONLIST) morse_trap(292);
+
+	/* Traverse linked list looking for active blinkers. */
 	do
 	{ // Here, p1 points to an active LED. */
-		if (p1->ctl.mode > 1)
+		if (p1->ctl.mode > 1)  // Needed?, or morse_trap it?
 	 	{ // Here, one of the blinking modes
 			// Timing counter
 			if (p1->ctl.ctr != 0)
@@ -228,9 +243,9 @@ int i;
 				}
 			}
 		}
-		p1 = p1->next;
-		if (p1 == NULL) morse_trap(292);
-	} while (p1->next != p1);
+		p1 = p1->next; // 'next' is NULL on last item on list
+	} while (p1 != NULL); 
+
 	return;
 #endif
 }
@@ -242,42 +257,42 @@ int i;
 static void blink_cancel(struct LEDLIST* p)
 {
 #ifdef USELEDLISTARRAYSCAN
+/* Array scan method : updating 'mode' effectively cancels blinking. */
 	return;
 #else
+/* Linked list method: remove struct from linked list. */
 
 	struct LEDLIST* p2 = NULL;
 	struct LEDLIST* p1 = phead;
 
-	if (p1 == NULL) return; // List is empty
+	if (p->next == (struct LEDLIST*)NOTONLIST)
+		return;
 
-	/* Check if this LED was in a blink mode. */
-	switch (p->ctl.mode)
-	{
-	case LED_BLINKSLOW:
-	case LED_BLINKFAST:
-	case LED_BLINK1SEC:
-	case LED_BLINKWINK:
-	// Here, it is in one of the blink modes.
-
-
+	if (p1 != NULL)
+	{ // Here list is not empty
 		/* Find previous in linked list to this one. */
-		do
-		{
-			p2 = p1;
-			p1 = p1->next;
-			if (p1 >= &ledlist[16]) morse_trap(29);
-		} while (p1 != p) ;
+		p2 = p->prev;
 
-		if (p2 == p1)
-		{ // Here, empty list
+		if (p2 == NULL)
+		{ // Here, removal of p will make an empty list
 			phead = NULL;
+			p->prev = NULL;
 		}
 		else
 		{
-			p2->next = p->next;  // Remove from list
-			p->next = 0;	// Show not active
+			if (p->next == NULL)
+			{ // Last on list
+				p2->next = p->next; // (NULL)
+			}
+			else
+			{ // Not last on list
+				p1 = p->next;
+				p1->prev = p->prev;
+				p2->next = p->next;  // Remove from list
+			}
 		}
 	}
+	p->next = (struct LEDLIST*)NOTONLIST; // Not on list	
 	return;
 #endif
 }
@@ -291,7 +306,6 @@ void StartLEDTask(void* argument)
 	struct LEDLIST* p;
 	BaseType_t qret;
 	uint8_t i;
-
 
   /* Infinite loop */
   for(;;)

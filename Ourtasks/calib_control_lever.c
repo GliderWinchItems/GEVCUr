@@ -44,7 +44,7 @@
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define SPLASHDELAY (128) //(128 * 3)  // 3 seconds
+#define SPLASHDELAY (128) // (128 = 1 sec)
 /* LCD delay following command */
 #define LCDLINEDELAY (2) // 2 * (1/128) = 15.625 ms
 #define INITDELAY2 ( 3)  // OFF (31.25 ms)
@@ -200,9 +200,7 @@ float calib_control_lever(void)
 {
 	uint8_t byt[32];
 	uint8_t* p;
-
 	float ftmp;
-
 	float fcur;
 	float frange;
 
@@ -296,7 +294,6 @@ float calib_control_lever(void)
 				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*2; 		
 				break;
 			}		
-
 
 			lcdprintf(&pbuflcd1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
 //			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);

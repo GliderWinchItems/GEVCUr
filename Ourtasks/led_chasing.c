@@ -111,7 +111,8 @@ static uint8_t chasectr = 0; // Counter for slowing down output rate
 static uint8_t seqctr   = 0; // (0 - 15) sequence
 
 static uint8_t led_chasing_state = 0;
-static const struct BEEPQ beep1 = {200,50,1}; // End of sequence
+static uint8_t allonctr = 0;
+static const struct BEEPQ beep1 = {200,300,2}; // End of sequence
 
 /* *************************************************************************
  * void led_chasing(void);
@@ -148,7 +149,11 @@ void led_chasing(void)
 			spiledx.bitnum = ledmap[0]; // First one in sequence
 			spiledx_prev.bitnum = ledmap[2]; // Use not the first one
 			chasectr = 0;
-			led_chasing_state = 3;
+			allonctr += 1;
+			if (allonctr > 1)
+				led_chasing_state = 3;
+			else
+				led_chasing_state = 0;
 			break;
 
 		case 3:

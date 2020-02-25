@@ -322,10 +322,10 @@ DiscoveryF4 LEDs --
 
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
-	xSerialTaskSendCreate(0);	// Create task and set Task priority
+	xSerialTaskSendCreate(1);	// Create task and set Task priority
 
 	/* Create serial receiving task. */
-	xSerialTaskReceiveCreate(0);
+	xSerialTaskReceiveCreate(1);
 
 	/* Setup semaphore for yprint and sprintf et al. */
 	yprintf_init();
@@ -343,7 +343,7 @@ DiscoveryF4 LEDs --
 	if (Qidret < 0) morse_trap(4); // Panic LED flashing
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
-  Qidret = xCanTxTaskCreate(0, 64); // CanTask priority, Number of msgs in queue
+  Qidret = xCanTxTaskCreate(2, 64); // CanTask priority, Number of msgs in queue
 	if (Qidret < 0) morse_trap(5); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
@@ -407,15 +407,15 @@ DiscoveryF4 LEDs --
 //	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Spi shift register task. */
-	Thrdret = xSpiOutTaskCreate(0);
+	Thrdret = xSpiOutTaskCreate(1);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
-	Thrdret = xBeepTaskCreate(-2, 32);
+	Thrdret = xBeepTaskCreate(0, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* LED task (taskpriority, max queued items) .*/
-	Thrdret = xLEDTaskCreate(-1, 32);
+	Thrdret = xLEDTaskCreate(0, 32);
 	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* ADC summing, calibration, etc. */
@@ -425,7 +425,7 @@ DiscoveryF4 LEDs --
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
 
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
 
 /* =================================================== */
 
@@ -968,7 +968,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//$  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 // Without this, a hard fault takes place under some combinations of selections
