@@ -20,10 +20,24 @@
 
 enum CONTACTOR_CONTROL_STATE
 {
-	INITTIM,
-	CLEARFAULT,
-	CONNECTED
+	CTL_INITTIM,
+	CTL_CLEARFAULT,
+	CTL_CONNECTING,
+	CTL_CONNECTED
 };
+
+enum CONTACTOR_STATE
+{
+	DISCONNECTED,   /*  0 */
+	CONNECTING,     /*  1 */
+	CONNECTED,      /*  2 */
+	FAULTING,       /*  3 */
+	FAULTED,        /*  4 */
+	RESETTING,      /*  5 */
+	DISCONNECTING,  /*  6 */
+	OTOSETTLING,    /*  7 one time intializing. */
+};
+
 
 /*
      payload[0]
@@ -38,6 +52,7 @@ struct CNTCTRCTL
 {
 	struct CANTXQMSG canka; // CAN keepalive msg
 	uint32_t nextctr;
+	uint16_t ctr;      // Repetition counter
 	uint8_t state;    // State machine
 	uint8_t cmdrcv;   // Latest payload[0] with command
 	uint8_t cmdsend;  // Command we send

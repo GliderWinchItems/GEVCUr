@@ -25,7 +25,7 @@ struct CNTCTRCTL cntctrctl; // Contactor ControlSCTH90N65G2V-7
  ************************************************************************************************************* */
 void contactor_control_init(void)
 {
-	cntctrctl.state    = INITTIM;
+	cntctrctl.state    = CTL_INITTIM;
 	cntctrctl.sendflag = 0;
 
 	/* Initialize keepalive CAN msg. */
@@ -34,7 +34,6 @@ void contactor_control_init(void)
 	cntctrctl.canka.bits       = 0; // /NART
 	cntctrctl.canka.can.id     = gevcufunction.lc.cid_cntctr_keepalive_i;
 	cntctrctl.canka.can.dlc    = 1;
-
 	return;
 }
 /* ***********************************************************************************************************
@@ -44,12 +43,13 @@ void contactor_control_init(void)
  ************************************************************************************************************* */
 void contactor_control_time(uint32_t ctr)
 {
-	if (cntctrctl.state == INITTIM)
+	if (cntctrctl.state == CTL_INITTIM)
 	{ // OTO 
-		cntctrctl.nextctr = ctr + CNCTR_KATICKS; // Time to send next KA msg
+		cntctrctl.nextctr  = ctr + CNCTR_KATICKS; // Time to send next KA msg
 		cntctrctl.cmdsend  = CMDRESET;// We start by clearing any contactor fault	
+		cntctrctl.ctr      = 0;       // Repetition counter
 		cntctrctl.sendflag = 1;       // Trigger sending (during GevcuUpdates.c)
-		cntctrctl.state = CLEARFAULT; // Msg will be to clear any faults
+		cntctrctl.state = CTL_CLEARFAULT; // Msg will be to clear any faults
 		return;
 	}
 
@@ -75,18 +75,36 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 
 	switch(cntctrctl.state)
 	{
-	case CLEARFAULT:
+	case CTL_CLEARFAULT:
 
-		if ((cntctrctl.cmdrcv & CMDRESET) != 0)
-		{
-			cntctrctl.cmdsend  = CMDRESET;
-			break;
+		if (pcan->cd.uc[1] != 0)
+		{ // A fault is showing
+			cntctrctl.ctr += 1;
+			if (cntctrctl.ctr < 4)
+			{ // Try to clear it a bunch of times
+				break;
+			}
+		// else Some sort of LCD msg?
 		}
+		cntctrctl.ctr = 0;
 		cntctrctl.cmdsend  = CMDCONNECT;
-		cntctrctl.state = CONNECTED;
+		cntctrctl.state = CTL_CONNECTING;
 		break;
 
-	case CONNECTED:
+	case CTL_CONNECTING:
+		if (pcan->cd.uc[2] != 0)
+		{
+			cntctrctl.ctr += 1;
+			if (cntctrctl.ctr < 30)
+			{ // It is taking too long. Re-start
+				cntctrctl.state = CTL_INITTIM;
+				break;
+			}
+		}
+		cntctrctl.state = CTL_CONNECTED;
+		break;
+
+	case CTL_CONNECTED:
 		// Here no need to respond to received msgs.
 		// 'contactor_control_time' will continue to send CONNECT msgs
 		break;
