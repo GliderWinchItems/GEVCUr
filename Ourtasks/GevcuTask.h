@@ -115,7 +115,6 @@ NOTES:
 #define PSW_PB_PREP  3 // Pushbutton
 #define PSW_PR_SAFE  4 // Switch pair (SAFE/ACTIVE)
 
-
 /* States */
 enum GEVCU_STATE
 {
@@ -131,7 +130,7 @@ enum GEVCU_STATE
 /* Fault codes */
 enum GEVCU_FAULTCODE
 {
-	NOFAULT,
+	GEVCU_NOFAULT,
 };
 
 /* Function command response payload codes. */
@@ -219,12 +218,11 @@ struct GEVCUFUNCTION
 
 	/* LCD buffer(s) */
 	struct SERIALSENDTASKBCB* pbuflcd1;
+	struct SERIALSENDTASKBCB* pbuflcd2;
 
 	uint8_t state;      // Gevcu main state
 	uint8_t substateA;  // 
 	uint8_t substateB;  // spare substate 
-
-
 
 	/* CAN msgs */
 	struct CANTXQMSG canmsg[NUMCANMSGS];

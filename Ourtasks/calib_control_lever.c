@@ -59,6 +59,8 @@ static uint8_t clrrowctr = 0;
 /* Flag to show others when CL calibration is complete. */
 uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 
+uint8_t flag_cllcdrdy;  // 0 = LCD not initialized; 1 = LCD OK to use
+
 struct CLFUNCTION clfunc;
 
 /* Beeper: { duration on, duration off, repeat count}; */
@@ -279,6 +281,9 @@ float calib_control_lever(void)
 				clrrowctr += 1; // Advance row number
 				break;
 			}
+
+			/* Let others know the LCD initialization sequence is complete. */
+			flag_cllcdrdy = 1;
 
 		/* === LCD initialization complete === */
 

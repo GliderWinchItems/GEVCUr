@@ -155,9 +155,12 @@ taskflags |= TSKBITGevcuTask ;
 	   0);           /* Debounce ct: 11            */ 
 
 	
-	/* lcdprintf buffer */
+	/* lcdprintf buffers */
 	gevcufunction.pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (gevcufunction.pbuflcd1 == NULL) morse_trap(401);
+
+	gevcufunction.pbuflcd2 = getserialbuf(&HUARTLCD,32);
+	if (gevcufunction.pbuflcd2 == NULL) morse_trap(402);
 
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\

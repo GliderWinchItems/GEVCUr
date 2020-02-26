@@ -140,6 +140,7 @@ C_SOURCES += Ourtasks/paycnvt.c
 C_SOURCES += Ourtasks/LEDTask.c
 #C_SOURCES += Ourtasks/SwitchTask.c
 C_SOURCES += Ourtasks/led_chasing.c
+C_SOURCES += Ourtasks/contactor_control_msg.c
 
 # /* USER CODE END */ 
 
