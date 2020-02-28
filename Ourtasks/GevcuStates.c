@@ -150,10 +150,11 @@ void GevcuStates_GEVCU_SAFE(void)
 	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_OPEN )
 	{ // Here SAFE/ACTIVE switch is in ACTIVE position
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
+
 		led_safe.mode = LED_BLINKFAST; // LED_SAFE fast blink mode
 		xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
 
-		/* Request contactor to DISCONNECT. */
+		/* Request contactor to CONNECT. */
 		cntctrctl.req = CMDCONNECT;
 		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGDELAY;
 		return;
@@ -177,6 +178,7 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 	/* Wait for CONNECTED. */
 	if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
 	{ // Put a stalled loop timeout here?
+		cntctrctl.req = CMDCONNECT;
 		return;
 	}
 
