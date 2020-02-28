@@ -121,7 +121,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 //#define DEHRIGTEST
 #ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
-	if (cntctrctl.cmdrcv != DISCONNECTED)
+	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
 	{ // LCD msg here?
 		return;
 	}
@@ -173,10 +173,9 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGLONG;
 	}
 
-#define DEHRIGTEST
 #ifndef DEHRIGTEST
 	/* Wait for CONNECTED. */
-	if (cntctrctl.cmdrcv != CONNECTED)
+	if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
 	{ // Put a stalled loop timeout here?
 		return;
 	}
