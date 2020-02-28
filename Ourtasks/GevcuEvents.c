@@ -65,11 +65,12 @@ void GevcuEvents_00(void)
  * void GevcuEvents_01(void);
  * @brief	: Switch pair: SAFE/ACTIVE
  * *************************************************************************/
-uint32_t dbgGE01;
-
+/*
+   When the SAFE/ACTIVE sw is goes from ACTIVE to SAFE, all states except
+   the initial startup terminate and the transition to SAFE state begins.
+*/
 void GevcuEvents_01(void)
 {
-dbgGE01 += 1;
 	/* Switch going to SAFE interrupt all other non-startup states. */
 	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE)
 	{ // Go to safe now (unless still in OTO initialization).

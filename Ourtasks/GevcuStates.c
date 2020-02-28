@@ -216,6 +216,10 @@ void GevcuStates_GEVCU_ACTIVE(void)
 		led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
 		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
+		led_prep.mode = LED_BLINKFAST;
+		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+
+
 		gevcufunction.state = GEVCU_ARM_TRANSITION;
 		gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY; // 
 		return;
@@ -254,6 +258,10 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 		led_arm.mode    = LED_ON; // ARM LED ON
 		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
+		led_prep.mode = LED_ON;
+		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+
+
 		gevcufunction.state = GEVCU_ARM;
 		return;
 
@@ -264,6 +272,14 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
  * *************************************************************************/
 void GevcuStates_GEVCU_ARM(void)
 {
+	if (gevcufunction.psw[PSW_PB_PREP]->db_on == SW_CLOSED)
+	{
+		led_prep.mode = LED_BLINKFAST;
+		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+		gevcufunction.state = GEVCU_ARM_TRANSITION;
+		return;		
+	}
+
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{
 		/* Set DMOC torque to CL scaled. */
@@ -275,6 +291,7 @@ void GevcuStates_GEVCU_ARM(void)
 		led_retrieve.mode = LED_OFF;	
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
+
 	return;
 }
 

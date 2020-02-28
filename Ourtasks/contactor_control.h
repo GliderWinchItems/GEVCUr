@@ -16,7 +16,7 @@
 #include "common_can.h"
 
 #define CNCTR_KATICKS (128/3)
-#define CNCTR_KAQUICKTIC (25)	
+#define CNCTR_KAQUICKTIC (128/5)	
 
 /* Command request bits assignments. 
 Sourced location: ../contactor/OurTasks/ContactorTask.h

@@ -76,6 +76,7 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 	{ // Here, do a reset which does the disconnecting process. */
 		cntctrctl.cmdsend  = CMDRESET;
 		cntctrctl.nextctr = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
+		cntctrctl.state = CTL_CLEARFAULT; // Start connect sequence when CMDCONNECT given
 		return;	
 	}
 	/* Here, not RESET means CONNECT. */
@@ -84,25 +85,17 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 	{
 	case CTL_CLEARFAULT:
 		contactor_control_msg(pcan); // LCD display
-		if ((pcan->cd.uc[0] & 0xf) != 0)
+		if (pcan->cd.uc[1] != 0)
 		{ // A fault is showing
 			cntctrctl.ctr += 1;
 			if (cntctrctl.ctr < 4)
 			{ // Try to clear it a bunch of times
 				break;
 			}
-		// else Some sort of LCD msg?
+		// Here. Give up and try a connect anyway.
 		}
 		cntctrctl.ctr = 0;
-		if (cntctrctl.req == CMDCONNECT)
-		{
-			cntctrctl.cmdsend  = CMDCONNECT;
-			cntctrctl.state = CTL_CONNECTING;
-			break;
-		}
-		cntctrctl.cmdsend  = CMDCONNECT;
 		cntctrctl.state = CTL_CONNECTING;
-		break;
 
 	case CTL_CONNECTING:
 		contactor_control_msg(pcan); // LCD display

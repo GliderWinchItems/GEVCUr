@@ -978,8 +978,10 @@ vTaskDelay(0);
 taskflagssave = taskflags;
 //while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
 
+//osDelay(1);
+
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1215,12 +1217,10 @@ extern uint16_t srdiff1;
 					sr1, srdiff1);
 #endif
 
-#define SHOWMAILBOXGEVCU07
+//#define SHOWMAILBOXGEVCU07
 #ifdef SHOWMAILBOXGEVCU07
 extern struct MAILBOXCAN* pdbg07mbx;
-extern uint32_t dbgGE01;
-//yprintf(&pbuf3,"\n\rCONT %4d %08X %02X %4d",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pdbg07mbx->ncan.can.cd.uc[0],dbgGE01);
-yprintf(&pbuf3,"\n\rCONT %d",dbgGE01);
+yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pdbg07mbx->ncan.can.cd.uc[0]);
 #endif
 
 #ifdef STARTUPCHASINGLEDS
