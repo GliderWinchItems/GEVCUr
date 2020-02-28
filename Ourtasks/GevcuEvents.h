@@ -33,5 +33,14 @@ void GevcuEvents_13(void);
 void GevcuEvents_14(void);
 void GevcuEvents_15(void);
 
+extern struct LEDREQ led_climb;
+extern struct LEDREQ led_retrieve;
+extern struct LEDREQ led_arm_pb;
+extern struct LEDREQ led_arm;
+extern struct LEDREQ led_prep_pb;
+extern struct LEDREQ led_prep;
+extern struct LEDREQ led_safe;
+extern uint8_t GevcuEvents_safesw_prev;
+
 #endif
 

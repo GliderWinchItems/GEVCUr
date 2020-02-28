@@ -34,6 +34,15 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 
 #include "main.h"
 
+// LED versus switches
+struct LEDREQ led_climb    = {LED_CLIMB,   0}; // 
+struct LEDREQ led_retrieve = {LED_RETRIEVE,0}; // Associate w Pushbutton
+struct LEDREQ led_arm_pb   = {LED_ARM_PB,  0}; // Associate w Pushbutton
+struct LEDREQ led_arm      = {LED_ARM,     0}; // Associate w Pushbutton
+struct LEDREQ led_prep_pb  = {LED_PREP_PB, 0}; // Associate w Pushbutton
+struct LEDREQ led_prep     = {LED_PREP,    0}; // Associate w Pushbutton
+struct LEDREQ led_safe     = {LED_SAFE,    0}; // Associate w switch pair
+
 /* *************************************************************************
  * void GevcuEvents_00(void);
  * @brief	: ADC readings available
@@ -56,22 +65,15 @@ void GevcuEvents_00(void)
  * void GevcuEvents_01(void);
  * @brief	: Switch pair: SAFE/ACTIVE
  * *************************************************************************/
-// Debugging & test
-struct LEDREQ led_safe    = {LED_SAFE,   0};
 void GevcuEvents_01(void)
 {
-	struct SWITCHPTR* p = psw[PSW_PR_SAFE];
-	switch (p->db_on)
-	{
-	case 1:
-      led_safe.mode = 0;
-		break;
-			
-	case 2:
-      led_safe.mode = 1;
-		break;
+	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE)
+	{ // Go to safe now (unless still in OTO initialization).
+		if (gevcufunction.state != GEVCU_INIT)
+		{
+			gevcufunction.state = GEVCU_SAFE_TRANSITION;
+		}
 	}
-	xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
 	return;
 }
 /* *************************************************************************
@@ -89,43 +91,40 @@ void GevcuEvents_02(void)
  * @brief	: Torque reversal pushbutton
  * @param	: psw = pointer to switch struct
  * *************************************************************************/
-// Debugging & test
-struct LEDREQ led_climb    = {LED_CLIMB,   0};
-struct LEDREQ led_retrieve = {LED_RETRIEVE,0};
-struct LEDREQ led_arm_pb   = {LED_ARM_PB,  0};
-struct LEDREQ led_prep_pb  = {LED_PREP_PB, 0};
 
 void GevcuEvents_03(void)
 {  // One or more pushbuttons have changed
 
+#ifdef TESTINGPUSHBUTTONS
 /* Update all four LEDs even though only one PB changed. */
-	struct SWITCHPTR* p = psw[PSW_ZTENSION];
+	struct SWITCHPTR* p = gevcufunction.psw[PSW_ZTENSION];
 	if (p->db_on == SW_CLOSED) 
       led_climb.mode = LED_BLINKFAST;
 	else 	
       led_climb.mode = 0;
 	xQueueSendToBack(LEDTaskQHandle,&led_climb,portMAX_DELAY);
 
-	p = psw[PSW_ZODOMTR];
+	p = gevcufunction.psw[PSW_ZODOMTR];
 	if (p->db_on == SW_CLOSED)
 		led_retrieve.mode = 1;
 	else
 		led_retrieve.mode = 0;	
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 
-	p = psw[PSW_PB_ARM];
+	p = gevcufunction.psw[PSW_PB_ARM];
 	if (p->db_on == SW_CLOSED)
 		led_arm_pb.mode = 1;
 	else
 		led_arm_pb.mode = 0;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
-	p = psw[PSW_PB_PREP];
+	p = gevcufunction.psw[PSW_PB_PREP];
 	if (p->db_on == SW_CLOSED)
 		led_prep_pb.mode = LED_BLINKWINK;
 	else
 		led_prep_pb.mode = 0;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep_pb,portMAX_DELAY);
+#endif
 
 	return;
 }
@@ -174,14 +173,13 @@ struct MAILBOXCAN* pdbg07mbx;
 
 void GevcuEvents_07(void)
 {
-// Copy mailbox for defaultTask display
+// Debugging: Copy mailbox for defaultTask display
 pdbg07mbx = gevcufunction.pmbx_cid_cntctr_keepalive_r; 
 
 	gevcufunction.evstat |= EVCANCNTCTR; // Show New Contactor CAN msg 
 	
-	/* Send pointer to CAN msg to contactor control routine */
-	contactor_control_CANrcv(gevcufunction.swtim1ctr,\
-              &gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
+	/* Send pointer to CAN msg to contactor control. */
+	contactor_control_CANrcv(&gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
 		
 	return;
 }	
@@ -201,8 +199,7 @@ void GevcuEvents_08(void)
  * *************************************************************************/
 void GevcuEvents_09(void)
 {
-	dmoc_control_GEVCUBIT09(&dmocctl[0],\
-        &gevcufunction.pmbx_cid_dmoc_speed->ncan.can);
+	dmoc_control_GEVCUBIT09(&dmocctl[0],&gevcufunction.pmbx_cid_dmoc_speed->ncan.can);
 	return;
 }
 /* *************************************************************************

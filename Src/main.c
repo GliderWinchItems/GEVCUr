@@ -1204,14 +1204,14 @@ extern struct SWITCHPTR* psw_cl_rst_n0;
 extern uint16_t sr1;
 extern uint16_t srdiff1;
 			yprintf(&pbuf4,"\tcurpos %5.1f %d %d %d %d %d %d  %d %d %04X %04X",clfunc.curpos,
-					psw[PSW_ZTENSION]->db_on,
-					psw[PSW_ZODOMTR]->db_on,
-					psw[PSW_PB_PREP]->db_on,
-					psw[PSW_PB_ARM]->db_on,
+					gevcufunction.psw[PSW_ZTENSION]->db_on,
+					gevcufunction.psw[PSW_ZODOMTR]->db_on,
+					gevcufunction.psw[PSW_PB_PREP]->db_on,
+					gevcufunction.psw[PSW_PB_ARM]->db_on,
 					psw_cl_fs_no->db_on,
 					psw_cl_rst_n0->db_on,
-					psw[PSW_PR_SAFE]->db_on,
-					psw[PSW_PR_SAFE]->on,
+					gevcufunction.psw[PSW_PR_SAFE]->db_on,
+					gevcufunction.psw[PSW_PR_SAFE]->on,
 					sr1, srdiff1);
 #endif
 

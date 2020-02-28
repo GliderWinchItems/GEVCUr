@@ -21,9 +21,6 @@
 #include "shiftregbits.h"
 #include "spiserialparallelSW.h"
 
-/* LCD display row  */
-#define CLROW 1  // Row (0 - 3)
-
 /* Send position percent to LCD. */
 #define SENDLCDPOSITIONTOUART
 

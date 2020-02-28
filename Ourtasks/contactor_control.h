@@ -18,11 +18,18 @@
 #define CNCTR_KATICKS (128/3)
 #define CNCTR_KAQUICKTIC (25)	
 
+/* Command request bits assignments. 
+Sourced location: ../contactor/OurTasks/ContactorTask.h
+*/
+#define CMDCONNECT (1 << 7) // 1 = Connect requested; 0 = Disconnect requested
+#define CMDRESET   (1 << 6) // 1 = Reset fault requested; 0 = no command
+
 enum CONTACTOR_CONTROL_STATE
 {
 	CTL_INITTIM,
 	CTL_CLEARFAULT,
 	CTL_CONNECTING,
+	CTL_CONNECTED1,
 	CTL_CONNECTED
 };
 
@@ -38,7 +45,6 @@ enum CONTACTOR_STATE
 	OTOSETTLING,    /*  7 one time intializing. */
 };
 
-
 /*
      payload[0]
        bit 7 - faulted (code in payload[2])
@@ -52,11 +58,12 @@ struct CNTCTRCTL
 {
 	struct CANTXQMSG canka; // CAN keepalive msg
 	uint32_t nextctr;
-	uint16_t ctr;      // Repetition counter
+	uint16_t ctr;     // Repetition counter
 	uint8_t state;    // State machine
 	uint8_t cmdrcv;   // Latest payload[0] with command
 	uint8_t cmdsend;  // Command we send
 	uint8_t sendflag; // 1 = send CAN msg, 0 = skip
+	uint8_t req;      // Request code: 0 = connect, 1 = disconnect
 };
 
 /* ***********************************************************************************************************/
@@ -67,14 +74,15 @@ void contactor_control_time(uint32_t ctr);
 /* @brief	: Timer input to state machine
  * @param	: ctr = sw1ctr time ticks
  ************************************************************************************************************* */
-void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan);
+void contactor_control_CANrcv(struct CANRCVBUF* pcan);
 /* @brief	: Handle contactor command CAN msgs being received
- * @param	: ctr = sw1tim tick counter
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
 void contactor_control_CANsend(void);
 /* @brief	: Send CAN msg
  ************************************************************************************************************* */
+
+extern struct CNTCTRCTL cntctrctl; // Contactor Control
 
 #endif
 

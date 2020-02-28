@@ -9,15 +9,11 @@
 #include "main.h"
 #include "morse.h"
 
-/* Command request bits assignments. 
-Sourced location: ../contactor/OurTasks/ContactorTask.h
-*/
-#define CMDCONNECT (1 << 7) // 1 = Connect requested; 0 = Disconnect requested
-#define CMDRESET   (1 << 6) // 1 = Reset fault requested; 0 = no command
+#include "contactor_control_msg.h"
 
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 
-struct CNTCTRCTL cntctrctl; // Contactor ControlSCTH90N65G2V-7
+struct CNTCTRCTL cntctrctl; // Contactor Control
 
 /* ***********************************************************************************************************
  * void contactor_control_init(void);
@@ -26,6 +22,7 @@ struct CNTCTRCTL cntctrctl; // Contactor ControlSCTH90N65G2V-7
 void contactor_control_init(void)
 {
 	cntctrctl.state    = CTL_INITTIM;
+	cntctrctl.req      = CMDRESET;  // Start off disconnected
 	cntctrctl.sendflag = 0;
 
 	/* Initialize keepalive CAN msg. */
@@ -63,20 +60,30 @@ void contactor_control_time(uint32_t ctr)
 	return;
 }
 /* ***********************************************************************************************************
- * void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan);
+ * void contactor_control_CANrcv(struct CANRCVBUF* pcan);
  * @brief	: Handle contactor command CAN msgs being received
- * @param	: ctr = sw1tim tick counter
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
-void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
+void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 {
 	/* Update contactor msg payload command byte */
 	cntctrctl.cmdrcv = pcan->cd.uc[0]; // Extract command byte from contactor
 
+	uint32_t ctr = gevcufunction.swtim1ctr;
+
+	/* Check requested state: CONNECT or DISCONNECT. */
+	if (cntctrctl.req == CMDRESET)
+	{ // Here, do a reset which does the disconnecting process. */
+		cntctrctl.cmdsend  = CMDRESET;
+		cntctrctl.nextctr = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
+		return;	
+	}
+	/* Here, not RESET means CONNECT. */
+
 	switch(cntctrctl.state)
 	{
 	case CTL_CLEARFAULT:
-
+		contactor_control_msg(pcan); // LCD display
 		if ((pcan->cd.uc[0] & 0xf) != 0)
 		{ // A fault is showing
 			cntctrctl.ctr += 1;
@@ -87,11 +94,18 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 		// else Some sort of LCD msg?
 		}
 		cntctrctl.ctr = 0;
+		if (cntctrctl.req == CMDCONNECT)
+		{
+			cntctrctl.cmdsend  = CMDCONNECT;
+			cntctrctl.state = CTL_CONNECTING;
+			break;
+		}
 		cntctrctl.cmdsend  = CMDCONNECT;
 		cntctrctl.state = CTL_CONNECTING;
 		break;
 
 	case CTL_CONNECTING:
+		contactor_control_msg(pcan); // LCD display
 		if ((pcan->cd.uc[0] & 0xf) != CONNECTED)
 		{
 			cntctrctl.ctr += 1;
@@ -102,8 +116,12 @@ void contactor_control_CANrcv(uint32_t ctr, struct CANRCVBUF* pcan)
 			}
 			break;
 		}
-		cntctrctl.state = CTL_CONNECTED;
+		cntctrctl.state = CTL_CONNECTED1;
 		break;
+
+	case CTL_CONNECTED1: // Last LCD msg display
+		contactor_control_msg(pcan); // LCD display
+		cntctrctl.state = CTL_CONNECTED;
 
 	case CTL_CONNECTED:
 		// Here no need to respond to received msgs.

@@ -39,9 +39,6 @@ osThreadId GevcuTaskHandle;
 
 struct GEVCUFUNCTION gevcufunction;
 
-/* Pointers to instantiated pushbutton structs. */
-struct SWITCHPTR* psw[NUMGEVCUPUSHBUTTONS];
-
 /* *************************************************************************
  * void swtim1_callback(TimerHandle_t tm);
  * @brief	: Software timer 1 timeout callback
@@ -100,29 +97,29 @@ taskflags |= TSKBITGevcuTask ;
 	/* Pointer returned points to struct with status. */
 
 	// Pushbutton to reverse torque
-	psw[PSW_ZTENSION] = switch_pb_add(
+	gevcufunction.psw[PSW_ZTENSION] = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		CP_REVERSETORQ,  /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_NOW,      /* Debounce mode              */
-	 	SWDBMS(1000),    /* Debounce ms: closing       */
-	   SWDBMS(50));     /* Debounce ms: opening       */    
+	 	SWDBMS(20),      /* Debounce ms: closing       */
+	   SWDBMS(20));     /* Debounce ms: opening       */    
 
 	// Pushbutton for zeroing odometer
-	psw[PSW_ZODOMTR] = switch_pb_add(
+	gevcufunction.psw[PSW_ZODOMTR] = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		CP_ZODOMTR,      /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
 	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(1020),    /* Debounce ms: closing       */
+	 	SWDBMS(20),      /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
   
 	// Pushbutton: arm
-	psw[PSW_PB_ARM] = switch_pb_add(
+	gevcufunction.psw[PSW_PB_ARM] = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		PB_ARM,          /* 1st sw see shiftregbits.h  */
@@ -133,7 +130,7 @@ taskflags |= TSKBITGevcuTask ;
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	//Pushbutton: prep
-	psw[PSW_PB_PREP] = switch_pb_add(
+	gevcufunction.psw[PSW_PB_PREP] = switch_pb_add(
 		NULL,            /* task handle = this task    */
 		GEVCUBIT03,      /* Task notification bit      */
 		PB_PREP,         /* 1st sw see shiftregbits.h  */
@@ -144,7 +141,7 @@ taskflags |= TSKBITGevcuTask ;
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	// Switch pair: SAFE/ACTIVE switch 
-	psw[PSW_PR_SAFE] = switch_pb_add(
+	gevcufunction.psw[PSW_PR_SAFE] = switch_pb_add(
 		NULL,         /* task handle = this task    */
 		GEVCUBIT01,   /* Task notification bit      */
 		SW_SAFE,      /* 1st sw see shiftregbits.h  */
@@ -153,7 +150,6 @@ taskflags |= TSKBITGevcuTask ;
 	 	SWMODE2_RS,   /* Debounce mode              */
 	 	0,            /* Debounce ct: 00            */
 	   0);           /* Debounce ct: 11            */ 
-
 	
 	/* lcdprintf buffers */
 	gevcufunction.pbuflcd1 = getserialbuf(&HUARTLCD,32);
@@ -162,10 +158,13 @@ taskflags |= TSKBITGevcuTask ;
 	gevcufunction.pbuflcd2 = getserialbuf(&HUARTLCD,32);
 	if (gevcufunction.pbuflcd2 == NULL) morse_trap(402);
 
+	gevcufunction.pbuflcd3 = getserialbuf(&HUARTLCD,32);
+	if (gevcufunction.pbuflcd3 == NULL) morse_trap(403);
+
 	/* Create timer Auto-reload/periodic */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
-	if (gevcufunction.swtimer1 == NULL) {morse_trap(403);}
+	if (gevcufunction.swtimer1 == NULL) {morse_trap(404);}
 
 	/* Initial startup state */
 	gevcufunction.state = GEVCU_INIT;
@@ -178,7 +177,7 @@ taskflags |= TSKBITGevcuTask ;
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
-	if (bret != pdPASS) {morse_trap(404);}
+	if (bret != pdPASS) {morse_trap(405);}
 
   /* Infinite loop */
   for(;;)
@@ -280,15 +279,28 @@ taskflags |= TSKBITGevcuTask ;
 		switch (gevcufunction.state)
 		{
 		case GEVCU_INIT:
+			GevcuStates_GEVCU_INIT();
 			break;
 
+		case GEVCU_SAFE_TRANSITION:
+			GevcuStates_GEVCU_SAFE_TRANSITION();
+			break;
 		case GEVCU_SAFE:
+			GevcuStates_GEVCU_SAFE();
 			break;
 
+		case GEVCU_ACTIVE_TRANSITION:
+			GevcuStates_GEVCU_ACTIVE_TRANSITION();
+			break;
 		case GEVCU_ACTIVE:
+			GevcuStates_GEVCU_ACTIVE();
 			break;
 
-		case GEVCU_PREP:
+		case GEVCU_ARM_TRANSITION:
+			GevcuStates_GEVCU_ARM_TRANSITION();
+			break;
+		case GEVCU_ARM:
+			GevcuStates_GEVCU_ARM();
 			break;
 
 		default:

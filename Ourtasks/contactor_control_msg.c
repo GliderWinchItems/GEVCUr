@@ -31,10 +31,6 @@ enum CONTACTOR_FAULTCODE
 	HE_AUTO_ZERO_TOLERANCE_ERR,
 };
 
-/* Define LCD rows used by this. */
-#define CNCTRLCDA 2 // Connect msg row
-#define CNCTRLCDB 3 // Fault msg row
-
 /******************************************************************************
  * void contactor_control_msg(struct CANRCVBUF* p);
  * @brief 	: Send CAN msgs

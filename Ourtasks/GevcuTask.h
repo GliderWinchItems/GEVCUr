@@ -148,9 +148,12 @@ enum GEVCU_CMD_CODES
 enum GEVCU_STATES
 {
 	GEVCU_INIT,   // 
+	GEVCU_SAFE_TRANSITION,
 	GEVCU_SAFE,
+	GEVCU_ACTIVE_TRANSITION,
 	GEVCU_ACTIVE,
-	GEVCU_PREP
+	GEVCU_ARM_TRANSITION,
+	GEVCU_ARM,
 };
 
 /* CAN msg array index names. */
@@ -219,6 +222,12 @@ struct GEVCUFUNCTION
 	/* LCD buffer(s) */
 	struct SERIALSENDTASKBCB* pbuflcd1;
 	struct SERIALSENDTASKBCB* pbuflcd2;
+	struct SERIALSENDTASKBCB* pbuflcd3;
+
+	/* Pointers to instantiated pushbutton structs. */
+	struct SWITCHPTR* psw[NUMGEVCUPUSHBUTTONS];
+
+	uint8_t safesw_prev; // Safe/Active switch previous state
 
 	uint8_t state;      // Gevcu main state
 	uint8_t substateA;  // 
@@ -240,7 +249,6 @@ void StartGevcuTask(void const * argument);
 
 extern struct GEVCUFUNCTION gevcufunction;
 extern osThreadId GevcuTaskHandle;
-extern struct SWITCHPTR* psw[NUMGEVCUPUSHBUTTONS];
 
 #endif
 

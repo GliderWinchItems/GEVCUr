@@ -13,6 +13,13 @@
 #include "stm32f4xx_hal.h"
 #include "SerialTaskSend.h"
 
+/* LCD row assigments.  */
+#define GEVCUTSK  0 // GevcuStates: state msg
+#define CLROW     1 // calib_control_lever: calibration & position
+#define CNCTRLCDA 2 // contactor_control_msg: state msg
+#define CNCTRLCDB 3 // contactor_control_msg: fault msg
+
+
 /* *************************************************************************/
 void lcdprintf_init(struct SERIALSENDTASKBCB** ppbcb);
 /* @brief	: Initialize display

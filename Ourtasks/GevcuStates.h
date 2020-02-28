@@ -14,7 +14,13 @@
 #include "stm32f4xx_hal.h"
 #include "adc_idx_v_struct.h"
 
-
+void GevcuStates_GEVCU_INIT(void);
+void GevcuStates_GEVCU_SAFE_TRANSITION(void);
+void GevcuStates_GEVCU_SAFE(void);
+void GevcuStates_GEVCU_ACTIVE_TRANSITION(void);
+void GevcuStates_GEVCU_ACTIVE(void);
+void GevcuStates_GEVCU_ARM_TRANSITION(void);
+void GevcuStates_GEVCU_ARM(void);
 
 #endif
 
