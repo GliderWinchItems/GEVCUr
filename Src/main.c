@@ -977,8 +977,8 @@ taskflags |= TSKBITdefaultTask;
 vTaskDelay(0);
 taskflagssave = taskflags;
 //while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
-
 //osDelay(1);
+
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS

@@ -98,6 +98,7 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		cntctrctl.state = CTL_CONNECTING;
 
 	case CTL_CONNECTING:
+		cntctrctl.cmdsend  = CMDCONNECT;
 		contactor_control_msg(pcan); // LCD display
 		if ((pcan->cd.uc[0] & 0xf) != CONNECTED)
 		{
