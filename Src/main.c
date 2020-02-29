@@ -89,6 +89,7 @@
 #include "LEDTask.h"
 #include "led_chasing.h"
 #include "calib_control_lever.h"
+#include "lcdmsg.h"
 
 
 /* USER CODE END Includes */
@@ -301,7 +302,7 @@ DiscoveryF4 LEDs --
   /* start timers, add new ones, ... */
 
 	/* defaultTask timer for pacing defaultTask output. */
-	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(100),0);
+	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -319,33 +320,34 @@ DiscoveryF4 LEDs --
   /* add threads, ... */
 /* =================================================== */
   /* init code for USB_DEVICE */
-//$  MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
 
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
-	xSerialTaskSendCreate(1);	// Create task and set Task priority
+	Thrdret = xSerialTaskSendCreate(1);	// Create task and set Task priority
+	if (Thrdret == NULL) morse_trap(225);
 
 	/* Create serial receiving task. */
-	xSerialTaskReceiveCreate(1);
+	ret = xSerialTaskReceiveCreate(1);
+	if (ret != pdPASS) morse_trap(224);
 
 	/* Setup semaphore for yprint and sprintf et al. */
 	yprintf_init();
-
 
 	/* USB-CDC buffering */
 	#define NUMCDCBUFF 4	// Number of CDC task local buffers
 	#define CDCBUFFSIZE 64*4	// Best buff size is multiples of usb packet size
 	struct CDCBUFFPTR* pret;
 	pret = cdc_txbuff_init(NUMCDCBUFF, CDCBUFFSIZE); // Setup local buffers
-	if (pret == NULL) morse_trap(3);
+	if (pret == NULL) morse_trap(223);
 	
 	/* USB-CDC queue and task creation */
 	Qidret = xCdcTxTaskSendCreate(3); // arg = Priority level
-	if (Qidret < 0) morse_trap(4); // Panic LED flashing
+	if (Qidret < 0) morse_trap(221); // Panic LED flashing
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
   Qidret = xCanTxTaskCreate(2, 64); // CanTask priority, Number of msgs in queue
-	if (Qidret < 0) morse_trap(5); // Panic LED flashing
+	if (Qidret < 0) morse_trap(220); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
   /* The MailboxTask takes care of the CANRx                         */
@@ -355,11 +357,11 @@ DiscoveryF4 LEDs --
 	/* Setup CAN hardware filters to default to accept all ids. */
 	HAL_StatusTypeDef Cret;
 	Cret = canfilter_setup_first(0, &hcan1, 15); // CAN1
-	if (Cret == HAL_ERROR) morse_trap(9);
+	if (Cret == HAL_ERROR) morse_trap(219);
 
 #ifdef CONFIGCAN2
 	Cret = canfilter_setup_first(1, &hcan2, 15); // CAN2
-	if (Cret == HAL_ERROR) morse_trap(10);
+	if (Cret == HAL_ERROR) morse_trap(217);
 #endif
 
 	/* Remove "accept all" CAN msgs and add specific id & mask, or id here. */
@@ -373,18 +375,18 @@ DiscoveryF4 LEDs --
 
 	/* GEVCUr state machine. */
 	Thrdret = xGevcuTaskCreate(1); // (arg) = priority
-	if (Thrdret == NULL) morse_trap(18);
+	if (Thrdret == NULL) morse_trap(216);
 
 	/* Create Mailbox control block w 'take' pointer for each CAN module. */
 	struct MAILBOXCANNUM* pmbxret;
 	// (CAN1 control block pointer, size of circular buffer)
 	pmbxret = MailboxTask_add_CANlist(pctl0, 48);
-	if (pmbxret == NULL) morse_trap(16);
+	if (pmbxret == NULL) morse_trap(215);
 
 #ifdef CONFIGCAN2
 	// (CAN2 control block pointer, size of circular buffer)
 	pmbxret = MailboxTask_add_CANlist(pctl1, 48); // Use default buff size
-	if (pmbxret == NULL) morse_trap(17);
+	if (pmbxret == NULL) morse_trap(214);
 #endif
 
 	/* Further initialization of mailboxes takes place when tasks start */
@@ -409,21 +411,25 @@ DiscoveryF4 LEDs --
 
 	/* Spi shift register task. */
 	Thrdret = xSpiOutTaskCreate(1);
-	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+	if (Thrdret == NULL) morse_trap(213); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
 	Thrdret = xBeepTaskCreate(0, 32);
-	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+	if (Thrdret == NULL) morse_trap(212); // Panic LED flashing
 
 	/* LED task (taskpriority, max queued items) .*/
 	Thrdret = xLEDTaskCreate(0, 32);
-	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
+	if (Thrdret == NULL) morse_trap(211); // Panic LED flashing
 
 	/* ADC summing, calibration, etc. */
 	xADCTaskCreate(3); // (arg) = priority
 
 	/* Start SPI for switch/led shift register. */
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
+
+	/* Queue for running LCD out of defaultTask. */
+	Qidret = lcdmsg_init(16);
+	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
   /* init code for USB_DEVICE */
 //  MX_USB_DEVICE_Init();
@@ -1099,7 +1105,10 @@ beepqtest.repct  = 2;
 /* Purpose: flag to have other task wait before 'for' loop. */
 lcdflag = 1;
 
-uint32_t slowtimectr = 0;
+/* Countdown timer for various display speeds. */
+uint16_t slowtimectr = 0; // Approx 1/sec
+uint16_t medtimectr = 0;  // Approx 8/swc
+
 
 //osDelay(1);
 
@@ -1120,10 +1129,10 @@ uint32_t slowtimectr = 0;
 			lcdout();
 	
 			slowtimectr += 1;
-			if (slowtimectr >= 10)
+			if (slowtimectr >= 16)
 			{
 				slowtimectr = 0;
-
+// ================== SLOW ==============================================
 #ifdef TESTLCDPRINTF
 extern uint32_t lcddbg;
 		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"\n\r01234 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
@@ -1138,8 +1147,8 @@ t1_DSUFT = DTWTIME;
 /* 'for' is to test doing all scans at one timer tick. */
 for (showctr = 0; showctr < 13; showctr++)
 {
-			switch (showctr)
-			{
+				switch (showctr)
+				{
 /* Cycle through the tasks. */
 case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");break;
 case  1: stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");break;
@@ -1158,7 +1167,7 @@ case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
-			}
+				}
 }
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
@@ -1190,7 +1199,12 @@ extern uint32_t dbrxbuff;
 yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
 #endif
   			}
-
+// ================= Moderate ===================================
+			medtimectr += 1;
+			if (medtimectr >= 4)
+			{
+				medtimectr = 0;
+			
 /* ##### timer not counted down ##### */
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
@@ -1225,11 +1239,11 @@ yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pd
 #endif
 
 #ifdef STARTUPCHASINGLEDS
-		if (flag_clcalibed == 0)
-		{
-			chasectr += 1;
-			if (chasectr > 2)
-			{
+				if (flag_clcalibed == 0)
+				{
+					chasectr += 1;
+					if (chasectr > 2)
+					{
 				chasectr = 0;
 				/* Send a lit LED down the row, over and over. */
 				spiledx.mode = LED_ON; // Turn current LED on
@@ -1241,15 +1255,15 @@ yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pd
 				spiledx_prev = spiledx; // Update previous
 				spiledx.bitnum += 1;    // Advance new
 				if (spiledx.bitnum > 15) spiledx.bitnum = 0;
-			}
-		}
-		// When Calibration complete turn off the lit LED
-		if (flag_clcalibed == 1)
-		{
+					}
+				}
+				// When Calibration complete turn off the lit LED
+				if (flag_clcalibed == 1)
+				{
 			flag_clcalibed = 2;
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-		}
+				}
 #endif
 
 #ifdef SHOWADCCOMMONCOMPUTATIONS
@@ -1264,24 +1278,24 @@ extern volatile uint32_t adcdbg2;
 #endif
 
 #ifdef SHOWSUMSOFADCRAWREADINGS
-			hdrctr += 1;
-			if (hdrctr >= 16) // Periodic print header
-			{
-				hdrctr = 0;
-				yprintf(&pbuf1,"\n\r     count           CL     12V    5V    spare  temp   vref");
-			}
-			yprintf(&pbuf2,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
-			adcdbctr_prev = adcdbctr;
+				hdrctr += 1;
+				if (hdrctr >= 16) // Periodic print header
+				{
+					hdrctr = 0;
+yprintf(&pbuf1,"\n\r     count           CL     12V    5V    spare  temp   vref");
+				}
+yprintf(&pbuf2,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
+		adcdbctr_prev = adcdbctr;
 #endif
 
 #ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
-			if (adc1.idx_xsum != idx_xsum_prev)
-			{
-				hdrctr2 += 1;
-				if (hdrctr2 >= 16) // Periodic print header
+				if (adc1.idx_xsum != idx_xsum_prev)
 				{
-					hdrctr2 = 0;
-					yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+					hdrctr2 += 1;
+					if (hdrctr2 >= 16) // Periodic print header
+					{
+						hdrctr2 = 0;
+yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
 				}
 				idx_xsum_prev = adc1.idx_xsum;
 				yprintf(&pbuf3,"\n\rctr: %5d  exsum: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",hdrctr2,
@@ -1291,34 +1305,34 @@ extern volatile uint32_t adcdbg2;
 					(float)adc1.chan[3].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
 					(float)adc1.chan[4].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
 					(float)adc1.chan[5].xsum[1]*(1.0/(float)ADCEXTENDSUMCT)	);
-			}
+				}
 #endif
 
 #ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-			if (adc1.idx_xsum != idx_xxsum_prev)
-			{
-				hdrctr3 += 1;
-				if (hdrctr3 >= 16) // Periodic print header
+				if (adc1.idx_xsum != idx_xxsum_prev)
 				{
-					hdrctr3 = 0;
-					yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
-				}
-				idx_xxsum_prev = adc1.idx_xsum;
-				ravectr += 1;
-				frecip =  (1.0/((float)ADCEXTENDSUMCT * (float)ravectr));
+					hdrctr3 += 1;
+					if (hdrctr3 >= 16) // Periodic print header
+					{
+						hdrctr3 = 0;
+yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
+					}
+					idx_xxsum_prev = adc1.idx_xsum;
+					ravectr += 1;
+					frecip =  (1.0/((float)ADCEXTENDSUMCT * (float)ravectr));
 	
-				for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++)
-				{
-					xxsum[ix] += adc1.chan[ix].xsum[1];	
-					ftmp = xxsum[ix];
-					fxxsum[ix] = ftmp * frecip;
+					for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++)
+					{
+						xxsum[ix] += adc1.chan[ix].xsum[1];	
+						ftmp = xxsum[ix];
+						fxxsum[ix] = ftmp * frecip;
+					}
+yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
+		ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
 				}
-				yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
-					ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
-			}
 #endif
-
-		}	
+			}	
+	  	}
 	}
   /* USER CODE END 5 */ 
 }
