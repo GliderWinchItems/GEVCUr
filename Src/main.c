@@ -981,7 +981,7 @@ taskflagssave = taskflags;
 
 
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS

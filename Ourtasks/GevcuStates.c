@@ -118,7 +118,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
 
-#define DEHRIGTEST
+//#define DEHRIGTEST
 #ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
