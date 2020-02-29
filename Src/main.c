@@ -968,7 +968,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//  MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 // Without this, a hard fault takes place under some combinations of selections
@@ -981,7 +981,7 @@ taskflagssave = taskflags;
 
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1327,10 +1327,13 @@ void CallbackdefaultTaskTimer(void const * argument)
 {
   /* USER CODE BEGIN CallbackdefaultTaskTimer */
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	xTaskNotifyFromISR(defaultTaskHandle, 
-		DEFAULTTSKBIT00,	/* 'or' bit assigned to buffer to notification value. */
-		eSetBits,      /* Set 'or' option */
-		&xHigherPriorityTaskWoken ); 
+	if (defaultTaskHandle != NULL)
+	{
+		xTaskNotifyFromISR(defaultTaskHandle, 
+			DEFAULTTSKBIT00,	/* 'or' bit assigned to buffer to notification value. */
+			eSetBits,      /* Set 'or' option */
+			&xHigherPriorityTaskWoken ); 
+	}
 
   /* USER CODE END CallbackdefaultTaskTimer */
 }

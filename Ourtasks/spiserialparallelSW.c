@@ -226,7 +226,8 @@ static void dbends(struct SWITCHPTR* p)
 			if (p->db_mode == SWMODE_NOW)
 			{
 				p->db_on = SW_CLOSED; // Show representation sw closed
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
+
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
@@ -236,7 +237,7 @@ static void dbends(struct SWITCHPTR* p)
 			if (p->db_mode == SWMODE_WAIT)
 			{ // Here, mode is wait until debounce completes
 				p->db_on = SW_OPEN;   // Show representation sw open
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
@@ -249,7 +250,7 @@ static void dbends(struct SWITCHPTR* p)
 			if (p->db_mode == SWMODE_NOW)
 			{
 				p->db_on = SW_OPEN;   // Show representation sw open
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 	//    else{ // mode is delay/wait, so db_on remains unchanged}
@@ -260,7 +261,7 @@ static void dbends(struct SWITCHPTR* p)
 			if (p->db_mode == SWMODE_WAIT)
 			{
 				p->db_on = SW_CLOSED;
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);
 			}
 		}
@@ -290,7 +291,7 @@ static void pbxor(struct SWITCHPTR* p)
 			{ // Special case: instantaneous state change, no debounce
 				p->db_on = SW_CLOSED;    // Debounced: representative of sw
 				p->state = SWPB_CLOSED;  // New sw state
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
 				{
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 					portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
@@ -301,7 +302,7 @@ static void pbxor(struct SWITCHPTR* p)
 				if (p->db_mode == SWMODE_NOW)
 				{ // Debounced sw representation shows new contact state "now"
 					p->db_on = SW_CLOSED;
-					if (p->notebit != 0) // Notify new state, if indicated
+					if ((p->notebit != 0) && (p->tskhandle != NULL)) // Notify new state, if indicated
 					{
 						xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 						portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
@@ -325,7 +326,7 @@ static void pbxor(struct SWITCHPTR* p)
 			{ // Special case: instantaneous state change
 				p->db_on = SW_OPEN;
 				p->state = SWPB_OPEN;
-				if (p->notebit != 0)
+				if ((p->notebit != 0) && (p->tskhandle != NULL))
 				{
 					xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 					portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
@@ -336,7 +337,7 @@ static void pbxor(struct SWITCHPTR* p)
 				if (p->db_mode == SWMODE_NOW)
 				{
 					p->db_on = SW_OPEN;
-					if (p->notebit != 0)
+					if ((p->notebit != 0) && (p->tskhandle != NULL))
 					{
 						xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 						portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
@@ -390,7 +391,7 @@ static void p2xor(struct SWITCHPTR* p)
 	case 1: // 1st open: 2nd closed
 		if (p->db_on == p->on) break;
 		p->db_on = p->on;
-			if (p->notebit != 0) // Notify task?
+			if ((p->notebit != 0) && (p->tskhandle != NULL)) // Notify task?
 			{
 				xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 				portYIELD_FROM_ISR( xHPT ); // Trigger scheduler
@@ -399,7 +400,7 @@ static void p2xor(struct SWITCHPTR* p)
 	case 2: // 1st closed: 2nd open
 		if (p->db_on == p->on) break;
 		p->db_on = p->on;
-			if (p->notebit != 0) // Notify task?
+			if ((p->notebit != 0) && (p->tskhandle != NULL)) // Notify task?
 			{
 				xTaskNotifyFromISR(p->tskhandle, p->notebit, eSetBits, &xHPT);	
 				portYIELD_FROM_ISR( xHPT ); // Trigger scheduler

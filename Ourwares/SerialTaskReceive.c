@@ -319,12 +319,15 @@ static void advancebuf(struct SERIALRCVBCB* prtmp)
 	prtmp->pworkend = prtmp->padd + prtmp->linesize - 2; // End
 
 	/* Notify originating task know a line is ready. */
-	xTaskNotifyFromISR(prtmp->tskhandle, 
-		prtmp->notebit,	/* 'or' bit assigned to buffer to notification value. */
-		eSetBits,      /* Set 'or' option */
-		&xHigherPriorityTaskWoken );
+	if (prtmp->tskhandle != NULL)
+	{
+		xTaskNotifyFromISR(prtmp->tskhandle, 
+			prtmp->notebit,	/* 'or' bit assigned to buffer to notification value. */
+			eSetBits,      /* Set 'or' option */
+			&xHigherPriorityTaskWoken );
 
-	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+		portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+	}
 	return;
 }
 /* *************************************************************************
@@ -436,6 +439,8 @@ extern uint8_t gatercvflag;
 		HAL_UART_Receive_IT(phuart, (uint8_t*)prtmp->pwork, 1); // Get next char		
 		return;
 	}
+
+	if (SerialTaskReceiveHandle == NULL) return;
 
 	/* Trigger Recieve Task to poll dma uarts */
 	xTaskNotifyFromISR(SerialTaskReceiveHandle, 

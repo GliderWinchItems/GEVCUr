@@ -143,12 +143,15 @@ void gateway_PCtoCAN_unloaddma(struct SERIALRCVBCB* prbcb)
 			if (prbcb->padd == prbcb->pend) prbcb->padd = prbcb->pbegin;
 
 			/* Notify originating task that a CAN msg is ready. */
-			xTaskNotifyFromISR(prbcb->tskhandle, 
-				prbcb->notebit,	/* 'or' bit assigned to buffer to notification value. */
-				eSetBits,         /* Use the 'or' option */
-				&xHigherPriorityTaskWoken );
+			if (prbcb->tskhandle != NULL)
+			{
+				xTaskNotifyFromISR(prbcb->tskhandle, 
+					prbcb->notebit,	/* 'or' bit assigned to buffer to notification value. */
+					eSetBits,         /* Use the 'or' option */
+					&xHigherPriorityTaskWoken );
 
-			portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+				portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+			}
 
 			/* Initialize for next CAN msg */
 			new_init(p);

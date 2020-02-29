@@ -118,7 +118,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
 
-//#define DEHRIGTEST
+#define DEHRIGTEST
 #ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
@@ -151,8 +151,11 @@ void GevcuStates_GEVCU_SAFE(void)
 	{ // Here SAFE/ACTIVE switch is in ACTIVE position
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 
-		led_safe.mode = LED_BLINKFAST; // LED_SAFE fast blink mode
+		led_safe.mode = LED_OFF; // LED_SAFE off
 		xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
+
+		led_prep_pb.mode = LED_BLINKFAST; // PREP Pushbutton LED fast blink mode
+		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 		/* Request contactor to CONNECT. */
 		cntctrctl.req = CMDCONNECT;
@@ -185,8 +188,12 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 #endif
 
 	/* Contactor connected. */
-	led_safe.mode   = LED_OFF; // LED_SAFE off
-	xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
+
+	led_prep_pb.mode = LED_OFF; // PREP Pushbutton off
+	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+
+	led_prep.mode = LED_ON; // PREP state led on
+	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 	led_arm_pb.mode = LED_BLINKFAST; // ARM Pushbutton LED fast blink mode
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
@@ -216,9 +223,8 @@ void GevcuStates_GEVCU_ACTIVE(void)
 		led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
 		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
-		led_prep.mode = LED_BLINKFAST;
+		led_prep.mode = LED_BLINKFAST; // PREP Pushbutton fast blink
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
-
 
 		gevcufunction.state = GEVCU_ARM_TRANSITION;
 		gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY; // 
@@ -255,12 +261,14 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 			lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");
 		}
 
-		led_arm.mode    = LED_ON; // ARM LED ON
-		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
+		led_arm_pb.mode = LED_OFF; // ARM Pushbutton LED
+		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
-		led_prep.mode = LED_ON;
+		led_prep.mode = LED_OFF; // PREP state LED
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
+		led_arm.mode = LED_OFF; // ARM state LED
+		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
 		gevcufunction.state = GEVCU_ARM;
 		return;
@@ -274,9 +282,13 @@ void GevcuStates_GEVCU_ARM(void)
 {
 	if (gevcufunction.psw[PSW_PB_PREP]->db_on == SW_CLOSED)
 	{
-		led_prep.mode = LED_BLINKFAST;
+		led_prep.mode = LED_ON; // PREP state led on
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
-		gevcufunction.state = GEVCU_ARM_TRANSITION;
+
+		led_arm_pb.mode = LED_BLINKFAST; // ARM Pushbutton LED fast blink mode
+		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
+
+		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 		return;		
 	}
 
