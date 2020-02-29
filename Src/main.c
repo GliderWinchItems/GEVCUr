@@ -274,6 +274,7 @@ int main(void)
   MX_TIM1_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
 /*
 DiscoveryF4 LEDs --
  GPIOD, GPIO_PIN_12 GREEN
@@ -981,7 +982,7 @@ taskflagssave = taskflags;
 
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS

@@ -223,7 +223,7 @@ void GevcuStates_GEVCU_ACTIVE(void)
 		led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
 		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
-		led_prep.mode = LED_BLINKFAST; // PREP Pushbutton fast blink
+		led_prep.mode = LED_OFF; // PREP state LED
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 		gevcufunction.state = GEVCU_ARM_TRANSITION;
