@@ -23,6 +23,7 @@
 #include "gevcu_idx_v_struct.h"
 #include "morse.h"
 #include "adcparamsinit.h"
+#include "lcdmsg.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
@@ -34,12 +35,20 @@ enum GEVCU_INIT_SUBSTATEA
 	GISA_WAIT,
 };
 
+/* Flag queue LCD msg only once. defaultTask will call these lcdprintf functions. */
+static uint8_t msgflag = 0; // 0 = send; 1 = don't send
+
 /* *************************************************************************
  * void GevcuStates_GEVCU_INIT(void);
  * @brief	: Initialization sequence: One Time Only
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg1(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
+static void lcdmsg2(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"SWITCH TO SAFE      ");}
+
 void GevcuStates_GEVCU_INIT(void)
 {	
+	void (*ptr2)(void); // Pointer to queue LCD msg
 	struct SWITCHPTR* p;
 
 	switch (gevcufunction.substateA)
@@ -47,10 +56,14 @@ void GevcuStates_GEVCU_INIT(void)
 	case GISA_OTO: // Cycle Safe/Active sw.
 		if (flag_clcalibed == 0) 
 			break;
-//                                                  12345678901234567890             
-		lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");
-		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGDELAY;
 
+	/* Queue LCD msg to be sent once. */
+	if (msgflag == 0)
+	{ 
+		msgflag = 1; // Don't keep banging away with the same msg
+		ptr2 = &lcdmsg1; // LCD msg pointer
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+	}
 
 		/* Update LED with SAFE/ACTIVE switch status. */
 		p = gevcufunction.psw[PSW_PR_SAFE];
@@ -66,23 +79,24 @@ void GevcuStates_GEVCU_INIT(void)
 			break;
 		}
 		xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
-
+		msgflag = 0; // Allow next LCD msg to be sent once
 		gevcufunction.substateA = GISA_WAIT;
 		break;
 
 	case GISA_WAIT: // More OTO to do here?
 		if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_OPEN )
 		{ // Here SAFE/ACTIVE switch is in ACTIVE position
-			if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-			{ // Sufficient delay between LCD msgs.
-		//                                                  12345678901234567890
-				lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"SWITCH TO SAFE      ");
-				gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGDELAY;
+			if (msgflag == 0)
+			{ 
+				msgflag = 1; // Don't keep banging away with the same msg
+				ptr2 = &lcdmsg2; // LCD msg pointer
+				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 			}
 			break;
 		}
 
 		/* Go into safe mode,. */
+		msgflag = 0; // Allow next LCD msg to be sent once
 		gevcufunction.state = GEVCU_SAFE_TRANSITION;
 		break;
 
@@ -95,14 +109,19 @@ void GevcuStates_GEVCU_INIT(void)
  * void GevcuStates_GEVCU_SAFE_TRANSITION(void);
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg3(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+
+//#define DEHRIGTEST // Uncomment to skip contactor response waits
+
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
-	if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-	{ // Sufficient delay between LCD msgs.
-//                                                  12345678901234567890
-		lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");
-		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGLONG;
+	void (*ptr2)(void) = &lcdmsg3; // LCD msg pointer
 
+	if (msgflag == 0)
+	{ 
+		msgflag = 1; // Don't keep banging away with the same msg
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 	}
       led_safe.mode    = LED_BLINKFAST; // LED_SAFE blinking
 		led_arm_pb.mode  = LED_OFF; // ARM Pushbutton LED
@@ -118,7 +137,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
 
-//#define DEHRIGTEST
+
 #ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
@@ -127,28 +146,35 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	}
 #endif
 
+	msgflag = 0; // Send LCD msg once
+
    led_safe.mode    = LED_ON;
 	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
 
+	msgflag = 0; // Allow next LCD msg to be sent once
 	gevcufunction.state = GEVCU_SAFE;
-	gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGDELAY;
 	return;
 }
 /* *************************************************************************
  * void GevcuStates_GEVCU_SAFE(void);
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg4(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE          ");}
+
 void GevcuStates_GEVCU_SAFE(void)
 {
-	if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-	{ // Sufficient delay between LCD msgs.
-		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGLONG;
-//                                                  12345678901234567890
-		lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE          ");
+	void (*ptr2)(void) = &lcdmsg4; // LCD msg pointer
+
+	if (msgflag == 0)
+	{ 
+		msgflag = 1; // Don't keep banging away with the same msg
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 	}
 		
 	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_OPEN )
 	{ // Here SAFE/ACTIVE switch is in ACTIVE position
+		msgflag = 0; // Allow next LCD msg to be sent once
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 
 		led_safe.mode = LED_OFF; // LED_SAFE off
@@ -159,7 +185,6 @@ void GevcuStates_GEVCU_SAFE(void)
 
 		/* Request contactor to CONNECT. */
 		cntctrctl.req = CMDCONNECT;
-		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGDELAY;
 		return;
 	}
 	return;
@@ -168,13 +193,17 @@ void GevcuStates_GEVCU_SAFE(void)
  * void GevcuStates_GEVCU_ACTIVE_TRANSITION(void);
  * @brief	: Contactor & DMOC are ready. Keep fingers to yourself.
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg5(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
+
 void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 {
-	if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-	{ // Sufficient delay between LCD msgs.
-//                                                  12345678901234567890
-		lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");
-		gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGLONG;
+	void (*ptr2)(void) = &lcdmsg5; // LCD msg pointer
+
+	if (msgflag == 0)
+	{ 
+		msgflag = 1; // Don't keep banging away with the same msg
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 	}
 
 #ifndef DEHRIGTEST
@@ -198,68 +227,70 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 	led_arm_pb.mode = LED_BLINKFAST; // ARM Pushbutton LED fast blink mode
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
+	msgflag = 0; // Allow next LCD msg to be sent once
 	gevcufunction.state = GEVCU_ACTIVE;
-	gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY;
 	return;
 }
 /* *************************************************************************
  * void GevcuStates_GEVCU_ACTIVE(void);
  * @brief	: Contactor & DMOC are ready. Keep fingers to yourself.
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg6(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE        ");}
+
 void GevcuStates_GEVCU_ACTIVE(void)
 {
-		if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-		{ // Sufficient delay between LCD msgs.
-	//                                                  12345678901234567890
-			lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE        ");
-			gevcustates_timx = gevcufunction.swtim1ctr + GEVCULCDMSGLONG;
-		}
+	void (*ptr2)(void) = &lcdmsg6; // LCD msg pointer
 
-		/* Wait for ARM pushbutton to be pressed. */	
-		if (gevcufunction.psw[PSW_PB_ARM]->db_on != SW_CLOSED)
-			return;
-	
-		/* Here, ARM_PB pressed, requesting ARMed state. */
-		led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
-		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
+	if (msgflag == 0)
+	{ 
+		msgflag = 1; // Don't keep banging away with the same msg
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+	}
 
-		led_prep.mode = LED_OFF; // PREP state LED
-		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
-
-		gevcufunction.state = GEVCU_ARM_TRANSITION;
-		gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY; // 
+	/* Wait for ARM pushbutton to be pressed. */	
+	if (gevcufunction.psw[PSW_PB_ARM]->db_on != SW_CLOSED)
 		return;
+	
+	/* Here, ARM_PB pressed, requesting ARMed state. */
+	led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
+	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
+
+	led_prep.mode = LED_OFF; // PREP state LED
+	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+
+	msgflag = 0; // Allow next LCD msg to be sent once
+	gevcufunction.state = GEVCU_ARM_TRANSITION;
+	return;
 }
 /* *************************************************************************
  * void GevcuStates_GEVCU_ARM_TRANSITION(void);
  * @brief	: Do everything needed to get into state
  * *************************************************************************/
+//  20 chars will over-write all display chars from previous msg:       12345678901234567890
+static void lcdmsg7(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
+static void lcdmsg8(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");}
+
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {
-//		if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-//		{ // Sufficient delay between LCD msgs.
-//			gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY; // 
-	//                                                  12345678901234567890
-//			lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM_TRANSITION");
-//		}
+	void (*ptr2)(void); // Pointer to queue LCD msg
+
 
 		/* Make sure Op has CL in zero position. */
 		if (clfunc.curpos > 0)
 		{
-			if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-			{ // Sufficient delay between LCD msgs.
-				gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY;
-		//                                                  12345678901234567890
-				lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");
-				return;
-			}	
+
+			if (msgflag == 0)
+			{ 
+				msgflag = 1; // Don't keep banging away with the same msg
+				ptr2 = &lcdmsg7; // LCD msg pointer
+				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+			}
+			return;
 		}
-		if ((int)(gevcustates_timx - gevcufunction.swtim1ctr) > 0)
-		{ // Sufficient delay between LCD msgs.
-			gevcustates_timx = gevcufunction.swtim1ctr	+ GEVCULCDMSGDELAY;
-	//                                                  12345678901234567890
-			lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");
-		}
+
+		ptr2 = &lcdmsg8; // LCD msg pointer
+		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		led_arm_pb.mode = LED_OFF; // ARM Pushbutton LED
 		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
@@ -270,6 +301,7 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 		led_arm.mode = LED_ON; // ARM state LED
 		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
+		msgflag = 0; // Allow next LCD msg to be sent once
 		gevcufunction.state = GEVCU_ARM;
 		return;
 

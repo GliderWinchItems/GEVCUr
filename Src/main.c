@@ -1121,18 +1121,22 @@ uint16_t medtimectr = 0;  // Approx 8/swc
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
-
+// ================= Higest rate =======================================
 			/* Check each LED until CL calibration ends. */
 			led_chasing();
 
 			/* Update CL position on LCD after CL calibration ends. */
 			lcdout();
+
+			/* LCD output from queue pointers. */
+			lcdmsg_poll();
 	
+// ================== SLOW ==============================================
+/* Countdown timer notifications. */
 			slowtimectr += 1;
 			if (slowtimectr >= 16)
 			{
 				slowtimectr = 0;
-// ================== SLOW ==============================================
 #ifdef TESTLCDPRINTF
 extern uint32_t lcddbg;
 		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"\n\r01234 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
@@ -1200,6 +1204,7 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 #endif
   			}
 // ================= Moderate ===================================
+/* Countdown timer notifications. */
 			medtimectr += 1;
 			if (medtimectr >= 4)
 			{

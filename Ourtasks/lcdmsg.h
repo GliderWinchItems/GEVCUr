@@ -20,7 +20,7 @@ void lcdmsg_poll(void);
 /*	@brief	: 
  * *************************************************************************/
 
-extern osMessageQId lcdmsgTaskQHandle;
+extern osMessageQId lcdmsgQHandle;
 
 #endif
 
