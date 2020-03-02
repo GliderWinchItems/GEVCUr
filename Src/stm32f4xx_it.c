@@ -166,10 +166,8 @@ void NMI_Handler(void)
 /**
   * @brief This function handles Hard fault interrupt.
   */
-
-
-//void HardFault_Handler(void)
-//{
+void HardFault_Handler(void)
+{
   /* USER CODE BEGIN HardFault_IRQn 0 */
 /* The prototype shows it is a naked function - in effect this is just an
 assembly function. */
@@ -177,8 +175,8 @@ void HardFault_Handler( void ) __attribute__( ( naked ) );
 
 /* The fault handler implementation calls a function called
 prvGetRegistersFromStack(). */
-void HardFault_Handler(void)
-{
+//void HardFault_Handler(void)
+//{
   /* USER CODE BEGIN HardFault_IRQn 0 */
  __asm volatile
  (
@@ -237,7 +235,6 @@ void HardFault_Handler(void)
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
-
 
 /**
   * @brief This function handles Memory management fault.

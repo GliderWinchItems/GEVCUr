@@ -35,7 +35,7 @@
 */
 
 //#define CLTIMEOUTTEST (128/4) // Test and debug
-#define CLLINEDELAY (3)  // Time delay for 20 char line (9600 baud)
+#define CLLINEDELAY (128/8)  // Time delay for 20 char line (9600 baud)
 
 /* Uncomment to enable LCD position going to monitor uart. */
 //#define SENDLCDPOSITIONTOUART
@@ -157,7 +157,7 @@ static void init(void)
 
 /* ***********************************************************************************************************
  * void lcdout(void);
- * @brief	: Output CL calibrated position to LCD
+ * @brief	: Output CL calibrated position to LCD. NOTE: called from defaultTask
  ************************************************************************************************************* */
 void lcdout(void)
 {
