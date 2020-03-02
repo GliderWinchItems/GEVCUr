@@ -27,6 +27,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cdc_rxbuffTaskCAN.h"
+#include "morse.h"
 
 uint32_t cdcifctr;
 
@@ -272,6 +273,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 
 	pcdcbuf_add->len = *Len; // Save number of bytes
 
+	if (pcdcbuf_add->len >= CDCOUTBUFFSIZE)
+	{
+		morse_trap(444);
+	}
+
 	/* Advance to next cdc buffer. */
 	pcdcbuf_add += 1;
 	if (pcdcbuf_add >= &cdcbuf[CDCOUTNUMBUF])
@@ -318,6 +324,9 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   if (hcdc->TxState != 0){
     return USBD_BUSY;
   }
+
+if(Buf == NULL) morse_trap(445);
+
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
   /* USER CODE END 7 */

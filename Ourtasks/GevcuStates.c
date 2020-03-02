@@ -27,7 +27,6 @@
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
-static uint32_t gevcustates_timx;
 
 enum GEVCU_INIT_SUBSTATEA
 {
@@ -112,7 +111,7 @@ void GevcuStates_GEVCU_INIT(void)
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg3(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
 
-//#define DEHRIGTEST // Uncomment to skip contactor response waits
+#define DEHRIGTEST // Uncomment to skip contactor response waits
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
@@ -274,7 +273,6 @@ static void lcdmsg8(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_AR
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {
 	void (*ptr2)(void); // Pointer to queue LCD msg
-
 
 		/* Make sure Op has CL in zero position. */
 		if (clfunc.curpos > 0)

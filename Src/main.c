@@ -320,7 +320,11 @@ DiscoveryF4 LEDs --
   /* add threads, ... */
 /* =================================================== */
   /* init code for USB_DEVICE */
+
+//taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
+//taskEXIT_CRITICAL();
+
 
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
@@ -432,7 +436,9 @@ DiscoveryF4 LEDs --
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
   /* init code for USB_DEVICE */
+//taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
+//taskEXIT_CRITICAL();
 
 /* =================================================== */
 

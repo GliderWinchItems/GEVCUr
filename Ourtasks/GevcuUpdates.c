@@ -30,11 +30,6 @@ extern TIM_HandleTypeDef htim4;
  * *************************************************************************/
 void GevcuUpdates(void)
 {
-	/* Reset new various flags. */
-	gevcufunction.evstat &= ~(
-		EVSWTIM1TICK | /* Timer tick */
-		EVNEWADC       /* new ADC readings */
-		);
 
 	/* Contactor keepalive/command msg sending. */
 	contactor_control_CANsend();
@@ -42,12 +37,20 @@ void GevcuUpdates(void)
 	/* DMOC CAN msg sending. */
 	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
+	/* Keepalive and torque command for DMOC */
+	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
+
 	/* Queue GEVCUr keep-alive status CAN msg */
 	if ((gevcufunction.outstat & CNCTOUT05KA) != 0)
 	{
 		gevcufunction.outstat &= ~CNCTOUT05KA;	
 	}
 
+	/* Reset new various flags. */
+	gevcufunction.evstat &= ~(
+		EVSWTIM1TICK | /* Timer tick */
+		EVNEWADC       /* new ADC readings */
+		);
 
 	return;
 }

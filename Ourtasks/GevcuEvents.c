@@ -49,15 +49,10 @@ struct LEDREQ led_safe     = {LED_SAFE,    0}; // Associate w switch pair
  * *************************************************************************/
 void GevcuEvents_00(void)
 {
-	float fclpos; 
-
 	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
 
-	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
-//	fclpos = calib_control_lever();
-
 	/* Convert control level position into torque request for DMOC #1. */
-	dmoc_control_throttlereq(&dmocctl[0], fclpos);
+	dmoc_control_throttlereq(&dmocctl[0], clfunc.curpos);
 	
 	return;
 }
