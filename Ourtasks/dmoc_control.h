@@ -100,6 +100,7 @@ struct DMOCCTL
 	uint8_t alive;        // DMOC counter (see docs)
 	uint8_t mode;         // Speed or Torque selection
 	uint8_t sendflag;     // 1 = send CAN msg, 0 = skip
+	uint8_t pbctl;        // Pushbutton control: 0 = zero torq, 1 = CL scaled torq
 };
 
 /* ***********************************************************************************************************/

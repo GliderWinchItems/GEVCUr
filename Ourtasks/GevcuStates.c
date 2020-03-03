@@ -24,6 +24,7 @@
 #include "morse.h"
 #include "adcparamsinit.h"
 #include "lcdmsg.h"
+#include "dmoc_control.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
@@ -313,6 +314,7 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
  * *************************************************************************/
 void GevcuStates_GEVCU_ARM(void)
 {
+	/* Pressing PREP returns to ACTIVE, (not armed) state. */
 	if (gevcufunction.psw[PSW_PB_PREP]->db_on == SW_CLOSED)
 	{
 		led_prep.mode = LED_ON; // PREP state led on
@@ -325,14 +327,19 @@ void GevcuStates_GEVCU_ARM(void)
 		return;		
 	}
 
+	/* Press pushbutton to send torque commands scaled by CL. */
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{
 		/* Set DMOC torque to CL scaled. */
+		dmocctl[0].pbctl = 1; 
+
 		led_retrieve.mode = LED_ON;
 	}
 	else
 	{
 		/* Set DMOC torque to zero. */
+		dmocctl[0].pbctl = 0; 
+
 		led_retrieve.mode = LED_OFF;	
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
