@@ -200,8 +200,10 @@ extern CAN_HandleTypeDef hcan1;
 #ifdef CONFIGCAN2
 	HAL_CAN_Start(&hcan2); // CAN2
 #endif
-//MX_USB_DEVICE_Init();
 
+//taskENTER_CRITICAL();
+//  MX_USB_DEVICE_Init();
+//taskEXIT_CRITICAL();
 
   /* Infinite RTOS Task loop */
   for(;;)

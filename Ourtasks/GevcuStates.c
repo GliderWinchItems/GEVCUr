@@ -184,6 +184,9 @@ void GevcuStates_GEVCU_SAFE(void)
 
 		/* Request contactor to CONNECT. */
 		cntctrctl.req = CMDCONNECT;
+
+		/* Set the last received contactor response to bogus. */
+		cntctrctl.cmdrcv = 0x8f; // Connect cmd w bogus response code
 		return;
 	}
 	return;

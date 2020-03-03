@@ -321,9 +321,9 @@ DiscoveryF4 LEDs --
 /* =================================================== */
   /* init code for USB_DEVICE */
 
-//taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//taskEXIT_CRITICAL();
+taskENTER_CRITICAL();
+  MX_USB_DEVICE_Init();
+taskEXIT_CRITICAL();
 
 
 	/* Create serial task (priority) */
