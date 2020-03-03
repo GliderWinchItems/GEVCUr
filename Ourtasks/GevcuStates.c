@@ -111,7 +111,7 @@ void GevcuStates_GEVCU_INIT(void)
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg3(void){lcdprintf(&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
 
-#define DEHRIGTEST // Uncomment to skip contactor response waits
+//#define DEHRIGTEST // Uncomment to skip contactor response waits
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
