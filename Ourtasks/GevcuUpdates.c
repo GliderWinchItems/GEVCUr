@@ -17,6 +17,7 @@
 #include "gevcu_msgs.h"
 #include "contactor_control.h"
 #include "dmoc_control.h"
+#include "calib_control_lever.h"
 
 #include "morse.h"
 
