@@ -18,7 +18,7 @@
 
 #define NUMDMOC 1	// Number of DMOCs
 
-/* Number ofr sw1tim ticks to give 64/sec rate. */
+/* Number of sw1tim ticks to give 64/sec rate. */
 #define DMOC_KATICKS (2)	
 
 /* GEVCU MotorController.h */
@@ -93,6 +93,7 @@ struct DMOCCTL
 	uint8_t state;        // Our State machine
 	uint8_t dmocstatenew; // DMOC state requested
 	uint8_t dmocstateact; // DMOC state actual
+	uint8_t dmocstaterep; // DMOC state reported (latest)
 	uint8_t dmocopstate;  // DMOC operation state
 	uint8_t dmocgear;     // DMOC gear selection
 	uint8_t dmocstatefaulted; // 1 = faulted

@@ -1140,7 +1140,7 @@ uint16_t medtimectr = 0;  // Approx 8/swc
 			lcdmsg_poll();
 
 #ifdef DMOCTESTS
-	yprintf(&pbuf1,"\n\rDMOCstate: %04X",dmocctl[0].dmocstateact);
+	yprintf(&pbuf1,"\n\rDMOCstate: act: %X rep:% X",dmocctl[0].dmocstateact,dmocctl[0].dmocstaterep);
 #endif
 	
 // ================== SLOW ==============================================

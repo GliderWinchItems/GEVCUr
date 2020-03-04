@@ -174,11 +174,11 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->speedoffset;
 
 	// DMOC status
-	uint8_t temp = (pcan->cd.uc[6] >> 4);
+	pdmocctl->dmocstaterep = (pcan->cd.uc[6] >> 4);
 
         //actually, the above is an operation status report which doesn't correspond
         //to the state enum so translate here.
-	switch (temp) 
+	switch (pdmocctl->dmocstaterep) 
 	{
 	case 0: //Initializing
             pdmocctl->dmocstateact =  DMOC_DISABLED;
@@ -360,7 +360,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
 
 	/* When DMOC shows DISABLED, send our request for STANDBY, providing we want ENABLE. */
-	if (pdmocctl->dmocstateact == DMOC_DISABLED && (pdmocctl->dmocopstate == DMOC_ENABLE || pdmocctl->dmocopstate == ENABLE))
+	if (pdmocctl->dmocstateact == DMOC_DISABLED && (pdmocctl->dmocopstate == DMOC_ENABLE || pdmocctl->dmocopstate == DMOC_ENABLE))
 		pdmocctl->dmocstatenew = DMOC_STANDBY;
 
 	/* Send ENABLE when DMOC shows either STANDBY or ENABLE. */
