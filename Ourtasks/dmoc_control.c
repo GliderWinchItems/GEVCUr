@@ -174,7 +174,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->speedoffset;
 
 	// DMOC status
-	pdmocctl->dmocstateact = (pcan->cd.uc[1] >> 4);
+	pdmocctl->dmocstateact = (pcan->cd.uc[6] >> 4);
 
         //actually, the above is an operation status report which doesn't correspond
         //to the state enum so translate here.
