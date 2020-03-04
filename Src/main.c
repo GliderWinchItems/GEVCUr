@@ -90,6 +90,7 @@
 #include "led_chasing.h"
 #include "calib_control_lever.h"
 #include "lcdmsg.h"
+#include "dmoc_control.h"
 
 
 /* USER CODE END Includes */
@@ -994,7 +995,7 @@ taskflagssave = taskflags;
 
 
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1004,6 +1005,7 @@ taskflagssave = taskflags;
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
+#define DMOCTESTS
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1136,6 +1138,10 @@ uint16_t medtimectr = 0;  // Approx 8/swc
 
 			/* LCD output from queue pointers. */
 			lcdmsg_poll();
+
+#ifdef DMOCTESTS
+	yprintf(&pbuf1,"\n\rDMOCstate: %04X",dmocctl[0].dmocstateact);
+#endif
 	
 // ================== SLOW ==============================================
 /* Countdown timer notifications. */
