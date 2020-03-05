@@ -19,7 +19,7 @@ uint8_t DMOCchecksum(struct CANRCVBUF* pcan)
 	/* Checksum is based on a right justified 11b address. */
 	sum = (pcan->id >> 21);
 
-	for (i = 0; i < pcan->dlc; i++)
+	for (i = 0; i < 7; i++)
 		sum += pcan->cd.uc[i];
 
 	return ((int)256 - (sum + 3));
