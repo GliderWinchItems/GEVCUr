@@ -324,7 +324,7 @@ void GevcuStates_GEVCU_ARM(void)
 		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
 		/* Set DMOC torque to zero. */
-		dmocctl[0].torquereq = 0;
+		dmocctl[0].pbctl = 0; 
 
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 		return;		
@@ -334,20 +334,15 @@ void GevcuStates_GEVCU_ARM(void)
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{
 		/* Set DMOC torque to CL scaled. */
-		// Current CL position (0-100.0) * pushbutton (0 or 1) * percent ajustment
-	   //   * Maximum torque command value.
-		dmocctl[0].torquereq = (clfunc.curpos * (0.01 * 30000)); // Torque Request (signed)
+		dmocctl[0].pbctl = 1; 
 
-		/* Reverse sign of torque if Z_TENSION pushbutton pressed. */
-		if (gevcufunction.psw[PSW_ZTENSION]->db_on == SW_CLOSED)
-		{ // Here, reverse sign of requested torque.
-			dmocctl[0].torquereq = -dmocctl[0].torquereq;
-		}
 		led_retrieve.mode = LED_ON;
 	}
 	else
-	{ /* Set DMOC torque to zero. */
-		dmocctl[0].torquereq = 0;
+	{
+		/* Set DMOC torque to zero. */
+		dmocctl[0].pbctl = 0; 
+
 		led_retrieve.mode = LED_OFF;	
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
