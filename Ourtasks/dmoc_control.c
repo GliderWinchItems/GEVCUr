@@ -399,16 +399,23 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 		{ // If actual (abs) rpm is greater than max (abs) rpm, zero the torque req.            
       	pdmocctl->torquereq = 0;
 		}
-		// Command is offset
-		if ((spisp_rd[0].u16 & CP_REVERSETORQ) == 0)
-		{ // Pushbutton pressed: Op wants torque command reversed
-			ntmp = -pdmocctl->torquereq;
+
+		/* Limit torque request to maxtorque (signed) */
+		ntmp = pdmocctl->torquereq;
+		if (ntmp > 0)
+		{ // Positive torque request
+			if (ntmp >= pdmocctl->maxtorque)
+				ntmp = pdmocctl->maxtorque;
 		}
 		else
-		{
-			ntmp = pdmocctl->torquereq;
+		{ // Negative torque request
+			if (ntmp < -pdmocctl->maxtorque)
+				ntmp = -pdmocctl->maxtorque;
 		}
-		ntmp += pdmocctl->maxtorque; 
+
+		/* Apply offset for command. */
+		ntmp = pdmocctl->torquereq + pdmocctl->torqueoffset;	
+
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);

@@ -36,9 +36,6 @@ void GevcuUpdates(void)
 	contactor_control_CANsend();
 	
 	/* DMOC CAN msg sending. */
-	// Current CL position (0-100.0) * pushbutton (0 or 1) * percent ajustment
-   //   * Maximum torque command value.
-	dmocctl[0].torquereq = clfunc.curpos * dmocctl[0].pbctl * 0.01 * 30000; // Torque Request (signed)
 	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
 	/* Keepalive and torque command for DMOC */

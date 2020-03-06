@@ -127,6 +127,8 @@ extern osThreadId CanRxTaskHandle;
 extern osThreadId SerialTaskReceiveHandle;
 extern osThreadId GatewayTaskHandle;
 
+uint16_t m_trap = 450; // Trap codes for MX Init() and Error Handler
+
 uint8_t canflag;
 uint8_t canflag1;
 uint8_t canflag2;
@@ -512,7 +514,7 @@ static void MX_ADC1_Init(void)
 {
 
   /* USER CODE BEGIN ADC1_Init 0 */
-
+	m_trap = 457; // morse_trap(457);
   /* USER CODE END ADC1_Init 0 */
 
   ADC_ChannelConfTypeDef sConfig = {0};
@@ -603,7 +605,7 @@ static void MX_CAN1_Init(void)
 {
 
   /* USER CODE BEGIN CAN1_Init 0 */
-
+	m_trap = 456; // morse_trap(456);
   /* USER CODE END CAN1_Init 0 */
 
   /* USER CODE BEGIN CAN1_Init 1 */
@@ -640,7 +642,7 @@ static void MX_I2C1_Init(void)
 {
 
   /* USER CODE BEGIN I2C1_Init 0 */
-
+	m_trap = 455; // morse_trap(455);
   /* USER CODE END I2C1_Init 0 */
 
   /* USER CODE BEGIN I2C1_Init 1 */
@@ -674,7 +676,7 @@ static void MX_SPI2_Init(void)
 {
 
   /* USER CODE BEGIN SPI2_Init 0 */
-
+	m_trap = 454; // morse_trap(454);
   /* USER CODE END SPI2_Init 0 */
 
   /* USER CODE BEGIN SPI2_Init 1 */
@@ -712,7 +714,7 @@ static void MX_TIM1_Init(void)
 {
 
   /* USER CODE BEGIN TIM1_Init 0 */
-
+	m_trap = 453; // morse_trap(453);
   /* USER CODE END TIM1_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
@@ -787,7 +789,7 @@ static void MX_USART2_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART2_Init 0 */
-
+	m_trap = 452; // morse_trap(452);
   /* USER CODE END USART2_Init 0 */
 
   /* USER CODE BEGIN USART2_Init 1 */
@@ -820,7 +822,7 @@ static void MX_USART3_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART3_Init 0 */
-
+	m_trap = 451; // morse_trap(451);
   /* USER CODE END USART3_Init 0 */
 
   /* USER CODE BEGIN USART3_Init 1 */
@@ -853,7 +855,7 @@ static void MX_USART6_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART6_Init 0 */
-
+	m_trap = 458; // morse_trap(458);
   /* USER CODE END USART6_Init 0 */
 
   /* USER CODE BEGIN USART6_Init 1 */
@@ -1399,6 +1401,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+	morse_trap(m_trap); // Flash error code set in earlier MX Init()'s
 
   /* USER CODE END Error_Handler_Debug */
 }
