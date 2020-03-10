@@ -402,11 +402,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
       	pdmocctl->torquereq = 0;
 		}
 
-		/* Convert Nm to Nm tenths, and thence to signed integer. */
-		ntmp = pdmocctl->torquereq * 10.0;
-
-		/* Apply offset for command. */
-		ntmp = pdmocctl->torquereq + pdmocctl->torqueoffset;	
+		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
+		ntmp = (int32_t)(pdmocctl->torquereq * 10.0f) + pdmocctl->torqueoffset;
 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
