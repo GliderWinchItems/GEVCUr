@@ -13,6 +13,7 @@
 #include "can_iface.h"
 #include "spiserialparallel.h"
 #include "shiftregbits.h"
+#include "calib_control_lever.h"
 
 /* Name the indices to correspond to the GEVCU DMOC documentation. */
 #define CMD1 0 
@@ -73,16 +74,16 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
 
 	pdmocctl->speedreq      =     0; // Requested speed
-	pdmocctl->maxspeed      = 10000; // Max speed (signed)
+	pdmocctl->maxspeed      =  2500; // Max speed (signed)  ### SMALL FOR 03/11/20 TEST ###
 	pdmocctl->speedoffset   = 20000; // Speed command offset
 
 	pdmocctl->torqueact     =     0; // Torque actual (reported)
 	pdmocctl->torquereq     =   0.0; // Requested torque (Nm)
-	pdmocctl->maxtorque     = 300.0; // Max torque (Nm)
+	pdmocctl->maxtorque     =  30.0; // Max torque (Nm) ### SMALL FOR 03/11/20 TEST ###
 	pdmocctl->torqueoffset  = 30000; // Torque command offset 
 
-	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4);
-	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);
+//	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
+//	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);         // Computed in CMD3
 
 	/* Load fixed data into three DMOC command CAN msgs. */
 	for (i = 0; i < 3; i++)
@@ -115,10 +116,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 /* Preset some payload bytes that do not change. */
 	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; // msb standby torque. -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
 	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; // lsb
-	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; // msb standby torque. -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
-	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; // lsb
 
-	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[5] = 60;   // 20 degrees celsius
+	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[5] = 60;   // 20 degrees celsius ambient temp
 
 	return;
 }
@@ -300,6 +299,10 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
+
+	/* Compute a new torque request from CL position. */
+	pdmocctl->torquereq = pdmocctl->pbctl * 0.01f * clfunc.curpos * pdmocctl->maxtorque; 
+
 	
 	/* Increment 'alive' counter by two each time group of three is sent */
 	pdmocctl->alive = (pdmocctl->alive + 2) & 0x0F;
@@ -322,12 +325,12 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* Translate above DmocMotorController.cpp */
 	ntmp = pdmocctl->speedreq; // Requested speed (RPM?)
 
-	// (Limit speed request: -20000 < speedreq < 20000)
-	if ((ntmp > pdmocctl->speedoffset) || (ntmp < pdmocctl->speedoffset))
-	         ntmp = pdmocctl->speedoffset;
+	// (Bogus speed request check: -20000 < speedreq < 20000)
+	if ((ntmp > pdmocctl->speedoffset) || (ntmp < -pdmocctl->speedoffset))
+	         ntmp = 0;
 
 	// Send non-zero speed command only when everything is ready
-	if ((ntmp > 0) && 
+	if ((ntmp != 0) && 
 	    (pdmocctl->dmocopstate == DMOC_ENABLE ) && 
 	    (pdmocctl->dmocgear    != DMOC_NEUTRAL) && 
        (pdmocctl->mode        == DMOC_MODESPEED) )
@@ -388,9 +391,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	xQueueSendToBack(CanTxQHandle,&pdmocctl->cmd[CMD1].txqcan,4);
 
 	/* CMD2: Torque limits ****************************************** */
-	// Update payload
-	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (pdmocctl->speedreq & 0xFF00) >> 8;
-	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (pdmocctl->speedreq & 0x00FF);
 
 	/* Speed or Torque mode. */
 	if (pdmocctl->mode == DMOC_MODETORQUE)
@@ -412,17 +412,19 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	}
 	else
 	{ // Speed mode
-		ntmp = pdmocctl->torquereq; // JIC torquereq gets changed between following instructions
-		ntmp += pdmocctl->maxtorque;
-		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
+		// Speed mode Max positive torque
+		ntmp = pdmocctl->torqueoffset + pdmocctl->maxtorque;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
-//      -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
-//		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = 0x75; //zero torque [Set during init]
-//		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[3] = 0x30; [Set during init]
+
+		// Speed mode Max negative torque
+		ntmp = pdmocctl->torqueoffset - pdmocctl->maxtorque; 
+		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
+		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[3] = (ntmp & 0x00FF);
 	}
 	
 	//what the hell is standby torque? Does it keep the transmission spinning for automatics? I don't know.
 //   -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
+// These are set during init
 //	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; //msb standby torque. [Set during init]
 //	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; //lsb [Set during init]
 
