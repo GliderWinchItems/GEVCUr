@@ -31,14 +31,13 @@ extern TIM_HandleTypeDef htim4;
  * *************************************************************************/
 void GevcuUpdates(void)
 {
-
 	/* Contactor keepalive/command msg sending. */
 	contactor_control_CANsend();
 	
 	/* DMOC CAN msg sending. */
-	// Current CL position (0-100.0) * pushbutton (0 or 1) * percent ajustment
-   //   * Maximum torque command value.
-	dmocctl[0].torquereq = dmocctl[0].pbctl * (int32_t)(clfunc.curpos * (0.01 * 30000)); // Torque Request (signed)
+	// pushbutton (0 or 1) * percent ajustment (0.01) * Current CL position (0-100.0)
+   //   * Maximum torque command value (e.g. +/- 300 Nm).
+	dmocctl[0].torquereq = dmocctl[0].pbctl * 0.01f * clfunc.curpos * dmocctl[0].maxtorque; 
 	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
 	/* Keepalive and torque command for DMOC */

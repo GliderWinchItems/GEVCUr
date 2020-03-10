@@ -65,16 +65,16 @@ struct DMOCCTL
 	uint32_t nextctr;     // Next send time ct
 
 	int32_t speedreq;     // Requested speed (signed)
-	int32_t torquereq;    // Torque Request (signed)
 	int32_t torquecmd;    // Command (do we need this?)
 	int32_t maxspeed;     // Max speed (signed)
-	int32_t maxtorque;    // Max torque (signed)
 	int32_t speedact;     // Speed actual (reported)
 	int32_t torqueact;    // Torque actual (signed)
 	int32_t regencalc;    // Calculated from maxregenwatts
 	int32_t accelcalc;    // Calculated from maxaccelwatts
 	int32_t currentact;   // Current Actual (reported)
 
+	float torquereq;    // Torque Request
+	float maxtorque;    // Max torque
 
 	uint32_t maxregenwatts;
 	uint32_t maxaccelwatts;
@@ -125,6 +125,11 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
 void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
+/* @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * @param	: pcan = pointer to CAN msg struct
+ ************************************************************************************************************* */
+void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
 /* @brief	: CAN msg received: cid_dmoc_actualtorq
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: pcan = pointer to CAN msg struct

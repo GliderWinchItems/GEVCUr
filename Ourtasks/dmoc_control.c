@@ -68,16 +68,18 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
 
 
-	pdmocctl->speedreq      = 0;     // Requested speed
-	pdmocctl->torquereq     = 0;     // Requested torque
-	pdmocctl->torqueact     = 0;     // Torque actual (reported)
 	pdmocctl->maxregenwatts = 60000; // ?
 	pdmocctl->maxaccelwatts = 60000; // ?
-	pdmocctl->torqueoffset  = 30000; // Torque command offset 
-	pdmocctl->speedoffset   = 20000; // Speed command offset
 	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
+
+	pdmocctl->speedreq      =     0; // Requested speed
 	pdmocctl->maxspeed      = 10000; // Max speed (signed)
-	pdmocctl->maxtorque     = 29999; // Max torque (signed)
+	pdmocctl->speedoffset   = 20000; // Speed command offset
+
+	pdmocctl->torqueact     =     0; // Torque actual (reported)
+	pdmocctl->torquereq     =   0.0; // Requested torque (Nm)
+	pdmocctl->maxtorque     = 300.0; // Max torque (Nm)
+	pdmocctl->torqueoffset  = 30000; // Torque command offset 
 
 	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4);
 	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);
@@ -400,18 +402,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
       	pdmocctl->torquereq = 0;
 		}
 
-		/* Limit torque request to maxtorque (signed) */
-		ntmp = pdmocctl->torquereq;
-		if (ntmp > 0)
-		{ // Positive torque request
-			if (ntmp >= pdmocctl->maxtorque)
-				ntmp = pdmocctl->maxtorque;
-		}
-		else
-		{ // Negative torque request
-			if (ntmp < -pdmocctl->maxtorque)
-				ntmp = -pdmocctl->maxtorque;
-		}
+		/* Convert Nm to Nm tenths, and thence to signed integer. */
+		ntmp = pdmocctl->torquereq * 10.0;
 
 		/* Apply offset for command. */
 		ntmp = pdmocctl->torquereq + pdmocctl->torqueoffset;	

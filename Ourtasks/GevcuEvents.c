@@ -243,7 +243,7 @@ void GevcuEvents_13(void)
  * *************************************************************************/
 void GevcuEvents_14(void)
 {
-	dmoc_control_GEVCUBIT13(&dmocctl[0],\
+	dmoc_control_GEVCUBIT14(&dmocctl[0],\
         &gevcufunction.pmbx_cid_dmoc_hv_temps->ncan.can);
 	return;
 }
