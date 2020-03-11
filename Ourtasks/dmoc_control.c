@@ -403,7 +403,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
       if ( (pdmocctl->speedact >   pdmocctl->maxspeed) ||
 			  (pdmocctl->speedact <  -pdmocctl->maxspeed)  ) 
 		{ // If actual (abs) rpm is greater than max (abs) rpm, zero the torque req.            
-      	pdmocctl->ftorquereq = 0;
+      	pdmocctl->itorquereq = 0;
 		}
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
