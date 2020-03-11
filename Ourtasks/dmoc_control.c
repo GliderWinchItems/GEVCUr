@@ -78,8 +78,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->speedoffset   = 20000; // Speed command offset
 
 	pdmocctl->torqueact     =     0; // Torque actual (reported)
-	pdmocctl->torquereq     =   0.0; // Requested torque (Nm)
-	pdmocctl->maxtorque     =  30.0; // Max torque (Nm) ### SMALL FOR 03/11/20 TEST ###
+	pdmocctl->ftorquereq    =   0.0; // Requested torque (Nm)
+	pdmocctl->fmaxtorque    =  30.0; // Max torque (Nm) ### SMALL FOR 03/11/20 TEST ###
 	pdmocctl->torqueoffset  = 30000; // Torque command offset 
 
 //	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
@@ -296,14 +296,18 @@ void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 {
 	int32_t ntmp;
+	int32_t ntmp1;
 
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
 
 	/* Compute a new torque request from CL position. */
-	pdmocctl->torquereq = pdmocctl->pbctl * 0.01f * clfunc.curpos * pdmocctl->maxtorque; 
+   // pushbutton(0.0 or 0.01) * CL position (0-100.0) * maxtorque (+/-)Nm
+	pdmocctl->ftorquereq = pdmocctl->fpbctl * clfunc.curpos * pdmocctl->fmaxtorque;
 
-	
+	// Convert float in Nm to Nm tenths as an integer.
+	pdmocctl->itorquereq = (pdmocctl->ftorquereq * 10.0f);
+
 	/* Increment 'alive' counter by two each time group of three is sent */
 	pdmocctl->alive = (pdmocctl->alive + 2) & 0x0F;
 
@@ -399,11 +403,11 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
       if ( (pdmocctl->speedact >   pdmocctl->maxspeed) ||
 			  (pdmocctl->speedact <  -pdmocctl->maxspeed)  ) 
 		{ // If actual (abs) rpm is greater than max (abs) rpm, zero the torque req.            
-      	pdmocctl->torquereq = 0;
+      	pdmocctl->ftorquereq = 0;
 		}
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
-		ntmp = (int32_t)(pdmocctl->torquereq * 10.0f) + pdmocctl->torqueoffset;
+		ntmp = pdmocctl->itorquereq + pdmocctl->torqueoffset;
 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
@@ -412,19 +416,20 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	}
 	else
 	{ // Speed mode
+		ntmp1 = pdmocctl->itorquereq; // integer of Nm in tenths
 		// Speed mode Max positive torque
-		ntmp = pdmocctl->torqueoffset + pdmocctl->maxtorque;
+		ntmp = pdmocctl->torqueoffset + ntmp1;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
 
 		// Speed mode Max negative torque
-		ntmp = pdmocctl->torqueoffset - pdmocctl->maxtorque; 
+		ntmp = pdmocctl->torqueoffset - ntmp1; 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[3] = (ntmp & 0x00FF);
 	}
 	
 	//what the hell is standby torque? Does it keep the transmission spinning for automatics? I don't know.
 //   -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
-// These are set during init
+// These are set during init so the following two are commented out.
 //	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; //msb standby torque. [Set during init]
 //	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; //lsb [Set during init]
 
@@ -456,13 +461,13 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 }
 /* ***********************************************************************************************************
  * void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct);
- * @brief	: Convert 0 - 100 percent into torquereq
+ * @brief	: Convert 0 - 100 percent into ftorquereq
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: fpct = throttle (control lever) position: 0.0 - 100.0
  ************************************************************************************************************* */
 void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct)
 {
-	pdmocctl->torquereq = (int)(fpct * (float)pdmocctl->maxtorque * 0.01);
+	pdmocctl->ftorquereq = (int)(fpct * (float)pdmocctl->fmaxtorque * 0.01);
 	return;	
 }
 

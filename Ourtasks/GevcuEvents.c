@@ -49,10 +49,7 @@ struct LEDREQ led_safe     = {LED_SAFE,    0}; // Associate w switch pair
  * *************************************************************************/
 void GevcuEvents_00(void)
 {
-	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
-
-	/* Convert control level position into torque request for DMOC #1. */
-	dmoc_control_throttlereq(&dmocctl[0], clfunc.curpos);
+//	gevcufunction.evstat |= EVNEWADC; // Show new readings ready
 	
 	return;
 }

@@ -35,11 +35,9 @@ void GevcuUpdates(void)
 	contactor_control_CANsend();
 	
 	/* DMOC CAN msg sending. */
-	// pushbutton (0 or 1) * percent ajustment (0.01) * Current CL position (0-100.0)
-   //   * Maximum torque command value (e.g. +/- 300 Nm).
 	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
-	/* Keepalive and torque command for DMOC */
+	/* Keepalive and torque command timing for DMOC */
 	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
 
 	/* Queue GEVCUr keep-alive status CAN msg */
