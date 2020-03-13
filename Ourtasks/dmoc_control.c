@@ -373,7 +373,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 		pdmocctl->dmocstatenew = DMOC_STANDBY;
 
 	/* Send ENABLE when DMOC shows either STANDBY or ENABLE. */
-	if ((pdmocctl->dmocstateact == DMOC_STANDBY || pdmocctl->dmocstateact == DMOC_ENABLE) && (pdmocctl->dmocopstate == DMOC_STANDBY))
+	if ((pdmocctl->dmocstateact == DMOC_STANDBY || pdmocctl->dmocstateact == DMOC_ENABLE) && (pdmocctl->dmocopstate == DMOC_ENABLE))
 		pdmocctl->dmocstatenew = DMOC_ENABLE;
 
 	/* In case we want to initiate powerdown the DMOC via operational state. */
