@@ -130,19 +130,6 @@ extern UART_HandleTypeDef huart6;
 
 //#define CONFIGCAN2	// Configure for CAN2
 
-// taskflags: used for debug'g. Flag set when task starts
-extern uint32_t taskflags; // Bits set when each task starts
-#define TSKBITdefaultTask   (1 << 0)  
-#define TSKBITSerialTask    (1 << 1)  
-#define TSKBITCanTxTask     (1 << 2)  
-#define TSKBITMailboxTask   (1 << 3)  
-#define TSKBITADCTask       (1 << 4)  
-#define TSKBITSerialRcvTask (1 << 5)  
-#define TSKBITGatewayTask   (1 << 6)  
-#define TSKBITCdcTxTask     (1 << 7)  
-#define TSKBITSpiOutTask    (1 << 8)   
-#define TSKBITGevcuTask     (1 << 9)  
-
 // ===============================================================================
 
 /* USER CODE END Private defines */

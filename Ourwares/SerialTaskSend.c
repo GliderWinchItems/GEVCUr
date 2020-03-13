@@ -191,8 +191,6 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 void StartSerialTaskSend(void* argument1)
 {
-taskflags |= TSKBITSerialTask;
-;
 	struct SERIALSENDTASKBCB*  pssb; // Copied item from queue
 	struct SSCIRBUF* ptmp;	// Circular buffer pointer block pointer
 

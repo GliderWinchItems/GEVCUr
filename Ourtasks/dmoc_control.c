@@ -64,7 +64,7 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->sendflag  = 0;
 	pdmocctl->alive     = 0; // DMOC count increments by 2 & truncated
 	pdmocctl->dmocstateact = DMOC_DISABLED;   // Assume initial state
-	pdmocctl->dmocopstate  = DMOC_STANDBY;    // Requested startup state
+	pdmocctl->dmocopstate  = DMOC_ENABLE;     // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
 
@@ -369,11 +369,11 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
 
 	/* When DMOC shows DISABLED, send our request for STANDBY, providing we want ENABLE. */
-	if (pdmocctl->dmocstateact == DMOC_DISABLED && (pdmocctl->dmocopstate == DMOC_ENABLE || pdmocctl->dmocopstate == DMOC_ENABLE))
+	if (pdmocctl->dmocstateact == DMOC_DISABLED && (pdmocctl->dmocopstate == DMOC_ENABLE || pdmocctl->dmocopstate == DMOC_STANDBY))
 		pdmocctl->dmocstatenew = DMOC_STANDBY;
 
 	/* Send ENABLE when DMOC shows either STANDBY or ENABLE. */
-	if ((pdmocctl->dmocstateact == DMOC_STANDBY || pdmocctl->dmocstateact == DMOC_ENABLE) && (pdmocctl->dmocopstate == DMOC_ENABLE))
+	if ((pdmocctl->dmocstateact == DMOC_STANDBY || pdmocctl->dmocstateact == DMOC_ENABLE) && (pdmocctl->dmocopstate == DMOC_STANDBY))
 		pdmocctl->dmocstatenew = DMOC_ENABLE;
 
 	/* In case we want to initiate powerdown the DMOC via operational state. */

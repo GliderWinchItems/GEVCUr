@@ -219,7 +219,6 @@ taskEXIT_CRITICAL();
  * *************************************************************************/
 void StartSerialTaskReceive(void* argument)
 {
-taskflags |= TSKBITSerialRcvTask;
 	struct SERIALRCVBCB* prtmp = prbhd;
 	struct SERIALRCVBCB* prtmp2;
 	

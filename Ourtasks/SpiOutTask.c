@@ -24,7 +24,6 @@ osMessageQId SpiOutTaskQHandle;
  * *************************************************************************/
 void StartSpiOutTask(void* argument)
 {
-taskflags |= TSKBITSpiOutTask;
 	struct SPIOUTREQUEST  spireq; // Copied item from queue
 
   /* Infinite loop */

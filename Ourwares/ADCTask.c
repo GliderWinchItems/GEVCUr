@@ -51,7 +51,6 @@ osThreadId xADCTaskCreate(uint32_t taskpriority)
  * *************************************************************************/
 void StartADCTask(void const * argument)
 {
-taskflags |= TSKBITADCTask;
 	#define TSK02BIT02	(1 << 0)  // Task notification bit for ADC dma 1st 1/2 (adctask.c)
 	#define TSK02BIT03	(1 << 1)  // Task notification bit for ADC dma end (adctask.c)
 

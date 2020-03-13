@@ -276,7 +276,6 @@ osThreadId xMailboxTaskCreate(uint32_t taskpriority)
  * *************************************************************************/
 void StartMailboxTask(void const * argument)
 {
-taskflags |= TSKBITMailboxTask;
 	struct MAILBOXCANNUM* pmbxnum;
 	struct CANRCVBUFN* pncan;
 	struct CANTAKEPTR* ptake[STM32MAXCANNUM];

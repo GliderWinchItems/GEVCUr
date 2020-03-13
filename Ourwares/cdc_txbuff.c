@@ -225,7 +225,6 @@ cdcct5 +=1;	// DEBUG: Count number of buffer "sends"
  * *************************************************************************/
 void StartCdcTxTaskSend(void const * argument)
 {
-taskflags |= TSKBITCdcTxTask;
 	BaseType_t Qret;	// queue receive return
 	struct CDCTXTASKBCB   ssb; // Copied item from queue
 

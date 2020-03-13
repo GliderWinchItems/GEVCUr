@@ -122,7 +122,6 @@ void StartCanRxTask(void const * argument)
 /* NOTE:  Since there is just one receiving task, this task is not needed.
           However, the initialization to create the queue is needed.
 */
-taskflags |= TSKBITCanTxTask;
 	vTaskSuspend( NULL );
 
 //   BaseType_t Qret;	// queue receive return

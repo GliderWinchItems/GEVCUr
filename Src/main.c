@@ -133,10 +133,6 @@ uint8_t canflag;
 uint8_t canflag1;
 uint8_t canflag2;
 
-// Debugging task start-up sequence
-uint32_t taskflags = 0; // Bits set when each task starts
-volatile uint32_t taskflagssave;
-
 uint8_t lcdflag = 0;
 
 /* USER CODE END PTD */
@@ -305,7 +301,7 @@ DiscoveryF4 LEDs --
   /* start timers, add new ones, ... */
 
 	/* defaultTask timer for pacing defaultTask output. */
-	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
+//	ret = xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -979,7 +975,9 @@ static void MX_GPIO_Init(void)
   * @param  argument: Not used 
   * @retval None
   */
+// ################################################################################
 // ######### DEFAULT TASK #########################################################
+// ################################################################################
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
@@ -987,14 +985,7 @@ void StartDefaultTask(void const * argument)
 //  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-// Without this, a hard fault takes place under some combinations of selections
-// for display. vTaskDelay w Zero ticks causes no delay, but yields to other Ready tasks.
-taskflags |= TSKBITdefaultTask;
-vTaskDelay(0);
-taskflagssave = taskflags;
-//while ((taskflagssave & 0x90) != 0x90) taskflagssave = taskflags;
-//osDelay(1);
-
+//osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
@@ -1117,11 +1108,11 @@ lcdflag = 1;
 
 /* Countdown timer for various display speeds. */
 uint16_t slowtimectr = 0; // Approx 1/sec
-uint16_t medtimectr = 0;  // Approx 8/swc
+uint16_t medtimectr = 0;  // Approx 8/sec
 
 
 //osDelay(1);
-
+	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
@@ -1142,7 +1133,7 @@ uint16_t medtimectr = 0;  // Approx 8/swc
 			lcdmsg_poll();
 
 #ifdef DMOCTESTS
-	yprintf(&pbuf1,"\n\rDMOCstate: act: %X rep:% X",dmocctl[0].dmocstateact,dmocctl[0].dmocstaterep);
+	yprintf(&pbuf1,"\n\rSTATE:dmoc:act: %X new: %X :gevcu: %X",dmocctl[0].dmocstateact,dmocctl[0].dmocstatenew,gevcufunction.state);
 #endif
 	
 // ================== SLOW ==============================================
