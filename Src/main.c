@@ -982,7 +982,9 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
+//taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
+//taskEXIT_CRITICAL();
   /* USER CODE BEGIN 5 */
 
 //osDelay(0); // Debugging HardFault
