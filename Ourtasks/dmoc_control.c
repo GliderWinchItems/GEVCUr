@@ -64,9 +64,7 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->sendflag     = 0;
 	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
 	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
-
-	pdmocctl->dmocstateact = DMOC_INIT;//DMOC_DISABLED;   // Assume initial state
-
+	pdmocctl->dmocstateact = DMOC_DISABLED;   // Assume initial state
 	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
@@ -186,7 +184,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	switch (pdmocctl->dmocstaterep) 
 	{
 	case 0: //Initializing
-            pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
+            pdmocctl->dmocstateact = DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = FALSE;
             break;
 
@@ -307,13 +305,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
-
-
-if (pdmocctl->dmocstateact == DMOC_INIT)
-{
-	return;
-}
-
 
 	/* Compute a new torque request from CL position. */
    // pushbutton(0.0 or 0.01) * CL position (0-100.0) * maxtorque (+/-)Nm
