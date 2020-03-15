@@ -212,7 +212,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
             break;
 
 	case 5: //Fault
-            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = TRUE;
 	/* Attempt a restart? */
 	pdmocctl->activityctr = 0;
@@ -373,8 +373,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
     }
 */
 
-#define DMOCDELAYSEQ
-#ifdef  DMOCDELAYSEQ
 	#define DMOCSTARTDELAYCT 20 // Delay count of 0x476 (speed) msgs rcv'd 
 //	if (pdmocctl->activityctr >= DMOCSTARTDELAYCT)
 	if (pdmocctl->dmocstateact != DMOC_INIT)
@@ -386,7 +384,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 //	{
 //		pdmocctl->dmocopstate = DMOC_STANDBY;
 //	}
-#endif
 
 /* Translate above DmocMotorController.cpp */
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
