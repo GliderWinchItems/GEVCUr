@@ -60,11 +60,12 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
       for both, the difference in modes will need to be set by "someone".
 	*/
 
-	pdmocctl->state     = DMOCINIT1; // Initial state
-	pdmocctl->sendflag  = 0;
-	pdmocctl->alive     = 0; // DMOC count increments by 2 & truncated
+	pdmocctl->state        = DMOCINIT1; // Initial state
+	pdmocctl->sendflag     = 0;
+	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
+	pdmocctl->activityctr  = 0;
 	pdmocctl->dmocstateact = DMOC_DISABLED;   // Assume initial state
-	pdmocctl->dmocopstate  = DMOC_ENABLE;     // Requested startup state
+	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
 
@@ -170,6 +171,8 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /* cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6); */
 /* 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
+
+	pdmocctl->activityctr += 1;
 
 	// Speed (signed)
 	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->speedoffset;
@@ -364,6 +367,19 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
         output.data.bytes[6] = alive + ((byte) NEUTRAL << 4) + ((byte) newstate << 6); //use new automatic state system.
     }
 */
+	if (pdmocctl->activityctr > 20)
+	{
+			pdmocctl->activityctr = 20;
+			pdmocctl->dmocopstate = DMOC_ENABLE;
+	}
+	else if (pdmocctl->activityctr > 18)
+	{
+		pdmocctl->dmocopstate = DMOC_STANDBY;
+	}
+	else if (pdmocctl->activityctr > 16)
+	{
+		pdmocctl->dmocopstate = DMOC_STANDBY;
+	}
 
 /* Translate above DmocMotorController.cpp */
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
