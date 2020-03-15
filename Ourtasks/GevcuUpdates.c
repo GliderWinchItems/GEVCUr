@@ -35,6 +35,14 @@ void GevcuUpdates(void)
 	contactor_control_CANsend();
 	
 	/* DMOC CAN msg sending. */
+	if (gevcufunction.state == GEVCU_ARM)
+	{
+		dmocctl[0].dmocopstate = DMOC_ENABLE;
+	}
+	else
+	{
+		dmocctl[0].dmocopstate = DMOC_DISABLED;
+	}
 	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
 
 	/* Keepalive and torque command timing for DMOC */
@@ -55,3 +63,4 @@ void GevcuUpdates(void)
 	return;
 }
 
+	
