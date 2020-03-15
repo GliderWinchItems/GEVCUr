@@ -372,11 +372,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 			pdmocctl->activityctr = 20;
 			pdmocctl->dmocopstate = DMOC_ENABLE;
 	}
-	else if (pdmocctl->activityctr > 18)
-	{
-		pdmocctl->dmocopstate = DMOC_STANDBY;
-	}
-	else if (pdmocctl->activityctr > 16)
+	else if (pdmocctl->activityctr > 12)
 	{
 		pdmocctl->dmocopstate = DMOC_STANDBY;
 	}
