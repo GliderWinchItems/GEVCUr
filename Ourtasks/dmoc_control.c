@@ -186,6 +186,10 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	switch (pdmocctl->dmocstaterep) 
 	{
 	case 0: //Initializing
+	/* When DMOC sends '0' it is initializing. We send DISABLED until
+	   DMOC responds with DISABLED. If dmocopstate is STANDBY or ENABLE
+	   then the state sequence in 'dmoc_control_CANsend' will step up
+   the DMOC to the requested state, e.g. STANDBY or ENABLE. */
             pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = FALSE;
             break;
@@ -209,22 +213,21 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	case 4: //Power Down
             pdmocctl->dmocstateact =  DMOC_POWERDOWN;
             pdmocctl->dmocstatefaulted = FALSE;
+			pdmocctl->dmocopstate = DMOC_DISABLED;
+			pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
             break;
 
 	case 5: //Fault
             pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = TRUE;
 	/* Attempt a restart? */
-	pdmocctl->activityctr = 0;
-	pdmocctl->dmocopstate = DMOC_DISABLED;
+			pdmocctl->dmocopstate = DMOC_DISABLED;
             break;
 
 	case 6: //Critical Fault
-            pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = TRUE;
 	/* Attempt a restart? */
-	pdmocctl->activityctr = 0;
-	pdmocctl->dmocopstate = DMOC_DISABLED;
+			pdmocctl->dmocopstate = DMOC_POWERDOWN;
 				break;
 
 	case 7: //LOS
@@ -321,7 +324,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* Increment 'alive' counter by two each time group of three is sent */
 	pdmocctl->alive = (pdmocctl->alive + 2) & 0x0F;
 
-
 	/* CMD1: RPM plus state of key and gear selector ***************  */
 
 /*  --DmocMotorController.cpp --<cmd1 snip>--  
@@ -376,17 +378,9 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
     }
 */
 
-	#define DMOCSTARTDELAYCT 20 // Delay count of 0x476 (speed) msgs rcv'd 
-//	if (pdmocctl->activityctr >= DMOCSTARTDELAYCT)
-	if (pdmocctl->dmocstateact != DMOC_INIT)
-	{
-			pdmocctl->activityctr = DMOCSTARTDELAYCT;
-			pdmocctl->dmocopstate = DMOC_ENABLE;
-	}
-//	else if (pdmocctl->activityctr > 12)
-//	{
-//		pdmocctl->dmocopstate = DMOC_STANDBY;
-//	}
+	/* When in DMOC_INIT state always send disabled. */
+	if (pdmocctl->dmocstateact == DMOC_INIT)
+		 pdmocctl->dmocopstate = DMOC_DISABLED; // Overwrite anything else.
 
 /* Translate above DmocMotorController.cpp */
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
@@ -419,6 +413,10 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	/* CMD2: Torque limits ****************************************** */
 
+	/* Don't load payload if dmoc is not in ENABLE state. */
+	if (pdmocctl->dmocstateact != DMOC_ENABLE)
+     	pdmocctl->itorquereq = 0;
+
 	/* Speed or Torque mode. */
 	if (pdmocctl->mode == DMOC_MODETORQUE)
 	{ // Torque mode
@@ -442,6 +440,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 		ntmp1 = pdmocctl->itorquereq; // integer of Nm in tenths
 		// Speed mode Max positive torque
 		ntmp = pdmocctl->torqueoffset + ntmp1;
+		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
 
 		// Speed mode Max negative torque
