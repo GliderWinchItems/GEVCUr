@@ -220,9 +220,12 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
             break;
 
 	case 6: //Critical Fault
-            pdmocctl->dmocstateact =  DMOC_DISABLED;
+            pdmocctl->dmocstateact =  DMOC_INIT;//DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = TRUE;
-            break;
+	/* Attempt a restart? */
+	pdmocctl->activityctr = 0;
+	pdmocctl->dmocopstate = DMOC_DISABLED;
+				break;
 
 	case 7: //LOS
             pdmocctl->dmocstateact =  DMOC_DISABLED;
