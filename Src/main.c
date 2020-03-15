@@ -1135,7 +1135,7 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 			lcdmsg_poll();
 
 #ifdef DMOCTESTS
-	yprintf(&pbuf1,"\n\rSTATE:dmoc:act: %X new: %X : rep: %X",dmocctl[0].dmocstateact,dmocctl[0].dmocstatenew,dmocctl[0].dmocstaterep);
+	yprintf(&pbuf1,"\n\rSTATE:dmoc:act: %X new: %X : rep: %X :op: %X",dmocctl[0].dmocstateact,dmocctl[0].dmocstatenew,dmocctl[0].dmocstaterep,dmocctl[0].dmocopstate);
 #endif
 	
 // ================== SLOW ==============================================

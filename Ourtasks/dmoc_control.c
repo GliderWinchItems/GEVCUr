@@ -369,7 +369,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 */
 	if (pdmocctl->activityctr > 20)
 	{
-			pdmocctl->activityctr = 20;
+			pdmocctl->activityctr = 21;
 			pdmocctl->dmocopstate = DMOC_ENABLE;
 	}
 	else if (pdmocctl->activityctr > 12)
