@@ -63,7 +63,7 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->state        = DMOCINIT1; // Initial state
 	pdmocctl->sendflag     = 0;
 	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
-	pdmocctl->activityctr  = 0;
+	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
 	pdmocctl->dmocstateact = DMOC_DISABLED;   // Assume initial state
 	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
@@ -213,6 +213,9 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	case 5: //Fault
             pdmocctl->dmocstateact =  DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = TRUE;
+	/* Attempt a restart? */
+	pdmocctl->activityctr = 0;
+	pdmocctl->dmocopstate = DMOC_DISABLED;
             break;
 
 	case 6: //Critical Fault
@@ -367,15 +370,20 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
         output.data.bytes[6] = alive + ((byte) NEUTRAL << 4) + ((byte) newstate << 6); //use new automatic state system.
     }
 */
-	if (pdmocctl->activityctr > 20)
+
+#define DMOCDELAYSEQ
+#ifdef  DMOCDELAYSEQ
+	#define DMOCSTARTDELAYCT 20 // Delay count of 0x476 (speed) msgs rcv'd 
+	if (pdmocctl->activityctr >= DMOCSTARTDELAYCT)
 	{
-			pdmocctl->activityctr = 21;
+			pdmocctl->activityctr = DMOCSTARTDELAYCT;
 			pdmocctl->dmocopstate = DMOC_ENABLE;
 	}
 	else if (pdmocctl->activityctr > 12)
 	{
 		pdmocctl->dmocopstate = DMOC_STANDBY;
 	}
+#endif
 
 /* Translate above DmocMotorController.cpp */
 	pdmocctl->dmocstatenew = DMOC_DISABLED;
