@@ -29,6 +29,7 @@ FILE* fpIn;
 
 struct CANTBL
 {
+	uint8_t seq;
 	uint32_t id;
 	uint8_t dlc;
 	uint8_t uc[8];
@@ -45,8 +46,10 @@ int main(int argc, char **argv)
 
 	while ( (fgets (&buf[0],LINESZ,stdin)) != NULL)	// Get a line from stdin
 	{
-		if (strlen(buf) > 12)
+		if ((strlen(buf) > 12) && (strlen(buf) < 32))
 		{
+			sscanf(buf,"%2x",&cantblx.seq);
+
 			// The ascii hex order is little endian.  Convert to an unsigned int
 			cantblx.id = 0;
 			for (m = 10; m >= 2; m-=2)
@@ -56,7 +59,7 @@ int main(int argc, char **argv)
 			}
 			sscanf(&buf[10],"%2x",(char*)&cantblx.dlc);
 
-			printf("\n%08X %1d ", cantblx.id,cantblx.dlc);
+			printf("%03u %08X %1d ", cantblx.seq,cantblx.id,cantblx.dlc);
 
 			// Get payload bytes	converted to binary
 			for (m = 0; m < cantblx.dlc; m++)
@@ -64,9 +67,9 @@ int main(int argc, char **argv)
 				sscanf(&buf[12+2*m]," %2x",(unsigned int*)&cantblx.uc[m]);
 				printf(" %02X",cantblx.uc[m]);
 			}
+			printf ("\n");
 		}
 	}
-	printf ("\n");
 	return 0;
 }	
 

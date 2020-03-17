@@ -14,7 +14,7 @@
 
 struct 
 
- * *************************************************************************/
+/* *************************************************************************/
 osThreadId xLcdTaskCreate(uint32_t taskpriority);
 /* osThreadId xLcdTaskCreate(uint32_t taskpriority, uint32_t beepqsize);
  * @brief	: Create task; task handle created is global for all to enjoy!
