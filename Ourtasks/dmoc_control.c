@@ -2,8 +2,9 @@
 * File Name          : dmoc_control.c
 * Date First Issued  : 12/04/2019
 * Board              : DiscoveryF4
-* Description        : Control of dmoc unit [state machine version]
+* Description        : Control of dmoc unit
 *******************************************************************************/
+/* More formal state machine version. */
 
 #include "dmoc_control.h"
 #include "main.h"
@@ -377,7 +378,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
         output.data.bytes[6] = alive + ((byte) NEUTRAL << 4) + ((byte) newstate << 6); //use new automatic state system.
     }
 */
-
+#ifdef USEOLDCODE
 	/* When in DMOC_INIT state always send disabled. */
 	if (pdmocctl->dmocstateact == DMOC_INIT)
 		 pdmocctl->dmocopstate = DMOC_DISABLED; // Overwrite anything else.
@@ -405,7 +406,51 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	{ // Show DMOC neutral gear until the DMOC shows that it is enabled.
 		pdmocctl->cmd[CMD1].txqcan.can.cd.uc[6] = pdmocctl->alive | (DMOC_NEUTRAL << 4) | (pdmocctl->dmocstatenew << 6) ;
 	}
+#else
+	switch (pdmocctl->dmocstateact)
+	{
+	case DMOC_INIT:
+		pdmocctl->dmocgear = DMOC_NEUTRAL;
+		pdmocctl->dmocstatenew = DMOC_DISABLED;
+		break;
 
+	case DMOC_DISABLED:
+		pdmocctl->dmocgear = DMOC_NEUTRAL;
+		if ((pdmocctl->dmocopstate == DMOC_ENABLE) ||
+		    (pdmocctl->dmocopstate == DMOC_STANDBY) )
+			pdmocctl->dmocstatenew = DMOC_STANDBY;
+		else
+			pdmocctl->dmocstatenew = DMOC_DISABLED;
+		break;
+
+	case DMOC_STANDBY:
+		pdmocctl->dmocgear = DMOC_NEUTRAL;
+		if (pdmocctl->dmocopstate == DMOC_ENABLE)
+			pdmocctl->dmocstatenew = DMOC_ENABLE;
+		break;
+
+	case DMOC_ENABLE:
+		if (pdmocctl->dmocopstate == DMOC_ENABLE)
+		{
+			pdmocctl->dmocstatenew = DMOC_ENABLE;
+			pdmocctl->dmocgear = DMOC_DRIVE;
+		}
+		else
+		{
+			pdmocctl->dmocstatenew = pdmocctl->dmocopstate;
+			pdmocctl->dmocgear = DMOC_NEUTRAL;
+		}
+		break;
+
+	case DMOC_POWERDOWN:
+		pdmocctl->dmocstatenew = DMOC_POWERDOWN;
+		break;
+	}
+
+	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[6] = pdmocctl->alive | (pdmocctl->dmocgear << 4) | (pdmocctl->dmocstatenew << 6) ;
+#endif
+
+	/* Add the weird dmoc checksum. */
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[7] = DMOCchecksum(&pdmocctl->cmd[CMD1].txqcan.can); 
 
 	// Queue CAN msg
