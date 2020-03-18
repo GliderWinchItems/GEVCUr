@@ -82,7 +82,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 
 	pdmocctl->torqueact     =     0; // Torque actual (reported)
 	pdmocctl->ftorquereq    =   0.0; // Requested torque (Nm)
-	pdmocctl->fmaxtorque    =  30.0; // Max torque (Nm) ### SMALL FOR 03/11/20 TEST ###
+	pdmocctl->fmaxtorqueP    =  30.0; // Max torque (Nm) ### SMALL MANUAL INERTIA TEST ###
+	pdmocctl->fmaxtorqueN    = -30.0; // Max torque (Nm) ### SMALL MANUAL INERTIA TEST ###
 	pdmocctl->torqueoffset  = 30000; // Torque command offset 
 
 //	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
@@ -523,16 +524,5 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	xQueueSendToBack(CanTxQHandle,&pdmocctl->cmd[CMD3].txqcan,4);
 
 	return;
-}
-/* ***********************************************************************************************************
- * void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct);
- * @brief	: Convert 0 - 100 percent into ftorquereq
- * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @param	: fpct = throttle (control lever) position: 0.0 - 100.0
- ************************************************************************************************************* */
-void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct)
-{
-	pdmocctl->ftorquereq = (int)(fpct * (float)pdmocctl->fmaxtorque * 0.01);
-	return;	
 }
 

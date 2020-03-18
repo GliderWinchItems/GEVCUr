@@ -74,10 +74,10 @@ struct DMOCCTL
 	int32_t accelcalc;    // Calculated from maxaccelwatts
 	int32_t currentact;   // Current Actual (reported)
 
-	float fmaxtorque;    // Max torque
-	float fpbctl;        // Pushbutton control: 0 = zero torq, 0.01 = CL scaled torq
-	float ftorquereq;    // float Torque Request = (0 or 0.01)*CL*fmaxtorque
-	int32_t itorquereq;  // int   Torque Request = (ftorquereq * 10.0f);
+	float fmaxtorqueP;    // Max torque (Nm) (likely P = positive)
+	float fmaxtorqueN;    // Max torque (Nm) (likely N = negative)
+	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
+	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);
 
 	uint32_t maxregenwatts;
 	uint32_t maxaccelwatts;
@@ -135,11 +135,6 @@ void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
 /* @brief	: CAN msg received: cid_dmoc_actualtorq
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: pcan = pointer to CAN msg struct
- ************************************************************************************************************* */
-void dmoc_control_throttlereq(struct DMOCCTL* pdmocctl, float fpct);
-/* @brief	: Convert 0 - 100 percent into ftorquereq
- * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @param	: fpct = throttle (control lever) position: 0.0 - 100.0
  ************************************************************************************************************* */
 void dmoc_control_CANsend(struct DMOCCTL* pdmocctl);
 /* @brief	: Send group of three CAN msgs to DMOC
