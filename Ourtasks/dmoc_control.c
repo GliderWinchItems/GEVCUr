@@ -2,7 +2,7 @@
 * File Name          : dmoc_control.c
 * Date First Issued  : 12/04/2019
 * Board              : DiscoveryF4
-* Description        : Control of dmoc unit
+* Description        : Control of dmoc unit [state machine version]
 *******************************************************************************/
 
 #include "dmoc_control.h"
