@@ -2,7 +2,7 @@
 * File Name          : dmoc_control.c
 * Date First Issued  : 12/04/2019
 * Board              : DiscoveryF4
-* Description        : Control of dmoc unit
+* Description        : Control of dmoc unit [state machine version]
 *******************************************************************************/
 /* More formal state machine version. */
 
@@ -315,9 +315,6 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
 
-	/* Compute a new torque request from CL position. */
-   // pushbutton(0.0 or 0.01) * CL position (0-100.0) * maxtorque (+/-)Nm
-	pdmocctl->ftorquereq = pdmocctl->fpbctl * clfunc.curpos * pdmocctl->fmaxtorque;
 
 	// Convert float in Nm to Nm tenths as an integer.
 	pdmocctl->itorquereq = (pdmocctl->ftorquereq * 10.0f);
@@ -378,6 +375,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
         output.data.bytes[6] = alive + ((byte) NEUTRAL << 4) + ((byte) newstate << 6); //use new automatic state system.
     }
 */
+//#define USEOLDCODE
 #ifdef USEOLDCODE
 	/* When in DMOC_INIT state always send disabled. */
 	if (pdmocctl->dmocstateact == DMOC_INIT)
