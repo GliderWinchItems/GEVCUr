@@ -229,7 +229,8 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	case 6: //Critical Fault
             pdmocctl->dmocstatefaulted = TRUE;
 	/* Attempt a restart? */
-			pdmocctl->dmocopstate = DMOC_POWERDOWN;
+			pdmocctl->dmocopstate  = DMOC_POWERDOWN;
+         pdmocctl->dmocstateact = DMOC_POWERDOWN;
 				break;
 
 	case 7: //LOS
