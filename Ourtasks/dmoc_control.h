@@ -54,8 +54,8 @@ enum DMOC_CONTROL_STATE
 struct DMOCCMDMSG
 {
 	struct CANTXQMSG txqcan; // Can msg
-	uint32_t nextctr;     // Next send time ct
-	uint8_t sendflag;     // 1 = send CAN msg, 0 = skip
+	uint32_t nextctr;        // Next send time ct
+	uint8_t sendflag;        // 1 = send CAN msg, 0 = skip
 };
 
 
@@ -74,8 +74,8 @@ struct DMOCCTL
 	int32_t accelcalc;    // Calculated from maxaccelwatts
 	int32_t currentact;   // Current Actual (reported)
 
-	float fmaxtorqueP;    // Max torque (Nm) (likely P = positive)
-	float fmaxtorqueN;    // Max torque (Nm) (likely N = negative)
+	float fmaxtorque_pbopen;  // Max torque (Nm) (pushbutton open/released)
+	float fmaxtorque_pbclosed;// Max torque (Nm) (pushbutton closed/pressed)
 	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
 	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);
 
@@ -84,7 +84,11 @@ struct DMOCCTL
 	uint32_t torqueoffset; // Offset for zero torque,     (nominally 30000)
 	uint32_t speedoffset;  // Offset for zero speed       (nominally 20000)
 	uint32_t currentoffset;// Offset for reported current (nominally  5000)
-	uint32_t activityctr;  // A counter
+
+	uint32_t activityctr;   // Count CAN msgs from dmoc
+	uint32_t activityctr_prev;  // Previous count (for computing difference)
+	uint32_t activitytimctr; // Number of sw timer ticks between activity check
+	uint32_t activitylimit;  // Number dmoc CAN msgs received during interval
 
 	// Extracted and calculated (deg C) temperatures
 	uint8_t rotortemp;     // Temperature: rotor (raw)
@@ -100,7 +104,7 @@ struct DMOCCTL
 	uint8_t dmocopstate;  // DMOC operation state
 	uint8_t dmocgear;     // DMOC gear selection
 	uint8_t dmocstatefaulted; // 1 = faulted
-	uint8_t dmocready;
+	uint8_t dmocnotsending; // 1 = dmoc CAN msgs not being received
 	uint8_t alive;        // DMOC counter (see docs)
 	uint8_t mode;         // Speed or Torque selection
 	uint8_t sendflag;     // 1 = send CAN msg, 0 = skip

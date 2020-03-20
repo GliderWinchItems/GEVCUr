@@ -160,7 +160,7 @@ void StartGevcuTask(void const * argument)
 	gevcufunction.pbuflcd3 = getserialbuf(&HUARTLCD,32);
 	if (gevcufunction.pbuflcd3 == NULL) morse_trap(403);
 
-	/* Create timer Auto-reload/periodic */
+	/* Create timer Auto-reload/periodic (128 per sec) */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
 	if (gevcufunction.swtimer1 == NULL) {morse_trap(404);}

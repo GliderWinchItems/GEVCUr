@@ -25,6 +25,7 @@
 #include "adcparamsinit.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
+#include "control_law_v0.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
@@ -326,25 +327,25 @@ void GevcuStates_GEVCU_ARM(void)
 		/* Set DMOC torque to zero. */
 		dmocctl[0].ftorquereq = 0;
 
+		/* Be sure to update LCD msg. */
+		msgflag = 0;
+
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 		return;		
 	}
 
-	/* Press pushbutton for alternate defined torque. */
-	if (gevcufunction.psw[PSW_ZTENSION]->db_on == SW_CLOSED)
-	{ 
-		/* Pct (0.01) * CL position (0-100.0) * max torque negative (Nm) */
-		dmocctl[0].ftorquereq = 0.01 * clfunc.curpos * dmocctl[0].fmaxtorqueN;
-		led_retrieve.mode = LED_ON;
-	}
-	else
+	/* Compute torque request when the GevcuEvents_04 handling of the
+      timer notification called dmoc_control_time, and dmoc_control_time
+      set the sendflag, indicating it is time to send the three CAN msgs. The
+		sending is executed via the call in GevcuUpdates to dmoc_control_CANsend,
+      which sends the msgs "if" the Gevcu state is ARM. dmoc_control_CANsend 
+		resets the sendflag.
+		Net-- a new torque request is only computed when it is needed.
+ 	*/
+	if (dmocctl[0].sendflag != 0)
 	{
-		/* Pct (0.01) * CL position (0-100.0) * max torque positive (Nm) */
-		dmocctl[0].ftorquereq = 0.01 * clfunc.curpos * dmocctl[0].fmaxtorqueP;
-		led_retrieve.mode = LED_OFF;
+		control_law_v0_calc(&dmocctl[0]); // Version 0: simple scale of CL w pb swtiching
 	}
-
-	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 
 	return;
 }

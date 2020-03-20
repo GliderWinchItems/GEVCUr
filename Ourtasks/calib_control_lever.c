@@ -137,7 +137,7 @@ static void init(void)
 		CL_FS_NO,        /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
-	 	SWMODE_WAIT,     /* Debounce mode              */
+	 	SWMODE_NOW,      /* Debounce mode              */
 	 	SWDBMS(250),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
@@ -148,8 +148,8 @@ static void init(void)
 		CL_RST_N0,       /* 1st sw see shiftregbits.h  */
 		0,               /* 2nd sw (0 = not sw pair)   */
       SWTYPE_PB,       /* switch on/off or pair      */
-	 	SWMODE_WAIT,     /* Debounce mode              */
-	 	SWDBMS(250),    /* Debounce ms: closing       */
+	 	SWMODE_NOW,      /* Debounce mode              */
+	 	SWDBMS(250),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
 
 	return;

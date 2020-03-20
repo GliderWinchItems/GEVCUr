@@ -65,9 +65,15 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->sendflag     = 0;
 	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
 	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
+	pdmocctl->dmocstatefaulted = 0; // 1 = faulted
+	pdmocctl->dmocnotsending   = 0; // 1 = dmoc CAN msgs not being received
+
+	pdmocctl->activityctr_prev =   0; // Previous count (for computing difference)
+	pdmocctl->activityctr      = 128; // Count CAN msgs from dmoc
+	pdmocctl->activitytimctr   =  50; // Number of sw timer ticks between activity check
+	pdmocctl->activitylimit    =   4; // Number dmoc CAN msgs received during interval
 
 	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
-
 	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
 	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
@@ -82,8 +88,8 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 
 	pdmocctl->torqueact     =     0; // Torque actual (reported)
 	pdmocctl->ftorquereq    =   0.0; // Requested torque (Nm)
-	pdmocctl->fmaxtorqueP    =  30.0; // Max torque (Nm) ### SMALL MANUAL INERTIA TEST ###
-	pdmocctl->fmaxtorqueN    = -30.0; // Max torque (Nm) ### SMALL MANUAL INERTIA TEST ###
+	pdmocctl->fmaxtorque_pbopen   =  30.0; // Max torque (Nm) (Pushbutton open/released)
+	pdmocctl->fmaxtorque_pbclosed = -30.0; // Max torque (Nm) (Pushbutton closed/pressed)
 	pdmocctl->torqueoffset  = 30000; // Torque command offset 
 
 //	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
@@ -133,12 +139,32 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
  ************************************************************************************************************* */
 void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr)
 {
+	int32_t diff;
+
 	if (pdmocctl->state == DMOCINIT1)
 	{ // OTO 
 		pdmocctl->nextctr = ctr + DMOC_KATICKS;
 		pdmocctl->sendflag = 1;       // Trigger sending now
 		pdmocctl->state = DMOCINIT2;  // 
 		return;
+	}
+
+	/* Activity check =>from<= dmoc. */
+	diff = pdmocctl->activityctr  - pdmocctl->activityctr_prev;
+	if (diff > 0) // Reset whenever we have one or more msgs received between time ticks
+	{
+		pdmocctl->activitytimctr = 0; // Reset time count
+		pdmocctl->dmocnotsending = 0; // 1 = dmoc CAN msgs not being received
+		pdmocctl->activityctr_prev = pdmocctl->activityctr;
+	}
+	else
+	{
+		pdmocctl->activitytimctr += 1;// Number of sw timer ticks between activity check
+		if (pdmocctl->activitytimctr >= pdmocctl->activitylimit)
+		{ // Time to see if dmoc has gone away
+			pdmocctl->activitytimctr = 0; // Reset timout counter
+			pdmocctl->dmocnotsending = 1; // 1 = dmoc CAN msgs not being received
+		}
 	}
 
 	/* Keepalive timing, based on sw1tim time ticks (e.g. (1/128) ms). */
@@ -204,7 +230,6 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	case 2: //ready (standby)
             pdmocctl->dmocstateact =  DMOC_STANDBY;
             pdmocctl->dmocstatefaulted = FALSE;
-            pdmocctl->dmocready = TRUE;
             break;
 
 	case 3: //enabled

@@ -141,6 +141,7 @@ C_SOURCES += Ourtasks/LEDTask.c
 C_SOURCES += Ourtasks/led_chasing.c
 C_SOURCES += Ourtasks/contactor_control_msg.c
 C_SOURCES += Ourtasks/lcdmsg.c
+C_SOURCES += Ourtasks/control_law_v0.c
 
 # /* USER CODE END */ 
 
