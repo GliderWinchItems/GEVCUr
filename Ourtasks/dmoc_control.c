@@ -458,7 +458,10 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 		if (pdmocctl->dmocopstate == DMOC_ENABLE)
 		{
 			pdmocctl->dmocstatenew = DMOC_ENABLE;
-			pdmocctl->dmocgear = DMOC_DRIVE;
+			if (pdmocctl->itorquereq >= 0)
+				pdmocctl->dmocgear = DMOC_DRIVE;
+			else
+				pdmocctl->dmocgear = DMOC_REVERSE;
 		}
 		else
 		{
@@ -489,13 +492,17 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	/* Speed or Torque mode. */
 	if (pdmocctl->mode == DMOC_MODETORQUE)
-	{ // Torque mode
-/* For speed mode they seem to be controlling speed by adjusting the torque! */
-      if ( (pdmocctl->speedact >   pdmocctl->maxspeed) ||
-			  (pdmocctl->speedact <  -pdmocctl->maxspeed)  ) 
-		{ // If actual (abs) rpm is greater than max (abs) rpm, zero the torque req.            
-      	pdmocctl->itorquereq = 0;
-		}
+	{ // Torque
+	/* If max speed (positive) over max, and requested torque is positive, set
+		requested to torque to zero. Otherwise, allow requested torque, whether 
+		positive or negative, to remain as requested. */
+      if ((pdmocctl->speedact > pdmocctl->maxspeed) && (pdmocctl->itorquereq >= 0))
+      	pdmocctl->itorquereq = 0;				
+
+	/* Opposite of above. Max speed in reverse, with negative torque requested sets
+      torque to zero. Otherwise, allow whatever torque is requested.*/
+      if ((pdmocctl->speedact < pdmocctl->maxspeed) && (pdmocctl->itorquereq < 0))
+      	pdmocctl->itorquereq = 0;				
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
 		ntmp = pdmocctl->itorquereq + pdmocctl->torqueoffset;

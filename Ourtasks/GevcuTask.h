@@ -207,6 +207,10 @@ struct GEVCUFUNCTION
 	TimerHandle_t swtimer2; // Software timer2: multiple purpose delay
 	TimerHandle_t swtimer3; // Software timer3: uart RX/keep-alive
 
+	uint32_t timesyncrcvctr; // Time sync CAN msgs received
+	uint32_t timesynclimit;
+
+
 	/* Pointers to incoming CAN msg mailboxes. */
 	struct MAILBOXCAN* pmbx_cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to pollcid_gevcur_keepalive_i;
 	struct MAILBOXCAN* pmbx_cid_gevcur_keepalive_i; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
