@@ -59,9 +59,21 @@ struct DMOCCMDMSG
 };
 
 
+/* PI Loop parameters and variables for DMOC unit. */
+struct CTLLAWPILOOP // Control Law PI Loop
+{
+	float kp;    // Proportional constant
+	float ki;    // Integral constant
+	float zdiff; // Differentiator 
+	float krpm;
+	/* ......... */
+};
+
+
 /* DMOC Control */
 struct DMOCCTL
 {
+	struct CTLLAWPILOOP pi; // PI Loop parameters and variables
 	struct DMOCCMDMSG cmd[3]; // Three command msgs required
 	uint32_t nextctr;     // Next send time ct
 

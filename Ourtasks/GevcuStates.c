@@ -25,7 +25,7 @@
 #include "adcparamsinit.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
-#include "control_law_v0.h"
+#include "control_law_v1.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
@@ -344,7 +344,7 @@ void GevcuStates_GEVCU_ARM(void)
  	*/
 	if (dmocctl[0].sendflag != 0)
 	{
-		control_law_v0_calc(&dmocctl[0]); // Version 0: simple scale of CL w pb swtiching
+		control_law_v1_calc(&dmocctl[0]); // Version 1: PI Loop
 	}
 
 	return;
