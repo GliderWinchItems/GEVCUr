@@ -73,6 +73,7 @@ struct DMOCCTL
 	int32_t regencalc;    // Calculated from maxregenwatts
 	int32_t accelcalc;    // Calculated from maxaccelwatts
 	int32_t currentact;   // Current Actual (reported)
+	int32_t voltageact;   // dcVoltage Actual (reported)
 
 	float fmaxtorque_pbopen;  // Max torque (Nm) (pushbutton open/released)
 	float fmaxtorque_pbclosed;// Max torque (Nm) (pushbutton closed/pressed)
