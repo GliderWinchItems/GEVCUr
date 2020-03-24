@@ -192,7 +192,7 @@ void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 }
 /* ***********************************************************************************************************
  * void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
- * @brief	: CAN msg received: cid_dmoc_actualtorq
+ * @brief	: CAN msg received: cid_dmoc_speed
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
@@ -280,7 +280,7 @@ void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
         dcCurrent = ((frame->data.bytes[2] * 256) + frame->data.bytes[3]) - 5000; //offset is 500A, unit = .1A
         activityCount++; */
 
-	pdmocctl->speedact   = (pcan->cd.uc[0] << 8 | pcan->cd.uc[1]);
+	pdmocctl->voltageact = (pcan->cd.uc[0] << 8 | pcan->cd.uc[1]);
 	pdmocctl->currentact = (pcan->cd.uc[2] << 8 | pcan->cd.uc[3]) - pdmocctl->currentoffset;
 	pdmocctl->activityctr += 1;
 	return;
@@ -501,7 +501,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	/* Opposite of above. Max speed in reverse, with negative torque requested sets
       torque to zero. Otherwise, allow whatever torque is requested.*/
-      if ((pdmocctl->speedact < pdmocctl->maxspeed) && (pdmocctl->itorquereq < 0))
+      if ((pdmocctl->speedact < -pdmocctl->maxspeed) && (pdmocctl->itorquereq < 0))
       	pdmocctl->itorquereq = 0;				
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
