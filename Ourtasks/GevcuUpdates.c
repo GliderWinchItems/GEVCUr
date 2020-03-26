@@ -37,16 +37,16 @@ void GevcuUpdates(void)
 	/* DMOC CAN msg sending. */
 	if (gevcufunction.state == GEVCU_ARM)
 	{
-		dmocctl[0].dmocopstate = DMOC_ENABLE;
+		dmocctl[DMOC_SPEED].dmocopstate = DMOC_ENABLE;
 	}
 	else
 	{
-		dmocctl[0].dmocopstate = DMOC_DISABLED;
+		dmocctl[DMOC_SPEED].dmocopstate = DMOC_DISABLED;
 	}
-	dmoc_control_CANsend(&dmocctl[0]); // DMOC #1
+	dmoc_control_CANsend(&dmocctl[DMOC_SPEED]); // DMOC #1
 
 	/* Keepalive and torque command timing for DMOC */
-	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
+	dmoc_control_time(&dmocctl[DMOC_SPEED], gevcufunction.swtim1ctr);
 
 	/* Queue GEVCUr keep-alive status CAN msg */
 	if ((gevcufunction.outstat & CNCTOUT05KA) != 0)

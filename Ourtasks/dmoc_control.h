@@ -17,8 +17,8 @@
 #include "common_can.h"
 
 #define NUMDMOC 2	     // Number of DMOCs
-#define DMOC_TORQUE 0  // DMOC unit index for torque DMOC
-#define DMOC_SPEED  1  // DMOC unit index for speed DMOC
+#define DMOC_TORQUE 1  // DMOC unit index for torque DMOC
+#define DMOC_SPEED  0  // DMOC unit index for speed DMOC
 
 /* Number of sw1tim ticks to give 64/sec rate. */
 #define DMOC_KATICKS (2)	

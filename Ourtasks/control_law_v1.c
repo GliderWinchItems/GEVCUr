@@ -65,7 +65,7 @@ void control_law_v1_init(void)
 void control_law_v1_reset(void)
 {
 	pi.intgrtr   = 0;
-	&dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
+	dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
 	return;
 }
 

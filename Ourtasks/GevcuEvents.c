@@ -141,7 +141,7 @@ void GevcuEvents_04(void)
 	contactor_control_time(gevcufunction.swtim1ctr);
 
 	/* Keepalive and torque command for DMOC */
-	dmoc_control_time(&dmocctl[0], gevcufunction.swtim1ctr);
+	dmoc_control_time(&dmocctl[DMOC_SPEED], gevcufunction.swtim1ctr);
 
 	return;
 }
@@ -186,7 +186,7 @@ pdbg07mbx = gevcufunction.pmbx_cid_cntctr_keepalive_r;
  * *************************************************************************/
 void GevcuEvents_08(void)
 {
-	dmoc_control_GEVCUBIT08(&dmocctl[0],\
+	dmoc_control_GEVCUBIT08(&dmocctl[DMOC_SPEED],\
         &gevcufunction.pmbx_cid_dmoc_actualtorq->ncan.can);
 	return;
 }
@@ -196,7 +196,7 @@ void GevcuEvents_08(void)
  * *************************************************************************/
 void GevcuEvents_09(void)
 {
-	dmoc_control_GEVCUBIT09(&dmocctl[0],&gevcufunction.pmbx_cid_dmoc_speed->ncan.can);
+	dmoc_control_GEVCUBIT09(&dmocctl[DMOC_SPEED],&gevcufunction.pmbx_cid_dmoc_speed->ncan.can);
 	return;
 }
 /* *************************************************************************
@@ -230,7 +230,7 @@ void GevcuEvents_12(void)
  * *************************************************************************/
 void GevcuEvents_13(void)
 {
-	dmoc_control_GEVCUBIT13(&dmocctl[0],\
+	dmoc_control_GEVCUBIT13(&dmocctl[DMOC_SPEED],\
         &gevcufunction.pmbx_cid_dmoc_hv_status->ncan.can);
 	return;
 }
@@ -240,7 +240,7 @@ void GevcuEvents_13(void)
  * *************************************************************************/
 void GevcuEvents_14(void)
 {
-	dmoc_control_GEVCUBIT14(&dmocctl[0],\
+	dmoc_control_GEVCUBIT14(&dmocctl[DMOC_SPEED],\
         &gevcufunction.pmbx_cid_dmoc_hv_temps->ncan.can);
 	return;
 }
