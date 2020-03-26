@@ -14,6 +14,9 @@
 void control_law_v1_init(void);
 /* @brief	: Load parameters
  * *************************************************************************/
+ void control_law_v1_reset(void);
+/* @brief	: Reset
+ * *************************************************************************/
 void control_law_v1_calc(struct DMOCCTL* pdmocctl);
 /* @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @brief	: Compute torquereq

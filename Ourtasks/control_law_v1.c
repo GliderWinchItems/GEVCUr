@@ -29,12 +29,6 @@ struct CTLLAWPILOOP // Control Law PI Loop
 	float ki;    	// Integral constant
 	float clp;		//	integrator anti-windup clip level
 	float fllspd;	//	100% control lever speed magnitude
-
-   // Limits
-	float fmaxtorque_pbopen;  // Max torque (Nm) (pushbutton open/released)
-	float fmaxtorque_pbclosed;// Max torque (Nm) (pushbutton closed/pressed)
-	float maxspeed_pos;
-	float maxspeed_neg;
 };
 
 static struct CTLLAWPILOOP pi;
@@ -42,8 +36,7 @@ static struct CTLLAWPILOOP pi;
 static uint8_t init_flag = 0; // Bootup one-time init
 
 /* *************************************************************************
- * void control_law_v1_init(struct DMOCCTL* pdmocctl);
- * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
+ * void control_law_v1_init(void);
  * @brief	: Load parameters
  * *************************************************************************/
 void control_law_v1_init(void)
@@ -56,34 +49,23 @@ void control_law_v1_init(void)
 	pi.ki = 0.15E-3f; 	// Integral constant
 	pi.fllspd = 360.0f;	//	100% control lever desired speed magnitude
 
-	pi.spderr    = 0;
-	pi.dsrdspd   = 0;
-	pi.intgrtr   = 0;
-
-	pi.fmaxtorque_pbopen   =  30.0f; // Max torque (Nm) (Pushbutton open/released)
-	pi.fmaxtorque_pbclosed = -30.0f; // Max torque (Nm) (Pushbutton closed/pressed)
-	pi.maxspeed_pos     =  2500; // Max speed forward
-	pi.maxspeed_neg     = -2500; // Max speed in reverse
-
-	/* Initialize DMOC that is in TORQUE mode. */
-	dmoc_control_initTORQUE();
-
+	pi.spderr  	= 0;
+	pi.dsrdspd  = 0;
+	pi.intgrtr  = 0;
+	
 	/* Initialize DMOC that is in SPEED mode. */
-// TODO: resolve if DMOC "mode" should be speed of torque!
-// I.e. do"we" control speed via torque, or does DMOC via its speed mode?
 	dmoc_control_initSPEED();
+	return;
+}
 
-	pi.maxspeed_pos     =  2500; // Max speed forward
-	pi.maxspeed_neg     = -2500; // Max speed in reverse
-
-	/* Initialize DMOC that is in TORQUE mode. */
-	dmoc_control_initTORQUE();
-
-	/* Initialize DMOC that is in SPEED mode. */
-// TODO: resolve if DMOC "mode" should be speed of torque!
-// I.e. do"we" control speed via torque, or does DMOC via its speed mode?
-//	dmoc_control_initSPEED();
-
+/* *************************************************************************
+ * void control_law_v1_reset(void);
+ * @brief	: Reset
+ * *************************************************************************/
+void control_law_v1_reset(void)
+{
+	pi.intgrtr   = 0;
+	&dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
 	return;
 }
 
@@ -139,16 +121,3 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 	return;
 }
-
-/*
-QUESTIONS:
-Control Law V2???
-What controls persistence/scope of variables
-f and i before floats and integers. when to use.
-Is init needed?
-Is structure needed
-What makes the ftorquereq be sent out immediately
-fmaxtorque_pbopen misnomer
-// vs /*, when to use
-Elaborate comment blocks and @ values, purpose and where did they come from
-*/
