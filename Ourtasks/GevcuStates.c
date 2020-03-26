@@ -325,7 +325,7 @@ void GevcuStates_GEVCU_ARM(void)
 		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
 		/* Set DMOC torque to zero. */
-		dmocctl[0].ftorquereq = 0;
+		dmocctl[DMOC_TORQUE].ftorquereq = 0;
 
 		/* Be sure to update LCD msg. */
 		msgflag = 0;
@@ -342,9 +342,9 @@ void GevcuStates_GEVCU_ARM(void)
 		resets the sendflag.
 		Net-- a new torque request is only computed when it is needed.
  	*/
-	if (dmocctl[0].sendflag != 0)
+	if (dmocctl[DMOC_TORQUE].sendflag != 0)
 	{
-		control_law_v1_calc(&dmocctl[0]); // Version 1: PI Loop
+		control_law_v1_calc(&dmocctl[DMOC_TORQUE]); // Version 1: PI Loop
 	}
 
 	return;

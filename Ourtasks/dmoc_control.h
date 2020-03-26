@@ -16,7 +16,9 @@
 #include "morse.h"
 #include "common_can.h"
 
-#define NUMDMOC 1	// Number of DMOCs
+#define NUMDMOC 2	     // Number of DMOCs
+#define DMOC_TORQUE 0  // DMOC unit index for torque DMOC
+#define DMOC_SPEED  1  // DMOC unit index for speed DMOC
 
 /* Number of sw1tim ticks to give 64/sec rate. */
 #define DMOC_KATICKS (2)	
@@ -58,28 +60,16 @@ struct DMOCCMDMSG
 	uint8_t sendflag;        // 1 = send CAN msg, 0 = skip
 };
 
-
-/* PI Loop parameters and variables for DMOC unit. */
-struct CTLLAWPILOOP // Control Law PI Loop
-{
-	float kp;    // Proportional constant
-	float ki;    // Integral constant
-	float zdiff; // Differentiator 
-	float krpm;
-	/* ......... */
-};
-
-
 /* DMOC Control */
 struct DMOCCTL
 {
-	struct CTLLAWPILOOP pi; // PI Loop parameters and variables
 	struct DMOCCMDMSG cmd[3]; // Three command msgs required
 	uint32_t nextctr;     // Next send time ct
 
 	int32_t speedreq;     // Requested speed (signed)
 	int32_t torquecmd;    // Command (do we need this?)
-	int32_t maxspeed;     // Max speed (signed)
+	int32_t maxspeed_pos; // Max speed (signed) (e.g. 9000)
+	int32_t maxspeed_neg; // Max speed (signed) (e.g.-9000)
 	int32_t speedact;     // Speed actual (reported)
 	int32_t torqueact;    // Torque actual (signed)
 	int32_t regencalc;    // Calculated from maxregenwatts
@@ -87,8 +77,8 @@ struct DMOCCTL
 	int32_t currentact;   // Current Actual (reported)
 	int32_t voltageact;   // dcVoltage Actual (reported)
 
-	float fmaxtorque_pbopen;  // Max torque (Nm) (pushbutton open/released)
-	float fmaxtorque_pbclosed;// Max torque (Nm) (pushbutton closed/pressed)
+	float fmaxtorque_pos;  // Max torque (Nm) forward (e.g. 300)
+	float fmaxtorque_neg;  // Max torque (Nm) reverse (e.g. -300)
 	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
 	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);
 
@@ -124,9 +114,9 @@ struct DMOCCTL
 };
 
 /* ***********************************************************************************************************/
-void dmoc_control_init(struct DMOCCTL* pdmocctl);
-/* @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @brief	: Prep for dmoc handling
+void dmoc_control_initTORQUE(void);
+void dmoc_control_initSPEED(void);
+/* @brief	: Prep dmoc(s)
  * ***********************************************************************************************************/
 void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr);
 /* @brief	: Timer input to state machine

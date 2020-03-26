@@ -34,32 +34,18 @@ extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 struct DMOCCTL dmocctl[NUMDMOC]; // Array allows for multiple DMOCs
 
 /* ***********************************************************************************************************
- * void dmoc_control_init(struct DMOCCTL* pdmocctl);
- * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @brief	: Prep for dmoc handling
+ * void dmoc_control_initTORQUE(void);
+ * void dmoc_control_initSPEED(void);
+ * @brief	: Prep dmoc(s)
  ************************************************************************************************************* */
-void dmoc_control_init(struct DMOCCTL* pdmocctl)
+void dmoc_control_initTORQUE(void)
 {
 	int i,j;
 
 	/* If values are semi-permanent in high-flash, then the following would be
       accomplished by copying from the high-flash areas. */
 
-	/* NOTE--When there is more than one DMOC and the following parameters
-      are applicable to both, then something like the following would be
-      needed to be added, e.g.
-      if (pdmocctl == &dmocctl[0])
-      { // Initial DMOC #1
-        ...
-      }
-		else
-		{ // Here, initial "other" DMOC
-        ... 
-		}
-		NOTE: for dynamometer testing one DMOC will be in torque mode
-      and the other in speed mode. If the following initialization is used
-      for both, the difference in modes will need to be set by "someone".
-	*/
+	struct DMOCCTL* pdmocctl = &dmocctl[DMOC_TORQUE];
 
 	pdmocctl->state        = DMOCINIT1; // Initial state
 	pdmocctl->sendflag     = 0;
@@ -82,15 +68,16 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->maxaccelwatts = 60000; // ?
 	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
 
-	pdmocctl->speedreq      =     0; // Requested speed
-	pdmocctl->maxspeed      =  2500; // Max speed (signed)  ### SMALL FOR 03/11/20 TEST ###
-	pdmocctl->speedoffset   = 20000; // Speed command offset
+	pdmocctl->speedreq     =     0; // Requested speed
+	pdmocctl->maxspeed_pos =  9999; // Max speed (signed) (e.g. 9000)
+	pdmocctl->maxspeed_neg = -9999; // Max speed (signed) (e.g.-9000)
+	pdmocctl->speedoffset  = 20000; // Speed command offset
 
-	pdmocctl->torqueact     =     0; // Torque actual (reported)
-	pdmocctl->ftorquereq    =   0.0; // Requested torque (Nm)
-	pdmocctl->fmaxtorque_pbopen   =  30.0; // Max torque (Nm) (Pushbutton open/released)
-	pdmocctl->fmaxtorque_pbclosed = -30.0; // Max torque (Nm) (Pushbutton closed/pressed)
-	pdmocctl->torqueoffset  = 30000; // Torque command offset 
+	pdmocctl->fmaxtorque_pos =  300.0f;  // Max torque (Nm) forward (e.g. 300)
+	pdmocctl->fmaxtorque_neg = -300.0f;  // Max torque (Nm) reverse (e.g. -300)
+	pdmocctl->ftorquereq     =    0.0f; // Requested torque (Nm)
+	pdmocctl->torqueact      =      0;  // Torque actual (reported)
+	pdmocctl->torqueoffset   =  30000;  // Torque command offset 
 
 //	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
 //	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);         // Computed in CMD3
@@ -131,6 +118,85 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 
 	return;
 }
+void dmoc_control_initSPEED(void)
+{
+	int i,j;
+	struct DMOCCTL* pdmocctl = &dmocctl[DMOC_SPEED];
+
+	pdmocctl->state        = DMOCINIT1; // Initial state
+	pdmocctl->sendflag     = 0;
+	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
+	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
+	pdmocctl->dmocstatefaulted = 0; // 1 = faulted
+	pdmocctl->dmocnotsending   = 0; // 1 = dmoc CAN msgs not being received
+
+	pdmocctl->activityctr_prev =   0; // Previous count (for computing difference)
+	pdmocctl->activityctr      = 128; // Count CAN msgs from dmoc
+	pdmocctl->activitytimctr   =  50; // Number of sw timer ticks between activity check
+	pdmocctl->activitylimit    =   4; // Number dmoc CAN msgs received during interval
+
+	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
+	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
+	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
+	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
+
+	pdmocctl->maxregenwatts = 60000; // ?
+	pdmocctl->maxaccelwatts = 60000; // ?
+	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
+
+	pdmocctl->speedreq     =     0; // Requested speed
+	pdmocctl->maxspeed_pos =  9999; // Max speed (signed) (e.g. 9000)
+	pdmocctl->maxspeed_neg = -9999; // Max speed (signed) (e.g.-9000)
+	pdmocctl->speedoffset  = 20000; // Speed command offset
+
+	pdmocctl->fmaxtorque_pos =  300.0f;  // Max torque (Nm) forward (e.g. 300)
+	pdmocctl->fmaxtorque_neg = -300.0f;  // Max torque (Nm) reverse (e.g. -300)
+	pdmocctl->ftorquereq     =    0.0f; // Requested torque (Nm)
+	pdmocctl->torqueact      =      0;  // Torque actual (reported)
+	pdmocctl->torqueoffset   =  30000;  // Torque command offset 
+
+//	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
+//	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);         // Computed in CMD3
+
+	/* Load fixed data into three DMOC command CAN msgs. */
+	for (i = 0; i < 3; i++)
+	{
+// TODO: Second DMOC will be on a different CAN bus, hence pctl1?
+// But, only one CAN is setup and intialized in 'main.c'
+		pdmocctl->cmd[i].txqcan.pctl       = pctl0; // CAN1 control block ptr (from main.c)
+		pdmocctl->cmd[i].txqcan.maxretryct = 8;
+		pdmocctl->cmd[i].txqcan.bits       = CANMSGLOOPBACKBIT; // Route tx copy as if received
+		pdmocctl->cmd[i].txqcan.can.dlc    = 8; // All command msgs have 8 payload bytes
+
+		for (j = 0; j < 8; j++) // Clear out payload (later, some bytes are bytes are overwritten)
+		{
+			pdmocctl->cmd[i].txqcan.can.cd.uc[j] = 0;
+		}
+	}
+	
+/* Load CAN id into DMOC command CAN msgs. */
+
+	//Commanded RPM plus state of key and gear selector
+	// CANID_DMOC_CMD_SPEED', '46400000','DMOC','I16_X6',         'DMOC: cmd: speed, key state'
+	pdmocctl->cmd[CMD1].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_speed;
+
+	//Torque limits
+	// CANID_DMOC_CMD_TORQ',  '46600000','DMOC','I16_I16_I16_X6', 'DMOC: cmd: torq,copy,standby,status
+	pdmocctl->cmd[CMD2].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_torq;
+
+	//Power limits plus setting ambient temp and whether to cool power train or go into limp mode
+	//CANID_DMOC_CMD_REGEN', '46800000','DMOC','I16_I16_X_U8_U8','DMOC: cmd: watt,accel,degC,alive
+	pdmocctl->cmd[CMD3].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_regen;
+
+/* Preset some payload bytes that do not change. */
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; // msb standby torque. -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; // lsb
+
+	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[5] = 60;   // 20 degrees celsius ambient temp
+
+	return;
+}
+
 /* ***********************************************************************************************************
  * void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr);
  * @brief	: Timer input to state machine
@@ -367,8 +433,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* Translate above DmocMotorController.cpp */
 	ntmp = pdmocctl->speedreq; // Requested speed (RPM?)
 
-	// (Bogus speed request check: -20000 < speedreq < 20000)
-	if ((ntmp > pdmocctl->speedoffset) || (ntmp < -pdmocctl->speedoffset))
+	//Check for speed request beyond max forward or reverse directions
+	if ((ntmp > pdmocctl->maxspeed_pos) || (ntmp < pdmocctl->maxspeed_neg))
 	         ntmp = 0;
 
 	// Send non-zero speed command only when everything is ready
@@ -496,12 +562,12 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* If max speed (positive) over max, and requested torque is positive, set
 		requested to torque to zero. Otherwise, allow requested torque, whether 
 		positive or negative, to remain as requested. */
-      if ((pdmocctl->speedact > pdmocctl->maxspeed) && (pdmocctl->itorquereq >= 0))
+      if ((pdmocctl->speedact > pdmocctl->maxspeed_pos) && (pdmocctl->itorquereq >= 0))
       	pdmocctl->itorquereq = 0;				
 
 	/* Opposite of above. Max speed in reverse, with negative torque requested sets
       torque to zero. Otherwise, allow whatever torque is requested.*/
-      if ((pdmocctl->speedact < -pdmocctl->maxspeed) && (pdmocctl->itorquereq < 0))
+      if ((pdmocctl->speedact < pdmocctl->maxspeed_neg) && (pdmocctl->itorquereq < 0))
       	pdmocctl->itorquereq = 0;				
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
