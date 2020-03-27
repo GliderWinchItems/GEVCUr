@@ -142,7 +142,7 @@ union UNION_PAY convertpayload(struct CANRCVBUF* pcanx, uint8_t paycode, uint8_t
 
 	case I16__I16:
 		if (k == 1) k = 2;
-	case I16_I16_I16_X7:
+	case I16_I16_I16_X6:
 		if (k != 3) {ui_ff.ui = payI16(pcanx,k*2);break;}
 		if (k == 3) {ui_ff.ui = pcanx->cd.uc[6];  break;}
 		break;
