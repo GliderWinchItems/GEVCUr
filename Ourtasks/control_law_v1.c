@@ -17,21 +17,7 @@ Speed PI Loop
 #include "LEDTask.h"
 #include "control_law_v1.h"
 
-struct CTLLAWPILOOP // Control Law PI Loop
-{
-	//	Working variables
-	float spderr;	//	speed error
-	float dsrdspd;	//	desired speed
-	float intgrtr;//	PI integrator
-
-	//	Parameters
-	float kp;    	// Proportional constant
-	float ki;    	// Integral constant
-	float clp;		//	integrator anti-windup clip level
-	float fllspd;	//	100% control lever speed magnitude
-};
-
-static struct CTLLAWPILOOP pi;
+struct CTLLAWPILOOP clv1;
 
 static uint8_t init_flag = 0; // Bootup one-time init
 
@@ -45,13 +31,13 @@ void control_law_v1_init(void)
 
 	/* Load parameters and initialize variables. */
 	/* See: struct CTLLAWPILOOP in dmoc_control.h. */
-	pi.kp = 0.015f;  	// Proportional constant
-	pi.ki = 0.15E-3f; 	// Integral constant
-	pi.fllspd = 360.0f;	//	100% control lever desired speed magnitude
+	clv1.kp = 0.015f;  	// Proportional constant
+	clv1.ki = 0.15E-3f; 	// Integral constant
+	clv1.fllspd = 360.0f;	//	100% control lever desired speed magnitude
 
-	pi.spderr  	= 0;
-	pi.dsrdspd  = 0;
-	pi.intgrtr  = 0;
+	clv1.spderr  	= 0;
+	clv1.dsrdspd  = 0;
+	clv1.intgrtr  = 0;
 	
 	/* Initialize DMOC that is in SPEED mode. */
 	dmoc_control_initSPEED();
@@ -64,7 +50,7 @@ void control_law_v1_init(void)
  * *************************************************************************/
 void control_law_v1_reset(void)
 {
-	pi.intgrtr   = 0;
+	clv1.intgrtr   = 0;
 	dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
 	return;
 }
@@ -81,10 +67,10 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 
 	//	Compute desred speed based on control lever and PB conditons
 	/* Press pushbutton for direction reversal */
-	pi.dsrdspd = 0.01f * clfunc.curpos * pi.fllspd;	//	Desired speed magnitude
+	clv1.dsrdspd = 0.01f * clfunc.curpos * clv1.fllspd;	//	Desired speed magnitude
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{ 
-		pi.dsrdspd = -pi.dsrdspd;
+		clv1.dsrdspd = -clv1.dsrdspd;
 		led_retrieve.mode = LED_ON;
 	}
 	else
@@ -93,28 +79,28 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 	}
 
 	//	Compute speed error
-	pi.spderr = pi.dsrdspd - pdmocctl->speedact;
+	clv1.spderr = clv1.dsrdspd - pdmocctl->speedact;
 
 	//	Update integrator and clp if needed
-	pi.intgrtr += pi.spderr * pi.ki;
-	if (pi.intgrtr > pi.clp) 
+	clv1.intgrtr += clv1.spderr * clv1.ki;
+	if (clv1.intgrtr > clv1.clp) 
 	{
-		pi.intgrtr = pi.clp;
+		clv1.intgrtr = clv1.clp;
 	}
-	else if (pi.intgrtr < -pi.clp)
+	else if (clv1.intgrtr < -clv1.clp)
 	{
-		pi.intgrtr = -pi.clp;
+		clv1.intgrtr = -clv1.clp;
 	}
 
 	//	Compute and limit torque command
-	pdmocctl->ftorquereq = pi.spderr * pi.kp + pi.intgrtr;
-	if (pdmocctl->ftorquereq > pi.clp) 
+	pdmocctl->ftorquereq = clv1.spderr * clv1.kp + clv1.intgrtr;
+	if (pdmocctl->ftorquereq > clv1.clp) 
 	{
-		pdmocctl->ftorquereq = pi.clp;
+		pdmocctl->ftorquereq = clv1.clp;
 	}
-	else if (pdmocctl->ftorquereq < -pi.clp)
+	else if (pdmocctl->ftorquereq < -clv1.clp)
 	{
-		pdmocctl->ftorquereq = -pi.clp;
+		pdmocctl->ftorquereq = -clv1.clp;
 	}
 
 	/* Update LED state. */

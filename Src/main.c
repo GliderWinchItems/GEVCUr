@@ -91,6 +91,7 @@
 #include "calib_control_lever.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
+#include "control_law_v1.h"
 
 
 /* USER CODE END Includes */
@@ -990,17 +991,18 @@ void StartDefaultTask(void const * argument)
 //osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
-#define DMOCTESTS
+//#define DMOCTESTS
+#define CONTROLV1DEBUG
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1140,6 +1142,15 @@ uint16_t medtimectr = 0;  // Approx 8/sec
          dmocctl[DMOC_SPEED].dmocstatenew,
          dmocctl[DMOC_SPEED].dmocstaterep,
          dmocctl[DMOC_SPEED].dmocopstate);
+#endif
+
+#ifdef CONTROLV1DEBUG
+	yprintf(&pbuf2,"\n\rtorquereq:%6.0f spderr: %6.0f dsrdspd: %6.0f intgrtr: %6.0f",
+		dmocctl[DMOC_SPEED].ftorquereq,
+		clv1.spderr,	 /*	speed error   */
+		clv1.dsrdspd,	 /*	desired speed */
+		clv1.intgrtr); /*	PI integrator */
+	
 #endif
 	
 // ================== SLOW ==============================================

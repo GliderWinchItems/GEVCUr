@@ -145,12 +145,12 @@ void dmoc_control_initSPEED(void)
 	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
 
 	pdmocctl->speedreq     =     0; // Requested speed
-	pdmocctl->maxspeed_pos =  9999; // Max speed (signed) (e.g. 9000)
-	pdmocctl->maxspeed_neg = -9999; // Max speed (signed) (e.g.-9000)
+	pdmocctl->maxspeed_pos =  5000; // Max speed (signed) (e.g. 9000)
+	pdmocctl->maxspeed_neg = -5000; // Max speed (signed) (e.g.-9000)
 	pdmocctl->speedoffset  = 20000; // Speed command offset
 
-	pdmocctl->fmaxtorque_pos =  300.0f;  // Max torque (Nm) forward (e.g. 300)
-	pdmocctl->fmaxtorque_neg = -300.0f;  // Max torque (Nm) reverse (e.g. -300)
+	pdmocctl->fmaxtorque_pos =  40.0f;  // Max torque (Nm) forward (e.g. 300)
+	pdmocctl->fmaxtorque_neg = -40.0f;  // Max torque (Nm) reverse (e.g. -300)
 	pdmocctl->ftorquereq     =    0.0f; // Requested torque (Nm)
 	pdmocctl->torqueact      =      0;  // Torque actual (reported)
 	pdmocctl->torqueoffset   =  30000;  // Torque command offset 
