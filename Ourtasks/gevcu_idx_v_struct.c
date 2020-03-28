@@ -38,15 +38,17 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 	p->cid_cntctr_keepalive_i  = 0xE3800000; // CANID_CMD_CNTCTRKAI:U8': Contactor1: I KeepAlive and connect command
     // GEVCUr sends to PC response to keepalive msg PC sends to GEVCUr
    p->cid_gevcur_keepalive_r = 0xE4200000; // CANID_CMD_GEVCURKAR: U8_U8 : GEVCUr: R KeepAlive response
+   p->cid_gevcur_ctllawv1    = 0xE4000000; // CANID_LOG_DMOCCMDSPD: FF    : GEVCUr: Desired speed');
     // DMOC receives these commands
 	p->cid_dmoc_cmd_speed  = 0x46400000;   // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
 	p->cid_dmoc_cmd_torq   = 0x46600000;   // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
 	p->cid_dmoc_cmd_regen  = 0x46800000;   // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
+	// 
 
 
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends
-	p->cid_cntctr_keepalive_r  = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
+	p->cid_cntctr_keepalive_r = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
      // PC sends to GEVCUr (i.e. "us")
 	p->cid_gevcur_keepalive_i = 0xE3E00000; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
      // DMOC sends                        11 bit

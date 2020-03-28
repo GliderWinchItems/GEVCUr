@@ -43,6 +43,13 @@ void GevcuUpdates(void)
 	{
 		dmocctl[DMOC_SPEED].dmocopstate = DMOC_DISABLED;
 	}
+
+	if (dmocctl[DMOC_SPEED].sendflag != 0)
+	{ // Here dmoc CMD1,2,3 are scheduled to be sent
+			// Queue CAN msg with desired speed
+		xQueueSendToBack(CanTxQHandle,&gevcufunction.canmsg[CID_GEVCUR_CTL_LAWV1],4);
+	}
+
 	dmoc_control_CANsend(&dmocctl[DMOC_SPEED]); // DMOC #1
 
 	/* Keepalive and torque command timing for DMOC */
