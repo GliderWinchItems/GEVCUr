@@ -1107,6 +1107,11 @@ beepqtest.repct  = 2;
 //	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  
 #endif
 
+#ifdef CONTROLV1DEBUG
+uint16_t hdrctr = 0;
+
+#endif
+
 /* Purpose: flag to have other task wait before 'for' loop. */
 lcdflag = 1;
 
@@ -1145,12 +1150,20 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 #endif
 
 #ifdef CONTROLV1DEBUG
-	yprintf(&pbuf2,"\n\rtorquereq:%6.0f spderr: %6.0f dsrdspd: %6.0f intgrtr: %6.0f",
-		dmocctl[DMOC_SPEED].ftorquereq,
-		clv1.spderr,	 /*	speed error   */
-		clv1.dsrdspd,	 /*	desired speed */
-		clv1.intgrtr); /*	PI integrator */
-	
+	hdrctr += 1;
+	if (hdrctr > 16)
+	{
+		hdrctr = 0;
+		yprintf(&pbuf4,"\n\r  speed speed speed\n\rdesired   act  err intgrtr torqreq state");
+	}
+
+	yprintf(&pbuf2,"\n\r%7.1f %5i %4.1f %7.1f %7.1f  %01X",
+		clv1.dsrdspd,	                 /* Desired speed */
+		dmocctl[DMOC_SPEED].speedact,   /* Actual speed */
+		clv1.spderr,	                 /* Speed error   */
+		clv1.intgrtr,                   /* PI integrator */
+		dmocctl[DMOC_SPEED].ftorquereq, /* Torque requested */
+		dmocctl[DMOC_SPEED].dmocopstate);/* DMOC state actual*/
 #endif
 	
 // ================== SLOW ==============================================
