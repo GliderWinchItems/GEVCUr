@@ -31,10 +31,11 @@ void control_law_v1_init(void)
 
 	/* Load parameters and initialize variables. */
 	/* See: struct CTLLAWPILOOP in dmoc_control.h. */
-	clv1.kp = 0.03f;  	    // Proportional constant
-	clv1.ki = 0.15E-3f; 	// Integral constant
+	clv1.kp = 0.20f;  		// Proportional constant
+	clv1.ki = 1.0E-3f; 		// Integral constant
 	clv1.fllspd = 2500.0f;	//	100% control lever desired speed magnitude
-	clv1.clp = 30.0f;
+	clv1.clpi = 10.0f;		//	Integrator clipping level
+	clv1.clpc = 20.0f;		//	Command clipping level
 
 	clv1.spderr   = 0;
 	clv1.dsrdspd  = 0;
@@ -84,24 +85,24 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 
 	//	Update integrator and clp if needed
 	clv1.intgrtr += clv1.spderr * clv1.ki;
-	if (clv1.intgrtr > clv1.clp) 
+	if (clv1.intgrtr > clv1.clpi) 
 	{
-		clv1.intgrtr = clv1.clp;
+		clv1.intgrtr = clv1.clpi;
 	}
-	else if (clv1.intgrtr < -clv1.clp)
+	else if (clv1.intgrtr < -clv1.clpi)
 	{
-		clv1.intgrtr = -clv1.clp;
+		clv1.intgrtr = -clv1.clpi;
 	}
 
 	//	Compute and limit torque command
 	pdmocctl->ftorquereq = clv1.spderr * clv1.kp + clv1.intgrtr;
-	if (pdmocctl->ftorquereq > clv1.clp) 
+	if (pdmocctl->ftorquereq > clv1.clpc) 
 	{
-		pdmocctl->ftorquereq = clv1.clp;
+		pdmocctl->ftorquereq = clv1.clpc;
 	}
-	else if (pdmocctl->ftorquereq < -clv1.clp)
+	else if (pdmocctl->ftorquereq < -clv1.clpc)
 	{
-		pdmocctl->ftorquereq = -clv1.clp;
+		pdmocctl->ftorquereq = -clv1.clpc;
 	}
 
 	/* Update LED state. */
