@@ -102,9 +102,12 @@ NOTES:
 #define CNCTOUTUART3 (1 << 8) // 1 = uart3 rx with high voltage timer timed out
 
 /* Number of different CAN id msgs this function sends. */
-#define NUMCANMSGS 6
+//#define NUMCANMSGS 6
+#define NUMCANMSGS 7 // Add 7th for sending control_law_v1 desired speed
+
 /* Indices for array below of "struct CANTXQMSG canmsg[NUMCANMSGS];" */
-#define CID_GEVCUR_KEEPALIVE_R 0 // cid_gevcur_keepalive_r
+#define CID_GEVCUR_KEEPALIVE_R  0 // cid_gevcur_keepalive_r
+#define CID_GEVCUR_CTL_LAWV1    6 // Desired speed commanded
 
 /* Number of switches for GEVCU task */
 #define NUMGEVCUPUSHBUTTONS 5

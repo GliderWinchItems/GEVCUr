@@ -40,6 +40,27 @@ enum GEVCU_INIT_SUBSTATEA
 static uint8_t msgflag = 0; // 0 = send; 1 = don't send
 
 /* *************************************************************************
+ * static void payloadfloat(uint8_t *po, float f);
+ *	@brief	: Convert float to bytes and load into payload
+ * @param	: po = pointer to payload byte location to start (Little Endian)
+ * *************************************************************************/
+static void payloadfloat(uint8_t *po, float f)
+{
+	union FF
+	{
+		float f;
+		uint8_t ui[4];
+	}ff;
+	ff.f = f; 
+
+	*(po + 0) = ff.ui[0];
+	*(po + 1) = ff.ui[1];
+	*(po + 2) = ff.ui[2];
+	*(po + 3) = ff.ui[3];
+	return;
+}
+
+/* *************************************************************************
  * void GevcuStates_GEVCU_INIT(void);
  * @brief	: Initialization sequence: One Time Only
  * *************************************************************************/
@@ -327,6 +348,9 @@ void GevcuStates_GEVCU_ARM(void)
 		/* Set DMOC torque and integrator to zero. */
 		control_law_v1_reset();
 
+		// Set desired speed CAN msg payload to zero.
+		payloadfloat(&gevcufunction.canmsg[CID_GEVCUR_CTL_LAWV1].can.cd.uc[0],0);
+
 		/* Be sure to update LCD msg. */
 		msgflag = 0;
 
@@ -345,6 +369,10 @@ void GevcuStates_GEVCU_ARM(void)
 	if (dmocctl[DMOC_SPEED].sendflag != 0)
 	{
 		control_law_v1_calc(&dmocctl[DMOC_SPEED]); // Version 1: PI Loop
+
+		/* Send a CAN msg with the desired (commanded) speed. */
+			// Load desired speed (float) into payload starting at [0] 
+		payloadfloat(&gevcufunction.canmsg[CID_GEVCUR_CTL_LAWV1].can.cd.uc[0],clv1.dsrdspd);
 	}
 
 	return;

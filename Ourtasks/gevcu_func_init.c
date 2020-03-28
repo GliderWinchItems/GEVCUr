@@ -72,8 +72,12 @@ void gevcu_func_init_init(struct GEVCUFUNCTION* p, struct ADCFUNCTION* padc)
 	/* Pre-load CAN ids & in some cases, dlc. */
    	// Contactor keepalive/command msg.
 	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.id  = p->lc.cid_cntctr_keepalive_i;
-	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.dlc = 1;
-	
+	p->canmsg[CID_GEVCUR_KEEPALIVE_R].can.dlc = 1;  // Single byte status
+
+	   // Control Law V1: Desired (commanded) speed. */
+	p->canmsg[CID_GEVCUR_CTL_LAWV1].can.id    = p->lc.cid_gevcur_ctllawv1;
+	p->canmsg[CID_GEVCUR_CTL_LAWV1].can.dlc   = 4;	// One field (so far!)
+ 
 	return;
 }
 /* *************************************************************************

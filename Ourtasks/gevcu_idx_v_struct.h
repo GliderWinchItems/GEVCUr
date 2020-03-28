@@ -57,12 +57,15 @@ struct GEVCULC
    //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION
     // GEVCUr sends; Contactor receives
 	uint32_t cid_cntctr_keepalive_i; // CANID_CMD_CNTCTRKAI:U8',    Contactor1: I KeepAlive and connect command
-    // GEVCUr sends; PC receives
-	uint32_t cid_gevcur_keepalive_r;// CANID_CMD_GEVCURKAR: U8_U8 : GEVCUr: R KeepAlive response
+    // GEVCUr sends; PC or "anybody" receives
+	uint32_t cid_gevcur_keepalive_r;// CANID_CMD_GEVCURKAR:  U8_U8 : GEVCUr: R KeepAlive response
+	uint32_t cid_gevcur_ctllawv1;   // CANID_LOG_DMOCCMDSPD: FF    : GEVCUr: Desired speed');
     // GEVCUr sends; DMOC receives these commands
 	uint32_t cid_dmoc_cmd_speed;    // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
 	uint32_t cid_dmoc_cmd_torq;     // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
 	uint32_t cid_dmoc_cmd_regen;    // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
+	// GEVCUr sends: logger, or PC capture logging, receives.
+
 
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends; we receive
