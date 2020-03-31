@@ -18,6 +18,7 @@
 #define CLROW     1 // calib_control_lever: calibration & position
 #define CNCTRLCDA 2 // contactor_control_msg: state msg
 #define CNCTRLCDB 3 // contactor_control_msg: fault msg
+#define DMOCSPDTQ 3 // GevcuStates: speed:torque
 
 
 /* *************************************************************************/

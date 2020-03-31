@@ -136,6 +136,8 @@ uint8_t canflag2;
 
 uint8_t lcdflag = 0;
 
+struct SERIALSENDTASKBCB* pbuflcd;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -967,7 +969,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+// LCD msg: Main 
+//                                                       "...................."
+static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmocctl[DMOC_SPEED].speedact,dmocctl[DMOC_SPEED].ftorquereq);}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1025,10 +1029,12 @@ void StartDefaultTask(void const * argument)
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
 	if (pbuf4 == NULL) morse_trap(12);
 
-#ifdef TESTLCDPRINTF
-	struct SERIALSENDTASKBCB* pbuflcd = getserialbuf(&HUARTLCD,64);
+	pbuflcd = getserialbuf(&HUARTLCD,64);
 	if (pbuflcd == NULL) morse_trap(12);
 
+	void (*ptrM1)(void) = &lcdmsgM1; // LCD msg pointer
+
+#ifdef TESTLCDPRINTF
 	uint32_t lcdrow = 0;
 	uint32_t lcdctr = 0;
 	uint32_t lcdret = 0;
@@ -1137,6 +1143,12 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 
 			/* Update CL position on LCD after CL calibration ends. */
 			lcdout();
+
+			/* Generate LCD msg for speed actual and commanded torque. */
+			if (flag_clcalibed != 0)
+			{
+				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0);
+			}
 
 			/* LCD output from queue pointers. */
 			lcdmsg_poll();

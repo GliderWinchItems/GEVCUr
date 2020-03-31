@@ -40,11 +40,11 @@ enum GEVCU_INIT_SUBSTATEA
 static uint8_t msgflag = 0; // 0 = send; 1 = don't send
 
 /* *************************************************************************
- * static void payloadfloat(uint8_t *po, float f);
+ * void payloadfloat(uint8_t *po, float f);
  *	@brief	: Convert float to bytes and load into payload
  * @param	: po = pointer to payload byte location to start (Little Endian)
  * *************************************************************************/
-static void payloadfloat(uint8_t *po, float f)
+void payloadfloat(uint8_t *po, float f)
 {
 	union FF
 	{
@@ -370,9 +370,7 @@ void GevcuStates_GEVCU_ARM(void)
 	{
 		control_law_v1_calc(&dmocctl[DMOC_SPEED]); // Version 1: PI Loop
 
-		/* Send a CAN msg with the desired (commanded) speed. */
-			// Load desired speed (float) into payload starting at [0] 
-		payloadfloat(&gevcufunction.canmsg[CID_GEVCUR_CTL_LAWV1].can.cd.uc[0],clv1.dsrdspd);
+		/* Setup and send CAN msgs to dmoc in GevcuUpdates.c. */
 	}
 
 	return;

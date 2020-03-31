@@ -408,6 +408,10 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
 
+	/* Sanity check: requested torque is within limits. */
+	if ((pdmocctl->ftorquereq > pdmocctl->fmaxtorque_pos) ||  
+		 (pdmocctl->ftorquereq < pdmocctl->fmaxtorque_neg) )
+				pdmocctl->ftorquereq = 0;  // Since bogus request set to zero
 
 	// Convert float in Nm to Nm tenths as an integer.
 	pdmocctl->itorquereq = (pdmocctl->ftorquereq * 10.0f);
