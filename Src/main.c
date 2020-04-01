@@ -1166,7 +1166,7 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 	if (hdrctr > 16)
 	{
 		hdrctr = 0;
-		yprintf(&pbuf4,"\n\r  speed speed speed\n\rdesired   act  err intgrtr torqreq state");
+		yprintf(&pbuf4,"\n\rdesired   act  err intgrtr torqreq state");
 	}
 
 	yprintf(&pbuf2,"\n\r%7.1f %5i %4.1f %7.1f %7.1f  %01X",
