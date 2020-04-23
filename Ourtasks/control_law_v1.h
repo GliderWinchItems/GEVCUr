@@ -20,7 +20,8 @@ struct CTLLAWPILOOP // Control Law PI Loop
 	float kp;    	// Proportional constant
 	float ki;    	// Integral constant
 	float clpi;		//	integrator anti-windup clip level
-	float clpc;		//	command clip level
+	float clpcp;	//	command clip level positive
+	float clpcn;	//	command clip level negative
 	float fllspd;	//	100% control lever speed magnitude
 };
 
