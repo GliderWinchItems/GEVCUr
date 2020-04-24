@@ -9,8 +9,8 @@
  /* Reference: origin to bottom-left corner of pcb */
  
  /* LCD module */
- brdlen   = 98.2;   // Overall pcb length
- brdwid   = 60;     // Overall pcb width
+ brdlen   = 98.2+1;   // Overall pcb length
+ brdwid   = 60+1;     // Overall pcb width
  brdholeoffset = 2.1; // Mounting holes from pcb edge
  brdholedia    = 3.5; // Mounting hole diameter
  brdthick = 1.7;    // pcb thickness
@@ -21,6 +21,12 @@
  dspwid   = 39.7;   // Display width
  dspthick = 10.0;   // Display thickness
  dspdepth = 13;     // Top of pcb to floor below
+ 
+ pinlen   = 43;     // hdr pins length (x)
+ pinwid   = 4.5;    // hdr pins width (y)
+ pinoff_x = 7;      // hdr pins offset (x)
+ pinht    = 5;      // hdr pins height above pcb
+ pinoff_y = 55.2;   // hdr pins offset (y)
  
  conlen   = 16;     // Connector w cable length (x)
  conwid   = 10.6;   // Connector width
@@ -60,7 +66,7 @@ module eye_bar(d1, d2, len, ht)
       cylinder(d = d2, h = ht + .001, center = false);
    }
 }
-psto_dia = 7;   // Post outside diameter
+psto_dia = 8;   // Post outside diameter
 psto_hole = 3.0; // Post hole diameter
 module post_outside(a,z,holedia)
 {
@@ -96,11 +102,11 @@ module bframe(zht,holedia)
                 cube([bbxlen,bbxwid,zht-.01],center=false);
                 
                 // Four corner posts
-                translate([bbxwall+bbxlen,bbxwid+bbxwall-psto_dia+.5,0])
+                translate([bbxwall+bbxlen,bbxwid+bbxwall-psto_dia+1,0])
                   rotate([0,0,180])
                     post_outside([0,0,0],zht,holedia);
                 
-                translate([bbxlen+bbxwall,bbxwall+.5,0])
+                translate([bbxlen+bbxwall,psto_dia-bbxwall-1,0])
                    mirror([1,0,0])
                     post_outside([0,0,0],zht,holedia);
 
@@ -113,11 +119,91 @@ module bframe(zht,holedia)
             }
             union()
             {
-                translate([bbxwall,bbxwall,bbxflr])
-                    cube([bbxlen-2*bbxwall,bbxwid-2*bbxwall,zht-bbxflr],center=false);
+ 
             }
         }
     }
 }
 
-bbx(6);
+module bottombox(wht,hdia)
+{
+    difference()
+    {
+       union()
+        {
+            bframe(wht,hdia);
+        }
+        union()
+        {
+            translate([bbxoff_x+bbxwall,0,bbxflr])
+              cube([bbxlen-2*bbxwall,bbxwid-2*bbxwall,wht-bbxflr],center=false);
+        }
+    }
+}
+bzldia  = 6;
+bzlhole = 3.2;
+
+module bezelpost(a,wht)
+{
+bzht = wht - brdthick;  
+    translate(a)
+    {
+        difference()
+        {
+            cylinder(d=bzldia,h=bzht,center=false);
+            cylinder(d=bzlhole,h=bzht,center=false);
+        }
+    }
+}
+
+/* Bottom box with LCD pcb posts */
+module bottomboxwposts(wht,dia)
+{
+bh = brdholeoffset;
+    union()
+    {
+        bottombox(wht,dia);
+        
+        bezelpost([       bh,       bh,0],wht);
+        bezelpost([brdlen-bh,       bh,0],wht);
+        bezelpost([       bh,brdwid-bh,0],wht);
+        bezelpost([brdlen-bh,brdwid-bh,0],wht);
+    }
+}
+
+module topbezel(wht,hdia)
+{
+    difference()
+    {
+        union()
+        {
+            bframe(wht,hdia);
+        }
+        union()
+        {
+ /*dspoff_x = 1.0;    // Display offset x
+ dspoff_y = 10.4;   // Display offset y
+ dsplen   = 97.1;   // Display length
+ dspwid   = 39.7;   // Display width
+ dspthick = 10.0;   // Display thickness
+ dspdepth = 13;     // Top of pcb to floor below
+ */
+            translate([0,dspoff_y,-0.01])
+              cube([dsplen,dspwid,wht+0.2],center=false);
+/*
+ pinlen   = 43;     // hdr pins length (x)
+ pinwid   = 4.5;    // hdr pins width (y)
+ pinoff_x = 7;      // hdr pins offset (x)
+ pinht    = 5;      // hdr pins height above pcb
+ pinoff_y = 55.2;   // hdr pins offset (y)          
+*/          translate([pinoff_x,pinoff_y,0])  
+              cube([pinlen,pinwid,pinht],center=false);
+        }
+    }   
+}
+
+//bottombox(14,3.3);
+bottomboxwposts(14,3.3);
+
+//translate([0,0,25]) topbezel(6,3.5);
+
