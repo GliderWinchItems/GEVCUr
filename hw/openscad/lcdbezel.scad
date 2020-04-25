@@ -9,8 +9,8 @@
  /* Reference: origin to bottom-left corner of pcb */
  
  /* LCD module */
- brdlen   = 98.2+1;   // Overall pcb length
- brdwid   = 60+1;     // Overall pcb width
+ brdlen   = 98.2;   // Overall pcb length
+ brdwid   = 60;     // Overall pcb width
  brdholeoffset = 2.1; // Mounting holes from pcb edge
  brdholedia    = 3.5; // Mounting hole diameter
  brdthick = 1.7;    // pcb thickness
@@ -67,7 +67,6 @@ module eye_bar(d1, d2, len, ht)
    }
 }
 psto_dia = 8;   // Post outside diameter
-psto_hole = 3.0; // Post hole diameter
 module post_outside(a,z,holedia)
 {
     translate(a)
@@ -137,11 +136,15 @@ module bottombox(wht,hdia)
         {
             translate([bbxoff_x+bbxwall,0,bbxflr])
               cube([bbxlen-2*bbxwall,bbxwid-2*bbxwall,wht-bbxflr],center=false);
+            
+            // Cable exit
+            translate([bbxoff_x-8,conoff_y+1,wht-5])
+             cube([15,8,15],center=false);
         }
     }
 }
 bzldia  = 6;
-bzlhole = 3.2;
+bzlhole = 2.8;
 
 module bezelpost(a,wht)
 {
@@ -151,7 +154,7 @@ bzht = wht - brdthick;
         difference()
         {
             cylinder(d=bzldia,h=bzht,center=false);
-            cylinder(d=bzlhole,h=bzht,center=false);
+            cylinder(d=bzlhole,h=bzht+.01,center=false);
         }
     }
 }
@@ -170,6 +173,13 @@ bh = brdholeoffset;
         bezelpost([brdlen-bh,brdwid-bh,0],wht);
     }
 }
+module bezelindent(a)
+{
+    translate(a)
+    {
+        cylinder(d=6,h=2.5,center=false);
+    }
+}//
 
 module topbezel(wht,hdia)
 {
@@ -181,7 +191,8 @@ module topbezel(wht,hdia)
         }
         union()
         {
- /*dspoff_x = 1.0;    // Display offset x
+ /* Cutout for LCD display 
+ dspoff_x = 1.0;    // Display offset x
  dspoff_y = 10.4;   // Display offset y
  dsplen   = 97.1;   // Display length
  dspwid   = 39.7;   // Display width
@@ -190,7 +201,8 @@ module topbezel(wht,hdia)
  */
             translate([0,dspoff_y,-0.01])
               cube([dsplen,dspwid,wht+0.2],center=false);
-/*
+
+/* PCB header pins indentation. 
  pinlen   = 43;     // hdr pins length (x)
  pinwid   = 4.5;    // hdr pins width (y)
  pinoff_x = 7;      // hdr pins offset (x)
@@ -198,12 +210,19 @@ module topbezel(wht,hdia)
  pinoff_y = 55.2;   // hdr pins offset (y)          
 */          translate([pinoff_x,pinoff_y,0])  
               cube([pinlen,pinwid,pinht],center=false);
+
+/* PCB Screw head indentations. */
+        bh = brdholeoffset;          
+        bezelindent([       bh,       bh,0]);
+        bezelindent([brdlen-bh,       bh,0]);
+        bezelindent([       bh,brdwid-bh,0]);
+        bezelindent([brdlen-bh,brdwid-bh,0]);
         }
     }   
 }
 
 //bottombox(14,3.3);
-bottomboxwposts(14,3.3);
+bottomboxwposts(14,2.8);
 
 //translate([0,0,25]) topbezel(6,3.5);
 
