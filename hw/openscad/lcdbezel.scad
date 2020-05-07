@@ -1,5 +1,5 @@
 /* File: lcdbezel.scad
- * 
+ * LCD 4x20 
  * Author: deh
  * Latest edit: 20200423
  */
@@ -168,9 +168,9 @@ bh = brdholeoffset;
         bottombox(wht,dia);
         
         bezelpost([       bh,       bh,0],wht);
-        bezelpost([brdlen-bh,       bh,0],wht);
-        bezelpost([       bh,brdwid-bh,0],wht);
-        bezelpost([brdlen-bh,brdwid-bh,0],wht);
+        bezelpost([brdlen-bh-2.7,       bh,0],wht);
+        bezelpost([       bh,brdwid-bh-.7,0],wht);
+        bezelpost([brdlen-bh-2.7,brdwid-bh-.7,0],wht);
     }
 }
 module bezelindent(a)
@@ -222,7 +222,7 @@ module topbezel(wht,hdia)
 }
 
 //bottombox(14,3.3);
-bottomboxwposts(14,2.8);
+bottomboxwposts(15,2.8);
 
 //translate([0,0,25]) topbezel(6,3.5);
 
