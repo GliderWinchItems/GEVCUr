@@ -31,8 +31,8 @@ void control_law_v1_init(void)
 
 	/* Load parameters and initialize variables. */
 	/* See: struct CTLLAWPILOOP in dmoc_control.h. */
-	clv1.kp = 0.3f;  		// Proportional constant
-	clv1.ki = 1.0E-4f; 		// Integral constant
+	clv1.kp = 1.0f;  		// Proportional constant
+	clv1.ki = 0.01f; 		// Integral constant
 	clv1.fllspd = 1500.0f;	//	100% control lever desired speed magnitude
 	clv1.clpi = 10.0f;		//	Integrator clipping level
 	clv1.clpcp = 300.0f;		//	Command clipping level positive
