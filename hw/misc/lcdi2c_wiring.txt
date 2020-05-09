@@ -1,0 +1,17 @@
+lcdi2c_wiring.txt
+
+05/09/2020
+
+1 - Signal name
+2 - DiscoveryF4 board pin labeling
+3 - DiscoveryF4 to subboard ribbon cable color coding
+4 - I2C bus ribbon cable alternate color coding
+
+GND   GND  blk   blu 
++5    5V   wht   grn  
+SDA   PB7  gry   yel  3.3K to +5 *
+SCL   PB6  pur   org  3.3K to +5 *
+
+* - Pull-ups are located on suboard
+
+
