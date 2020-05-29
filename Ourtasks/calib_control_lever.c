@@ -21,6 +21,8 @@
 #include "shiftregbits.h"
 #include "spiserialparallelSW.h"
 
+#include "LcdTask.h"
+
 /* Send position percent to LCD. */
 #define SENDLCDPOSITIONTOUART
 
@@ -67,8 +69,9 @@ static const struct BEEPQ beep3 = {100,40,1}; // Success beeping
 static const struct BEEPQ beepf = { 60,20,1}; // We are waiting for your prompt
 
 /* uart output buffers. */
-static struct SERIALSENDTASKBCB* pbuflcd1;
-static struct SERIALSENDTASKBCB* pbufmon1;
+static struct SERIALSENDTASKBCB* pbuflcd1;    // UART 4x20 display
+static struct LCDTASK_LINEBUF*   pbuflcdi2c1; // LCDI2C 4x20 display
+static struct SERIALSENDTASKBCB* pbufmon1;    // Default task monitor UART
 
 enum CLSTATE
 {
