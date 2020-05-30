@@ -220,7 +220,6 @@ int main(void)
 //while (pclr < (uint32_t*)(0x2000bb80 + 32768)) *pclr++ = 0x66666666;
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -315,7 +314,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, (384+128));
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -450,7 +449,6 @@ DiscoveryF4 LEDs --
   osKernelStart();
  
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -751,7 +749,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 35001;//15700;
+  sConfigOC.Pulse = 15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -987,9 +985,7 @@ static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmo
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//taskEXIT_CRITICAL();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 //osDelay(0); // Debugging HardFault
@@ -1405,7 +1401,7 @@ void CallbackdefaultTaskTimer(void const * argument)
   /* USER CODE END CallbackdefaultTaskTimer */
 }
 
-/**
+ /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM5 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment

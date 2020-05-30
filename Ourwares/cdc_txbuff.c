@@ -71,7 +71,7 @@ static osStaticMessageQDef_t CdcTxTaskSendQCB;
  * @param	: taskpriority = Task priority (just as it says!)
  * @return	: Handle to queue
  * *************************************************************************/
-osThreadId xCdcTxTaskSendCreate(uint32_t taskpriority)
+osMessageQId xCdcTxTaskSendCreate(uint32_t taskpriority)
 {
 	/* definition and creation of task: CdcTxTaskSend */
    osThreadDef(CdcTxTaskSend, StartCdcTxTaskSend, osPriorityNormal, 0,128);
