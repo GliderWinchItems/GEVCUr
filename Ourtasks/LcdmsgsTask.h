@@ -43,6 +43,8 @@ struct LCDMSGTASK_MSGREQ
   * *************************************************************************/
 
 extern QueueHandle_t LcdmsgsTaskQHandle;
+extern TaskHandle_t LcdmsgsTaskHandle;
+
 extern volatile uint16_t LcdmsgsTaskflag; // 0 = routine not ready; 1 = ready
 
 #endif

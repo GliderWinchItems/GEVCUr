@@ -93,6 +93,11 @@
 #include "dmoc_control.h"
 #include "control_law_v1.h"
 
+#include "LcdTask.h"
+#include "lcd_hd44780_i2c.h"
+#include "LcdmsgsTask.h"
+#include "LcdmsgsetTask.h"
+
 
 /* USER CODE END Includes */
 
@@ -436,6 +441,15 @@ DiscoveryF4 LEDs --
 	Qidret = lcdmsg_init(16);
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
+  osThreadId retThrd =  xLcdTaskCreate(0, 16);
+  if (retThrd == NULL) morse_trap(123);
+
+  retThrd= xLcdmsgsTaskCreate(0, 32);
+  if (retThrd == NULL) morse_trap(124);
+
+  retThrd= xLcdmsgsetTaskCreate(0, 32);
+  if (retThrd == NULL) morse_trap(125);
+
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
@@ -749,7 +763,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 15700;
+  sConfigOC.Pulse = 35000; //15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;

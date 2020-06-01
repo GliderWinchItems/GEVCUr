@@ -19,21 +19,16 @@
 #include "lcd_hd44780_i2c.h"
 #include "morse.h"
 #include "LcdmsgsTask.h"
-//#include "yprintf.h
+#include "LcdmsgsetTask.h"
+#include "yprintf.h"
 
 struct LCDI2C_UNIT* punitd4x20 = NULL;
-struct LCDI2C_UNIT* punitd4x16 = NULL;
-struct LCDI2C_UNIT* punitd2x16 = NULL;
+//struct LCDI2C_UNIT* punitd4x16 = NULL;
+//struct LCDI2C_UNIT* punitd2x16 = NULL;
 
 volatile uint8_t LcdTaskflag = 0;
 
 extern I2C_HandleTypeDef hi2c1;
-
-//osSemaphoreId vsnprintfSemaphoreHandle;
-#define NOYPRINTFISPRESENT
-#ifdef NOYPRINTFISPRESENT
-SemaphoreHandle_t vsnprintfSemaphoreHandle;
-#endif
 
 enum LCD_STATE
 {
@@ -193,78 +188,20 @@ void StartLcdTask(void* argument)
 	struct LCDPARAMS* p1;
 	struct LCDI2C_UNIT* ptmp;
 
-	/* Instantiate each LCD display unit. 
-	   Arguments:
-	     I2C bus handle
-	     Address of unit on I2C bus
-	     Number of rows (lines)
-	     Number of columns
-	*/
-	punitd4x20 = xLcdTaskcreateunit(&hi2c1,0x27,4,20);
-  	if (punitd4x20 == NULL) morse_trap(227);
+  /* Instantiate each LCD I2C display unit. 
+     Arguments:
+       I2C bus handle
+       Address of unit on I2C bus
+       Number of rows (lines)
+       Number of columns                    */
+  punitd4x20 = xLcdTaskcreateunit(&hi2c1,0x27,4,20);
+  if (punitd4x20 == NULL) morse_trap(227);
 
-  	punitd4x16 = xLcdTaskcreateunit(&hi2c1,0x26,4,16);
-  	if (punitd4x16 == NULL) morse_trap(226);
-  
-  	punitd2x16 = xLcdTaskcreateunit(&hi2c1,0x25,2,16);
-  	if (punitd2x16 == NULL) morse_trap(225);
+  osThreadId retThrd = xLcdmsgsTaskCreate(0, 32);
+  if (retThrd == NULL) morse_trap(124);
 
-
-  	/* Some test messages. */
-#define DDD (pdMS_TO_TICKS(10)) // osDelay
-  struct LCDPARAMS* pu1 = &punitd4x20->lcdparams;
-    lcdSetCursorPosition(pu1,0, 0);
-    lcdPrintStr(pu1,(uint8_t*)line1,20); osDelay(DDD);
-
-    lcdSetCursorPosition(pu1,0, 1);
-    lcdPrintStr(pu1,(uint8_t*)line2,20); osDelay(DDD);
-
-    lcdSetCursorPosition(pu1,0, 2);
-    lcdPrintStr(pu1,(uint8_t*)line3,20); osDelay(DDD);
-
-    lcdSetCursorPosition(pu1,0, 3);
-    lcdPrintStr(pu1,(uint8_t*)line4,20); osDelay(DDD);
-
-    osDelay(pdMS_TO_TICKS(300));
-
-  struct LCDPARAMS* pu2 = &punitd4x16->lcdparams;
-    lcdSetCursorPosition(pu2,0, 0);
-    lcdPrintStr(pu2,(uint8_t*)line1,16); osDelay(DDD);
-
-    lcdSetCursorPosition(pu2,0, 1);
-    lcdPrintStr(pu2,(uint8_t*)line2,16); osDelay(DDD);
-
-    lcdSetCursorPosition(pu2,0, 2);
-    lcdPrintStr(pu2,(uint8_t*)line3,16); osDelay(DDD);
-
-    lcdSetCursorPosition(pu2,0, 3);
-    lcdPrintStr(pu2,(uint8_t*)line4,16); osDelay(DDD);
-
-    osDelay(pdMS_TO_TICKS(250));
-
-
-  struct LCDPARAMS* pu3 = &punitd2x16->lcdparams;
-
-    lcdSetCursorPosition(pu3,0, 0);
-    lcdPrintStr(pu3,(uint8_t*)line1,16); osDelay(DDD);
-
-    lcdSetCursorPosition(pu3,0, 1);
-    lcdPrintStr(pu3,(uint8_t*)line2,16); osDelay(DDD);
-
-    //osDelay(250);
-
- osDelay(pdMS_TO_TICKS(2000));
- 
- // Clear all lines 
- uint32_t i;
- for (i = 0; i < 4; i++){ lcdSetCursorPosition(pu1,0, i);
-  lcdPrintStr(pu1,(uint8_t*)"                    ",20);}
-
-for (i = 0; i < 4; i++){ lcdSetCursorPosition(pu2,0, i);
-  lcdPrintStr(pu2,(uint8_t*)"                ",16);}
-   
-for (i = 0; i < 2; i++){ lcdSetCursorPosition(pu3,0, i);
-  lcdPrintStr(pu3,(uint8_t*)"                ",16);}
+  retThrd= xLcdmsgsetTaskCreate(0, 32);
+  if (retThrd == NULL) morse_trap(125);
 
     /* Let LcdmsgsTask know that we are ready accept msgs. */
     LcdTaskflag = 1;
@@ -303,24 +240,23 @@ HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); // Orange
  * *************************************************************************/
 osThreadId xLcdTaskCreate(uint32_t taskpriority, uint16_t numbcb)
 {
-	/*
-	BaseType_t xTaskCreate( TaskFunction_t pvTaskCode,
-const char * const pcName,
-unsigned short usStackDepth,
-void *pvParameters,
-UBaseType_t uxPriority,
-TaskHandle_t *pxCreatedTask );
-*/
-	BaseType_t ret = xTaskCreate(&StartLcdTask,"LcdI2CTask",512,NULL,taskpriority,&LcdTaskHandle);
+/* xTaskCreate 
+  	BaseType_t xTaskCreate( TaskFunction_t pvTaskCode,
+  	const char * const pcName,
+  	unsigned short usStackDepth,
+  	void *pvParameters,
+  	UBaseType_t uxPriority,
+  	TaskHandle_t *pxCreatedTask );   
+ */
+	BaseType_t ret = xTaskCreate(&StartLcdTask,"LcdI2CTask",96,NULL,taskpriority,&LcdTaskHandle);
 	if (ret != pdPASS) morse_trap(35);//return NULL;
 
 	LcdTaskQHandle = xQueueCreate(numbcb, sizeof(struct LCDTASK_LINEBUF*) );
 	if (LcdTaskQHandle == NULL) morse_trap(37);//return NULL;
 
-#ifdef NOYPRINTFISPRESENT
-	vsnprintfSemaphoreHandle = xSemaphoreCreateMutex(); // Semaphore for this buffer
+	if (vsnprintfSemaphoreHandle == NULL)
+		vsnprintfSemaphoreHandle = xSemaphoreCreateMutex(); // Semaphore for this buffer
 	if (vsnprintfSemaphoreHandle == NULL) morse_trap(38);
-#endif
 
 	return LcdTaskHandle;
 }

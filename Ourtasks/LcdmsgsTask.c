@@ -17,7 +17,12 @@
 #include "LcdTask.h"
 #include "LcdmsgsTask.h"
 #include "morse.h"
-//#include "yprintf.h
+#include "yprintf.h"
+
+extern struct LCDI2C_UNIT* punitd4x20;
+extern struct LCDI2C_UNIT* punitd4x16;
+extern struct LCDI2C_UNIT* punitd2x16;
+
 
 TaskHandle_t LcdmsgsTaskHandle = NULL;
 QueueHandle_t LcdmsgsTaskQHandle;
@@ -59,6 +64,7 @@ void StartLcdmsgsTask(void* argument)
 	if (pu03 == NULL) morse_trap(703);
 	if (pu04 == NULL) morse_trap(704);
 
+#ifdef LCD4x16and2x16
 	// Four one line buffers for 4x16 unit 
 	struct LCDTASK_LINEBUF* pu11 = xLcdTaskintgetbuf(punitd4x16,16);
 	struct LCDTASK_LINEBUF* pu12 = xLcdTaskintgetbuf(punitd4x16,16);
@@ -78,6 +84,7 @@ void StartLcdmsgsTask(void* argument)
 	if (pu22 == NULL) morse_trap(722);
 	if (pu23 == NULL) morse_trap(723);
 	if (pu24 == NULL) morse_trap(724);
+#endif	
 
 
 	/* Let other's know msging is ready. */
@@ -167,7 +174,7 @@ HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); // Red
  * *************************************************************************/
 osThreadId xLcdmsgsTaskCreate(uint32_t taskpriority, uint16_t numbcb)
 {
-	BaseType_t ret = xTaskCreate(&StartLcdmsgsTask,"Lcd,sgsTask",512,NULL,taskpriority,&LcdmsgsTaskHandle);
+	BaseType_t ret = xTaskCreate(&StartLcdmsgsTask,"Lcd,sgsTask",96,NULL,taskpriority,&LcdmsgsTaskHandle);
 	if (ret != pdPASS) morse_trap(35);//return NULL;
 
 	LcdmsgsTaskQHandle = xQueueCreate(numbcb, sizeof(struct LCDMSGTASK_MSGREQ) );

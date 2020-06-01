@@ -29,7 +29,7 @@ void StartLcdmsgsetTask(void* argument)
 		ret = xQueueReceive(LcdmsgsetTaskQHandle,&lsv,portMAX_DELAY);
 		if (ret == pdPASS)
 		{	
-HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
+//HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
 			if (lsv.ptr != NULL)  // jic a NULL ptr got on the queue
 		  	  (*lsv.ptr)(lsv.u);  // Go do something
 		}
@@ -45,7 +45,7 @@ HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
 osThreadId xLcdmsgsetTaskCreate(uint32_t taskpriority, uint16_t numbcb)
 {
 	BaseType_t 	ret = xTaskCreate(&StartLcdmsgsetTask,"LcdmsgsetTask",\
-		512,NULL,taskpriority,&LcdmsgsetTaskHandle);
+		384,NULL,taskpriority,&LcdmsgsetTaskHandle);
 	if (ret != pdPASS) morse_trap(401);//return NULL;
 
 	LcdmsgsetTaskQHandle = xQueueCreate(numbcb, sizeof(struct LCDMSGSET) );

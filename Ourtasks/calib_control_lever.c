@@ -20,6 +20,8 @@
 #include "lcdprintf.h"
 #include "shiftregbits.h"
 #include "spiserialparallelSW.h"
+#include "LcdTask.h"
+#include "LcdmsgsetTask.h"
 
 #include "LcdTask.h"
 
@@ -27,7 +29,7 @@
 #define SENDLCDPOSITIONTOUART
 
 /* Timeout for re-issue LCD/Beep prompt */
-#define CLTIMEOUT (128*5)  // 5 seconds
+#define CLTIMEOUT (128*1)  // 1 second
 
 /* Timeout for re-sending LCD msg. */
 #define CLRESEND (128/3)   // 3 per sec
@@ -55,6 +57,8 @@
 
 static uint8_t clrrowctr = 0;
 
+extern struct LCDI2C_UNIT* punitd4x20; // Pointer LCDI2C 4x20 unit
+
 /* Flag to show others when CL calibration is complete. */
 uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 
@@ -68,10 +72,11 @@ static const struct BEEPQ beep2 = {200,50,1}; // Full open prompt
 static const struct BEEPQ beep3 = {100,40,1}; // Success beeping
 static const struct BEEPQ beepf = { 60,20,1}; // We are waiting for your prompt
 
-/* uart output buffers. */
-static struct SERIALSENDTASKBCB* pbuflcd1;    // UART 4x20 display
-static struct LCDTASK_LINEBUF*   pbuflcdi2c1; // LCDI2C 4x20 display
-static struct SERIALSENDTASKBCB* pbufmon1;    // Default task monitor UART
+/* LCD output buffer pointers. */
+static struct SERIALSENDTASKBCB* pbufmon1;    // HUARTMON (Monitor UART)
+static struct SERIALSENDTASKBCB* pbuflcd1;    // HUART (LCD uart)
+static struct LCDTASK_LINEBUF*   pbuflcdi2c1; // Ptr to buffer #1 LCDI2C unit 4x20
+static struct LCDTASK_LINEBUF*   pbuflcdi2c2; // Ptr to buffer #2 CDLI2C unit 4x20
 
 enum CLSTATE
 {
@@ -123,7 +128,7 @@ static void init(void)
 
 	clfunc.range_er = 25000; // Minimum range for calbirated CL
 
-	/* lcdprintf buffer */
+	/* LCD (uart) lcdprintf buffer */
 	pbuflcd1 = getserialbuf(&HUARTLCD,32);
 	if (pbuflcd1 == NULL) morse_trap(81);
 
@@ -160,8 +165,14 @@ static void init(void)
 
 /* ***********************************************************************************************************
  * void lcdout(void);
- * @brief	: Output CL calibrated position to LCD. NOTE: called from defaultTask
+ * @brief	: Output CL calibrated position to LCD. NOTE: called from defaultTask after calibration completes.
  ************************************************************************************************************* */
+/* LCDI2C 4x20 msg. */
+static struct LCDMSGSET lcdmsgcl1;
+static struct LCDMSGSET lcdmsgcl2;
+static void lcdmsgfunc1(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CL %5.1f%%  ",u.f);}
+static void lcdmsgfunc2(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c2,CLROW,11,"%5d    ",u.u32);}
+
 void lcdout(void)
 {
 	/* Do not update until calibration complete. */
@@ -171,12 +182,27 @@ void lcdout(void)
 	if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0) // Pace output updates
 	{ 
 		if ((int)(clfunc.timx - gevcufunction.swtim1ctr) > 0) return;
-//  	yprintf(&pbufmon1,"\n\rCL %5.1f %5d",clfunc.curpos,adc1.abs[0].adcfil); // Monitor uart output
- 	 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f %5d      ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
+
+	 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
  		clfunc.timx = gevcufunction.swtim1ctr + CLLINEDELAY;
-//lcdprintf(&pbuflcd1,      2,0,"%5.1f %5.1f        ",clfunc.curpos_h,clfunc.h_diff); 
-//lcdprintf(&pbuflcd1,      3,0,"%5.1f %5.1f        ",clfunc.maxbegins, clfunc.minends); 
-//clfunc.timx = gevcufunction.swtim1ctr + CLLINEDELAY*3;
+ 		
+ 		/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
+ 		// This avoids 'printf' semaphores stalling the program calling 'lcdout'
+	 	lcdmsgcl1.u.f = clfunc.curpos; // Value that is passed to function 
+  		lcdmsgcl1.ptr = lcdmsgfunc1;   // Pointer to the function
+
+  		if (LcdmsgsetTaskQHandle != NULL)
+    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
+
+    	// Since only one value is passed via the queue the second value to be displayed is
+    	// setup by a second msg. A second buffer is used to avoid stalling in the lcd output
+    	// routine when the first is in-progress sending. That stalling is not really important
+    	// since LcdTask is a separate task, however.
+    	lcdmsgcl2.u.u32 = adc1.abs[0].adcfil; // Value that is passed to function 
+  		lcdmsgcl2.ptr = lcdmsgfunc2;   // Pointer to the function
+
+  		if (LcdmsgsetTaskQHandle != NULL)
+    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
 	}
 }
 /* ***********************************************************************************************************
@@ -205,6 +231,21 @@ float calib_control_lever(void)
 	float ftmp;
 	float fcur;
 	float frange;
+
+		/* LCD (I2C) lcdi2cprintf buffer. */
+		/* We can't do this in the 'init' since the LCD may not have been instantiated. */
+	uint32_t loopctr = 0;
+	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
+  	    if (punitd4x20 == NULL) morse_trap(2326);
+
+		if (pbuflcdi2c1 == NULL)
+		    pbuflcdi2c1 = xLcdTaskintgetbuf(punitd4x20, 32);
+		if (pbuflcdi2c1 == NULL) morse_trap(2327);				
+
+		if (pbuflcdi2c2 == NULL)
+		    pbuflcdi2c2 = xLcdTaskintgetbuf(punitd4x20, 32);
+		if (pbuflcdi2c2 == NULL) morse_trap(2328);				
+
 
 		switch (clfunc.state)
 		{ // The following is a one-time only sequenceSPLASHDELAY
@@ -293,14 +334,16 @@ float calib_control_lever(void)
 			/* Both limit switches should not be ON at the same time! */
 			if ((psw_cl_fs_no->on == 0) && (psw_cl_rst_n0->on == 0))	
 			{  //                           01234567890123456789  
-				lcdprintf(&pbuflcd1,CLROW,0,"CL ERR: BOTH SWS ON ");
+				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL ERR: BOTH SWS ON ");
+				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
-				clfunc.state = INITLCD1;
-				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*2; 		
-				break;
-			}		
 
-			lcdprintf(&pbuflcd1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
+				clfunc.state = INITLCD1;
+				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*1; 		
+				break;
+			}		                     // "...................." 
+			lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
+			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
 //			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			clfunc.state = OPEN1WAIT;
@@ -329,7 +372,8 @@ float calib_control_lever(void)
 			}
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
-				lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
+				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
+				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT;
 			}
 //			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) // Non-debounced
@@ -351,7 +395,8 @@ float calib_control_lever(void)
 				if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 				{
 //					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
-					lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
+ 					lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
+					lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}
 				break;
@@ -373,7 +418,8 @@ float calib_control_lever(void)
 
 			if ((int)(clfunc.timx - gevcufunction.swtim1ctr) < 0)
 			{
-				lcdprintf(&pbuflcd1,CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
+				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
+				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
 				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT; 
 			}
 			break;
@@ -387,10 +433,11 @@ float calib_control_lever(void)
 			/* Sanity check. */
 			if (frange < clfunc.range_er)
 			{
-				lcdprintf(&pbuflcd1,CLROW,0,"CL RANGE ERROR %0.1f",frange);
+				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL RANGE ERROR      ");			
+				lcdprintf (&pbuflcd1,   CLROW,0,"CL RANGE ERROR %0.1f",frange);
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 				clfunc.state = INITLCD1;
-				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*2; 		
+				clfunc.timx = gevcufunction.swtim1ctr + CLTIMEOUT*1; 		
 				break;		
 			}
 
