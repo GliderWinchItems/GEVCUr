@@ -12,7 +12,7 @@
 #include "DMOCchecksum.h"
 #include "paycnvt.h"
 #include "can_iface.h"
-#include "spiserialparallel.h"
+//#include "spiserialparallel.h"
 #include "shiftregbits.h"
 #include "calib_control_lever.h"
 

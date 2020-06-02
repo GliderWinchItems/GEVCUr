@@ -1005,8 +1005,7 @@ static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmo
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN 5 */
+//  /* USER CODE BEGIN 5 */
 
 //osDelay(0); // Debugging HardFault
 
@@ -1015,14 +1014,14 @@ void StartDefaultTask(void const * argument)
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-//#define SHOWSERIALPARALLELSTUFF
+#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
 //#define DMOCTESTS
-#define CONTROLV1DEBUG
+//#define CONTROLV1DEBUG
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else

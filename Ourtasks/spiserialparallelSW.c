@@ -36,7 +36,7 @@ uint32_t spispctr; // spi interrupt counter for debugging.
 static SPI_HandleTypeDef *pspix;
 
 static uint16_t spinotebits; // Shift0reg bits that changed
-static int8_t srinit;	// Initialization cycle ctr
+static int16_t srinit;	// Initialization cycle ctr
 
 
 /* NOTE: Switch i/o pins have pull-ups and closing the switch pulls the
@@ -422,7 +422,8 @@ HAL_StatusTypeDef spiserialparallel_init(SPI_HandleTypeDef* phspi)
 {
 	pspix = phspi;	// Save pointer to spi contol block
 
-	srinit = 30;	// Allow a few cycles for the hardware shift-regs to init.
+	/* 790-800 is the threshold for error vs ok. */
+	srinit = 3000;	// Allow a few cycles for the hardware shift-regs to init.
 
 	/* Enable output shift register pins. */
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_6,GPIO_PIN_RESET); // Not OE pins
