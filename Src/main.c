@@ -982,7 +982,13 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 // LCD msg: Main 
-//                                                       "...................."
+//      
+/* LCD output buffer pointer. */
+static struct LCDTASK_LINEBUF*   pbuflcdi2cm1; // Ptr to LCDI2C unit 4x20 buffer #1 in main
+static struct LCDMSGSET lcdi2cfunc;
+static void lcdi2cmsgm1(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2cm1,0,0,"Hello Wily Winch Op.");}
+
+
 static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmocctl[DMOC_SPEED].speedact,dmocctl[DMOC_SPEED].ftorquereq);}
 /* USER CODE END 4 */
 
@@ -1043,6 +1049,21 @@ void StartDefaultTask(void const * argument)
 	if (pbuflcd == NULL) morse_trap(12);
 
 	void (*ptrM1)(void) = &lcdmsgM1; // LCD msg pointer
+
+  uint8_t loopctr = 0;
+  while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
+      if (punitd4x20 == NULL) morse_trap(2326);
+
+  if (pbuflcdi2cm1 == NULL)
+      pbuflcdi2cm1 = xLcdTaskintgetbuf(punitd4x20, 32);
+  if (pbuflcdi2cm1 == NULL) morse_trap(82); 
+
+  // Repeat msg on LCD I2C unit
+  lcdi2cfunc.ptr = lcdi2cmsgm1;
+  // Place ptr to struct w ptr 
+  if (LcdmsgsetTaskQHandle != NULL)
+    xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);       
+
 
 #ifdef TESTLCDPRINTF
 	uint32_t lcdrow = 0;
