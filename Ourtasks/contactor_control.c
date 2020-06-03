@@ -8,8 +8,9 @@
 #include "contactor_control.h"
 #include "main.h"
 #include "morse.h"
-
 #include "contactor_control_msg.h"
+#include "LcdTask.h"
+#include "LcdmsgsetTask.h"
 
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 

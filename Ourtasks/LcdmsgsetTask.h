@@ -18,8 +18,8 @@ union LCDSETVAR
 	 int32_t s32;
 	uint16_t u16[2];
 	 int16_t s16[2];
-	uint8_t  u8[4];
-	 int8_t  s8[4];
+	uint8_t   u8[4];
+	 int8_t   s8[4];
 };
 
 struct LCDMSGSET

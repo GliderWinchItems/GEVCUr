@@ -141,8 +141,6 @@ uint8_t canflag2;
 
 uint8_t lcdflag = 0;
 
-struct SERIALSENDTASKBCB* pbuflcd;
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -983,13 +981,24 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 // LCD msg: Main 
 //      
-/* LCD output buffer pointer. */
+/* LCD I2C output buffer pointer. */
 static struct LCDTASK_LINEBUF*   pbuflcdi2cm1; // Ptr to LCDI2C unit 4x20 buffer #1 in main
-static struct LCDMSGSET lcdi2cfunc;
-static void lcdi2cmsgm1(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2cm1,0,0,"Hello Wily Winch Op.");}
+static struct LCDTASK_LINEBUF*   pbuflcdi2cm2; // Ptr to LCDI2C unit 4x20 buffer #2 in main
+static struct LCDTASK_LINEBUF*   pbuflcdi2cm3; // Ptr to LCDI2C unit 4x20 buffer #3 in main
 
+static struct LCDMSGSET lcdi2cfunc1;
+static struct LCDMSGSET lcdi2cfunc2;
+static struct LCDMSGSET lcdi2cfunc3;
 
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"Hello Wily Winch Op.");}
+static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
+static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
+
+// LCD UART msg
+struct SERIALSENDTASKBCB* pbuflcd;
 static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmocctl[DMOC_SPEED].speedact,dmocctl[DMOC_SPEED].ftorquereq);}
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1010,7 +1019,7 @@ void StartDefaultTask(void const * argument)
 //osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1049,19 +1058,31 @@ void StartDefaultTask(void const * argument)
 
 	void (*ptrM1)(void) = &lcdmsgM1; // LCD msg pointer
 
+  /* LCD I2C msgs used in this task. */
+  // Wait for LcdTask to instantiate 4x20 #1 unit. */
   uint8_t loopctr = 0;
   while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
       if (punitd4x20 == NULL) morse_trap(2326);
 
+  // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
   if (pbuflcdi2cm1 == NULL)
       pbuflcdi2cm1 = xLcdTaskintgetbuf(punitd4x20, 32);
   if (pbuflcdi2cm1 == NULL) morse_trap(82); 
-
-  // Repeat msg on LCD I2C unit
-  lcdi2cfunc.ptr = lcdi2cmsgm1;
-  // Place ptr to struct w ptr 
+  lcdi2cfunc1.ptr = lcdi2cmsgm1;
   if (LcdmsgsetTaskQHandle != NULL)
-    xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);       
+    xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);       
+
+  // Get buffers and partially initialize for later use.
+  if (pbuflcdi2cm2 == NULL)
+      pbuflcdi2cm2 = xLcdTaskintgetbuf(punitd4x20, 32);
+  if (pbuflcdi2cm2 == NULL) morse_trap(82); 
+  lcdi2cfunc2.ptr = lcdi2cmsgM1a;
+  
+  if (pbuflcdi2cm3 == NULL)
+      pbuflcdi2cm3 = xLcdTaskintgetbuf(punitd4x20, 32);
+  if (pbuflcdi2cm3 == NULL) morse_trap(82); 
+  lcdi2cfunc3.ptr = lcdi2cmsgM1b;
+
 
 
 #ifdef TESTLCDPRINTF
@@ -1178,6 +1199,15 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 			if (flag_clcalibed != 0)
 			{
 				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0);
+
+        lcdi2cfunc2.u.u32 = dmocctl[DMOC_SPEED].speedact; // Value that is passed to function 
+        if (LcdmsgsetTaskQHandle != NULL)
+            xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc2, 0);
+
+        lcdi2cfunc3.u.f = dmocctl[DMOC_SPEED].ftorquereq; // Value that is passed to function 
+        if (LcdmsgsetTaskQHandle != NULL)
+            xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc3, 0);
+
 			}
 
 			/* LCD output from queue pointers. */
