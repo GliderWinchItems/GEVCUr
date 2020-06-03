@@ -989,8 +989,8 @@ static struct LCDTASK_LINEBUF*   pbuflcdi2cm3; // Ptr to LCDI2C unit 4x20 buffer
 static struct LCDMSGSET lcdi2cfunc1;
 static struct LCDMSGSET lcdi2cfunc2;
 static struct LCDMSGSET lcdi2cfunc3;
-
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"Hello Wily Winch Op.");}
+//                                                                         "12345678901234567890"
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr v1.1 06/03/20");}
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
 
