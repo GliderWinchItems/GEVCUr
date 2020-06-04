@@ -40,18 +40,18 @@
 //#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
-#define SPLASHDELAY  (T1MS*800) 
+#define SPLASHDELAY  (T1MS*500) 
 /* LCD delay following command */
 #define LCDLINEDELAY (T1MS*20)   // 20 ms
-#define INITDELAY2   (T1MS* 32)  // OFF (32 ms)
-#define INITDELAY3   (T1MS* 32)  // ON  (32 ms)
-#define INITDELAY4   (T1MS*400)  // CLEAR (~400 ms)
-#define INITDELAY5   (T1MS* 32)  // BACKLIGHT  (32 ms)
-#define INITDELAY6   (T1MS*100)  // MOVE CURSOR (~100 ms)
-#define INITDELAY7   (T1MS*100)  // Clear row with 20 spaces
-#define CLTIMEOUT    (T1MS*1000) // Timeout for re-issue LCD/Beep prompt 
-#define CLRESEND     (T1MS*1000) // Timeout for re-sending LCD msg.
-#define CLLINEDELAY  (T1MS*100)  // Time delay for 20 char line (9600 baud)
+#define INITDELAY2   (T1MS* 20)  // OFF (32 ms)
+#define INITDELAY3   (T1MS* 20)  // ON  (32 ms)
+#define INITDELAY4   (T1MS* 20)  // CLEAR (~400 ms)
+#define INITDELAY5   (T1MS* 20)  // BACKLIGHT  (32 ms)
+#define INITDELAY6   (T1MS* 20)  // MOVE CURSOR (~100 ms)
+#define INITDELAY7   (T1MS* 40)  // Clear row with 20 spaces
+#define CLTIMEOUT    (T1MS*800)  // Timeout for re-issue LCD/Beep prompt 
+#define CLRESEND     (T1MS*800)  // Timeout for re-sending LCD msg.
+#define CLLINEDELAY  (T1MS* 80)  // Time delay for 20 char line (9600 baud)
 
 static uint8_t clrrowctr = 0;
 
@@ -178,25 +178,25 @@ void lcdout(void)
 
 /* Note: pacing of this is because it is called from defaultTask loop */
 
-	 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
+ 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
  		
- 		/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
- 		// This avoids 'printf' semaphores stalling the program calling 'lcdout'
-	 	lcdmsgcl1.u.f = clfunc.curpos; // Value that is passed to function 
-  		lcdmsgcl1.ptr = lcdmsgfunc1;   // Pointer to the function
+	/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
+	// This avoids 'printf' semaphores stalling the program calling 'lcdout'
+ 	lcdmsgcl1.u.f = clfunc.curpos; // Value that is passed to function 
+	lcdmsgcl1.ptr = lcdmsgfunc1;   // Pointer to the function
 
-  		if (LcdmsgsetTaskQHandle != NULL)
-    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
+	if (LcdmsgsetTaskQHandle != NULL)
+   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
 
-    	// Since only one value is passed via the queue the second value to be displayed is
-    	// setup by a second msg. A second buffer is used to avoid stalling in the lcd output
-    	// routine when the first is in-progress sending. That stalling is not really important
-    	// since LcdTask is a separate task, however.
-    	lcdmsgcl2.u.u32 = adc1.abs[0].adcfil; // Value that is passed to function 
-  		lcdmsgcl2.ptr = lcdmsgfunc2;   // Pointer to the function
+   	// Since only one value is passed via the queue the second value to be displayed is
+   	// setup by a second msg. A second buffer is used to avoid stalling in the lcd output
+   	// routine when the first is in-progress sending. That stalling is not really important
+   	// since LcdTask is a separate task, however.
+   	lcdmsgcl2.u.u32 = adc1.abs[0].adcfil; // Value that is passed to function 
+	lcdmsgcl2.ptr = lcdmsgfunc2;   // Pointer to the function
 
-  		if (LcdmsgsetTaskQHandle != NULL)
-    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
+	if (LcdmsgsetTaskQHandle != NULL)
+   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
 }
 /* ***********************************************************************************************************
  * static void lcdclearrow(uint8_t row);
@@ -458,7 +458,6 @@ float calib_control_lever(void)
 				break;
 
 			clfunc.state = CLCREADY;
-flag_clcalibed = 1; // Set calibrated flag			
 
 		/* === Calibration is complete. === */
 

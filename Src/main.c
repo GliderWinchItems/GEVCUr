@@ -439,13 +439,14 @@ DiscoveryF4 LEDs --
 	Qidret = lcdmsg_init(16);
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
-  osThreadId retThrd =  xLcdTaskCreate(0, 16);
+  /* LCD I2C message handling. (taskpriority, max queued items). */
+  osThreadId retThrd =  xLcdTaskCreate(0,16);
   if (retThrd == NULL) morse_trap(123);
 
-  retThrd= xLcdmsgsTaskCreate(0, 32);
+  retThrd= xLcdmsgsTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(124);
 
-  retThrd= xLcdmsgsetTaskCreate(0, 32);
+  retThrd= xLcdmsgsetTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(125);
 
   /* init code for USB_DEVICE */
@@ -990,7 +991,7 @@ static struct LCDMSGSET lcdi2cfunc1;
 static struct LCDMSGSET lcdi2cfunc2;
 static struct LCDMSGSET lcdi2cfunc3;
 //                                                                         "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-03 0002");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-04 0004");}
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
 
@@ -1204,6 +1205,7 @@ uint8_t ratepace = 0;
 			/* Generate LCD msg for speed actual and commanded torque. */
 			if (flag_clcalibed != 0)
 			{
+HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin, GPIO_PIN_SET); // GREEN
 				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0); // LCD uart
 
         // LCD I2C: two values requires two calls

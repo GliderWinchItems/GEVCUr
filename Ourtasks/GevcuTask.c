@@ -183,14 +183,13 @@ void StartGevcuTask(void const * argument)
   {
 		/* Wait for notifications */
 		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
-//		noteused = 0;	// Accumulate bits in 'noteval' processed.
+		noteuse = 0;	// Accumulate bits in 'noteval' processed.
   /* ========= Events =============================== */
 // NOTE: this could be made into a loop that shifts 'noteval' bits
 // and calls from table of addresses.  This would have an advantage
 // if the high rate bits are shifted out first since a test for
 // no bits left could end the testing early.
 		// Check notification and deal with it if set.
-		noteuse = 0;
 		if ((noteval & GEVCUBIT00) != 0)
 		{ // ADC readings ready
 //			GevcuEvents_00(); // Skip and let ADCTask to the CL work

@@ -284,12 +284,14 @@ int lcdi2cprintf(struct LCDTASK_LINEBUF** pplb, int row, int col, const char *fm
 	struct LCDTASK_LINEBUF* plb = *pplb;
 	va_list argp;
 
+	if (plb == NULL) return 0;
+
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
 //	xSemaphoreTake(plb->semaphore, 5000);
 
-	plb->linereq   = row;
-	plb->colreq = col;
+	plb->linereq = row;
+	plb->colreq  = col;
 
 	/* Block if vsnprintf is being uses by someone else. */
 	xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );
