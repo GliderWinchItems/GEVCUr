@@ -214,7 +214,7 @@ void StartLcdTask(void* argument)
 	Qret = xQueueReceive( LcdTaskQHandle,&plb,portMAX_DELAY);
 	if (Qret == pdPASS)
 	{ // Here, OK item from queue
-HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); // Orange
+HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); // Red
 		// Point to parameters for this unit
 		ptmp = plb->punit;
 		if (ptmp != NULL) // JIC

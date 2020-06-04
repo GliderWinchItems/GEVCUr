@@ -990,7 +990,7 @@ static struct LCDMSGSET lcdi2cfunc1;
 static struct LCDMSGSET lcdi2cfunc2;
 static struct LCDMSGSET lcdi2cfunc3;
 //                                                                         "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr v1.1 06/03/20");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-03 0002");}
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
 
@@ -1176,6 +1176,7 @@ lcdflag = 1;
 uint16_t slowtimectr = 0; // Approx 1/sec
 uint16_t medtimectr = 0;  // Approx 8/sec
 
+uint8_t ratepace = 0;
 
 //osDelay(1);
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
@@ -1192,14 +1193,20 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 			/* Check each LED until CL calibration ends. */
 			led_chasing();
 
+    ratepace += 1;
+    if (ratepace > 5) // Slow down LCD output rate
+    {
+      ratepace = 0;
+
 			/* Update CL position on LCD after CL calibration ends. */
 			lcdout();
 
 			/* Generate LCD msg for speed actual and commanded torque. */
 			if (flag_clcalibed != 0)
 			{
-				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0);
+				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0); // LCD uart
 
+        // LCD I2C: two values requires two calls
         lcdi2cfunc2.u.u32 = dmocctl[DMOC_SPEED].speedact; // Value that is passed to function 
         if (LcdmsgsetTaskQHandle != NULL)
             xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc2, 0);
@@ -1207,11 +1214,11 @@ uint16_t medtimectr = 0;  // Approx 8/sec
         lcdi2cfunc3.u.f = dmocctl[DMOC_SPEED].ftorquereq; // Value that is passed to function 
         if (LcdmsgsetTaskQHandle != NULL)
             xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc3, 0);
-
 			}
 
 			/* LCD output from queue pointers. */
 			lcdmsg_poll();
+    }
 
 #ifdef DMOCTESTS
 	yprintf(&pbuf1,"\n\rSTATE:dmoc:act: %X new: %X : rep: %X :op: %X",

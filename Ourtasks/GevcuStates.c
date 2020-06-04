@@ -77,8 +77,8 @@ void payloadfloat(uint8_t *po, float f)
 static void lcdmsg1   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
 static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_INT           ");}
 
-static void lcdmsg2   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"SWITCH TO SAFE      ");}
-static void lcdi2cmsg2(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"SWITCH TO SAFE      ");}
+static void lcdmsg2    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD uart
+static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
 
  /* LCDI2C 4x20 msg. */
 static struct LCDMSGSET lcdi2cfunc;
@@ -99,6 +99,7 @@ void GevcuStates_GEVCU_INIT(void)
 	switch (gevcufunction.substateA)
 	{
 	case GISA_OTO: // Cycle Safe/Active sw.
+		msgflag = 0;
 		if (flag_clcalibed == 0) 
 			break;
 
@@ -146,10 +147,9 @@ void GevcuStates_GEVCU_INIT(void)
 				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 				// Repeat msg on LCD I2C unit
-				lcdi2cfunc.ptr = lcdi2cmsg2;
-				// Place ptr to struct w ptr 
-				 if (LcdmsgsetTaskQHandle != NULL)
-	 		   	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+				lcdi2cfunc.ptr = lcdi2cmsg2a;
+				if (LcdmsgsetTaskQHandle != NULL)
+	 		   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 			}
 			break;
 		}
@@ -184,8 +184,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		// Repeat msg on LCD I2C unit
-		lcdi2cfunc.ptr = lcdi2cmsg3;
-		// Place ptr to struct w ptr 
+		lcdi2cfunc.ptr = lcdi2cmsg3; 
 		 if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 	}
