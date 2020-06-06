@@ -449,6 +449,7 @@ DiscoveryF4 LEDs --
   retThrd= xLcdmsgsetTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(125);
 
+
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
@@ -991,7 +992,7 @@ static struct LCDMSGSET lcdi2cfunc1;
 static struct LCDMSGSET lcdi2cfunc2;
 static struct LCDMSGSET lcdi2cfunc3;
 //                                                                         "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-04 0004");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-06 0006");}
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
 
@@ -1070,7 +1071,8 @@ void StartDefaultTask(void const * argument)
       pbuflcdi2cm1 = xLcdTaskintgetbuf(punitd4x20, 32);
   if (pbuflcdi2cm1 == NULL) morse_trap(82); 
   lcdi2cfunc1.ptr = lcdi2cmsgm1;
-  if (LcdmsgsetTaskQHandle != NULL)
+
+  if (LcdmsgsetTaskQHandle == NULL) morse_trap(2323);
     xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);       
 
   // Get buffers and partially initialize for later use.

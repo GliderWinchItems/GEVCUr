@@ -113,7 +113,7 @@ the CL would become a separate function.
 static void init(void)
 {
 	clfunc.min    = 65521;
-   clfunc.max    = 0;
+   clfunc.max     = 0;
 	clfunc.toctr  = 0;
 	clfunc.curpos = 0;
 	clfunc.state  = INITLCD;
@@ -177,8 +177,6 @@ void lcdout(void)
 	if (flag_clcalibed == 0) return; 
 
 /* Note: pacing of this is because it is called from defaultTask loop */
-
- 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
  		
 	/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
 	// This avoids 'printf' semaphores stalling the program calling 'lcdout'
@@ -197,6 +195,11 @@ void lcdout(void)
 
 	if (LcdmsgsetTaskQHandle != NULL)
    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
+
+   	/* LCD uart display. */
+ 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
+
+	return;
 }
 /* ***********************************************************************************************************
  * static void lcdclearrow(uint8_t row);
@@ -224,10 +227,17 @@ float calib_control_lever(void)
 	float ftmp;
 	float fcur;
 	float frange;
+	uint32_t loopctr;
 
-		/* LCD (I2C) lcdi2cprintf buffer. */
+
+
+		switch (clfunc.state)
+		{ // The following is a one-time only sequenceSPLASHDELAY
+		case INITLCD: // Half-second delay for splash screen to clear
+
+				/* LCD (I2C) lcdi2cprintf buffer. */
 		/* We can't do this in the 'init' since the LCD may not have been instantiated. */
-	uint32_t loopctr = 0;
+		loopctr = 0;
 	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
   	    if (punitd4x20 == NULL) morse_trap(2326);
 
@@ -239,14 +249,12 @@ float calib_control_lever(void)
 		    pbuflcdi2c2 = xLcdTaskintgetbuf(punitd4x20, 32);
 		if (pbuflcdi2c2 == NULL) morse_trap(2328);				
 
-
-		switch (clfunc.state)
-		{ // The following is a one-time only sequenceSPLASHDELAY
-		case INITLCD: // Half-second delay for splash screen to clear
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
 			clfunc.state = INITLCD1;
+// Skipe LCD uart intiialization sequence
 //			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line
+			clfunc.state = INITLCD7; // NEXT: CL forward			
 			break;
 
 		case INITLCD1: // Delay further LCD commands until time expires.
@@ -328,7 +336,7 @@ float calib_control_lever(void)
 			if ((psw_cl_fs_no->on == 0) && (psw_cl_rst_n0->on == 0))	
 			{  //                           01234567890123456789  
 				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL ERR: BOTH SWS ON ");
-				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
+//				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 
 				clfunc.state = INITLCD1;
@@ -336,7 +344,7 @@ float calib_control_lever(void)
 				break;
 			}		                     // "...................." 
 			lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
-			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
+//			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
 //			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = DTWTIME + CLTIMEOUT;
 			clfunc.state = OPEN1WAIT;
@@ -365,8 +373,8 @@ float calib_control_lever(void)
 			}
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
-				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
-				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
+				lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER  %5d  ",clfunc.toctr++);
+//				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 				clfunc.timx = DTWTIME + CLTIMEOUT;
 			}
 //			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) // Non-debounced
@@ -388,8 +396,8 @@ float calib_control_lever(void)
 				if ((int)(clfunc.timx - DTWTIME) < 0)
 				{
 //					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
- 					lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
-					lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
+ 					lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVERa   %5d  ",clfunc.toctr++);
+//					lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}
 				break;
@@ -411,8 +419,8 @@ float calib_control_lever(void)
 
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
-				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER         ");
-				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
+				lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVERb   %5d  ",clfunc.toctr++);  
+//				lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
 				clfunc.timx = DTWTIME + CLTIMEOUT; 
 			}
 			break;
@@ -427,10 +435,10 @@ float calib_control_lever(void)
 			if (frange < clfunc.range_er)
 			{
 				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL RANGE ERROR      ");			
-				lcdprintf (&pbuflcd1,   CLROW,0,"CL RANGE ERROR %0.1f",frange);
+//		lcdprintf (&pbuflcd1,   CLROW,0,"CL RANGE ERROR %0.1f",frange);
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 				clfunc.state = INITLCD1;
-				clfunc.timx = DTWTIME + CLTIMEOUT*1; 		
+				clfunc.timx = DTWTIME + CLTIMEOUT*2; 		
 				break;		
 			}
 

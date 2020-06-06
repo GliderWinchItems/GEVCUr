@@ -214,7 +214,7 @@ void StartLcdTask(void* argument)
 	Qret = xQueueReceive( LcdTaskQHandle,&plb,portMAX_DELAY);
 	if (Qret == pdPASS)
 	{ // Here, OK item from queue
-HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); // Red
+//HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); // Red
 		// Point to parameters for this unit
 		ptmp = plb->punit;
 		if (ptmp != NULL) // JIC
@@ -227,6 +227,8 @@ HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); // Red
 
 			// Send the glorious text of liberation! (Or, at least some ASCII)
   			lcdPrintStr(p1,plb->pbuf, plb->size);
+
+ // 			xSemaphoreGive( plb->semaphore );
 		}
 	}
   }
@@ -332,7 +334,7 @@ int lcdi2cputs(struct LCDTASK_LINEBUF** pplb, int row, int col, char* pchr)
 
 	/* Block (for a while) if this buffer is not yet available. 
       when the buffer has been sent. */
-	xSemaphoreTake(plb->semaphore, 1024);
+	xSemaphoreTake(plb->semaphore, 100);
 
 	// Save cursor position
 	plb->linereq   = row; 	

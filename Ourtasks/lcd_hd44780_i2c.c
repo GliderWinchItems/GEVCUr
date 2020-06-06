@@ -94,7 +94,6 @@ struct LCDPARAMS* lcdInit(struct LCDI2C_UNIT* punit)
     while (HAL_I2C_GetState(p1->hi2c) != HAL_I2C_STATE_READY) {
         vTaskDelay(1);
     }
-//osDelay(1);
     /* Lets set display params */
     /* First of all lets set display size */
  //   lcdData |= LCD_MODE_4BITS;

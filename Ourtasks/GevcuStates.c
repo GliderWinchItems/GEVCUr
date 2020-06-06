@@ -89,35 +89,41 @@ void GevcuStates_GEVCU_INIT(void)
 	struct SWITCHPTR* p;
 
 	uint8_t loopctr = 0;
-	while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
-  	if (punitd4x20 == NULL) morse_trap(2326);
-
-	if (pbuflcdi2s1 == NULL)
-	    pbuflcdi2s1 = xLcdTaskintgetbuf(punitd4x20, 32);
-	if (pbuflcdi2s1 == NULL) morse_trap(82);				
 
 	switch (gevcufunction.substateA)
 	{
 	case GISA_OTO: // Cycle Safe/Active sw.
-		msgflag = 0;
+
+		/* Wait for task that instantiates the LCD display. */
+		while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
+  		if (punitd4x20 == NULL) morse_trap(2326);
+
+  		/* Get LCD I2C buffer used by GevcuStates. */
+		if (pbuflcdi2s1 == NULL)
+	    	pbuflcdi2s1 = xLcdTaskintgetbuf(punitd4x20, 32);
+		if (pbuflcdi2s1 == NULL) morse_trap(82);				
+
+		msgflag = 0; // One-msg flag, JIC
+
+		/* Wait for calib_control_lever.c to complete calibrations. */
 		if (flag_clcalibed == 0) 
 			break;
 
-	/* Queue LCD msg to be sent once. */
-	if (msgflag == 0)
-	{ 
-		msgflag = 1; // Don't keep banging away with the same msg
+		/* Queue LCD msg to be sent once. */
+		if (msgflag == 0)
+		{ 
+			msgflag = 1; // Don't keep banging away with the same msg
 
-		// Msg on UART LCD
-		ptr2 = &lcdmsg1; // LCD msg pointer
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+			// Msg on UART LCD
+			ptr2 = &lcdmsg1; // LCD msg pointer
+			xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
-		// Repeat msg on LCD I2C unit
-		lcdi2cfunc.ptr = lcdi2cmsg1;
-		// Place ptr to struct w ptr 
-		 if (LcdmsgsetTaskQHandle != NULL)
-	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
-	}
+			// Repeat msg on LCD I2C unit
+			lcdi2cfunc.ptr = lcdi2cmsg1;
+			// Place ptr to struct w ptr 
+		 	if (LcdmsgsetTaskQHandle != NULL)
+	  	  		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+		}
 
 		/* Update LED with SAFE/ACTIVE switch status. */
 		p = gevcufunction.psw[PSW_PR_SAFE];

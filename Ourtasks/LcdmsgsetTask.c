@@ -19,9 +19,10 @@ TaskHandle_t LcdmsgsetTaskHandle;
  * void StartLcdmsgsetTask(void* argument);
  *	@brief	: Task startup
  * *************************************************************************/
-static struct LCDMSGSET lsv;
+//struct LCDMSGSET lsv;
 void StartLcdmsgsetTask(void* argument)
 {
+struct LCDMSGSET lsv;	
 	BaseType_t ret;
 
 	for ( ;; )
