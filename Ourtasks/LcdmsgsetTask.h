@@ -11,6 +11,9 @@
 #include "task.h"
 #include "cmsis_os.h"
 
+/* 
+This union provides a way to pass some variables to a function that uses vsnprintf.
+*/
 union LCDSETVAR
 {
 	float f;
@@ -20,8 +23,18 @@ union LCDSETVAR
 	 int16_t s16[2];
 	uint8_t   u8[4];
 	 int8_t   s8[4];
+//These added to allow two floats to be passed	 
+	float ftwo[2];    
+	uint32_t u32two[2];
+	uint64_t u64;
 };
 
+/*
+This struct is placed on a queue and the pointer is set to point to a function
+that calls vsnprintf in LcdmsgssetTask.c. Any waits on the semaphore for
+vsnprint occur in LcdmsgsetTask.c and not the originating task that wants to
+output something.
+*/
 struct LCDMSGSET
 {
 	void (*ptr)(union LCDSETVAR);

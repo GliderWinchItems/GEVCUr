@@ -985,16 +985,28 @@ static void MX_GPIO_Init(void)
 //      
 /* LCD I2C output buffer pointer. */
 static struct LCDTASK_LINEBUF*   pbuflcdi2cm1; // Ptr to LCDI2C unit 4x20 buffer #1 in main
+  #ifdef TWOCALLSWITHONEARGUMENT  
 static struct LCDTASK_LINEBUF*   pbuflcdi2cm2; // Ptr to LCDI2C unit 4x20 buffer #2 in main
 static struct LCDTASK_LINEBUF*   pbuflcdi2cm3; // Ptr to LCDI2C unit 4x20 buffer #3 in main
+  #else
+static struct LCDTASK_LINEBUF*   pbuflcdi2cm4; // Ptr to LCDI2C unit 4x20 buffer #4 in main
+  #endif
 
 static struct LCDMSGSET lcdi2cfunc1;
+  #ifdef TWOCALLSWITHONEARGUMENT  
 static struct LCDMSGSET lcdi2cfunc2;
 static struct LCDMSGSET lcdi2cfunc3;
+  #else
+static struct LCDMSGSET lcdi2cfunc4;
+  #endif
 //                                                                         "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-06 0006");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-07 0007");}
+  #ifdef TWOCALLSWITHONEARGUMENT  
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
+  #else
+static void lcdi2cmsgM1c(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm4,DMOCSPDTQ, 0,"S%6i   T%6.1f  ",u.u32two[0],u.ftwo[1]);}
+  #endif
 
 // LCD UART msg
 struct SERIALSENDTASKBCB* pbuflcd;
@@ -1076,6 +1088,7 @@ void StartDefaultTask(void const * argument)
     xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);       
 
   // Get buffers and partially initialize for later use.
+#ifdef TWOCALLSWITHONEARGUMENT  
   if (pbuflcdi2cm2 == NULL)
       pbuflcdi2cm2 = xLcdTaskintgetbuf(punitd4x20, 32);
   if (pbuflcdi2cm2 == NULL) morse_trap(82); 
@@ -1086,7 +1099,13 @@ void StartDefaultTask(void const * argument)
   if (pbuflcdi2cm3 == NULL) morse_trap(82); 
   lcdi2cfunc3.ptr = lcdi2cmsgM1b;
 
-
+#else
+// One call with two arguments
+if (pbuflcdi2cm4 == NULL)
+      pbuflcdi2cm4 = xLcdTaskintgetbuf(punitd4x20, 32);
+  if (pbuflcdi2cm4 == NULL) morse_trap(82); 
+  lcdi2cfunc4.ptr = lcdi2cmsgM1c;
+#endif
 
 #ifdef TESTLCDPRINTF
 	uint32_t lcdrow = 0;
@@ -1197,7 +1216,7 @@ uint8_t ratepace = 0;
 			led_chasing();
 
     ratepace += 1;
-    if (ratepace > 5) // Slow down LCD output rate
+    if (ratepace > 2) // Slow down LCD output rate
     {
       ratepace = 0;
 
@@ -1210,6 +1229,7 @@ uint8_t ratepace = 0;
 HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin, GPIO_PIN_SET); // GREEN
 				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0); // LCD uart
 
+#ifdef TWOCALLSWITHONEARGUMENT 
         // LCD I2C: two values requires two calls
         lcdi2cfunc2.u.u32 = dmocctl[DMOC_SPEED].speedact; // Value that is passed to function 
         if (LcdmsgsetTaskQHandle != NULL)
@@ -1218,6 +1238,13 @@ HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin, GPIO_PIN_SET); // GREEN
         lcdi2cfunc3.u.f = dmocctl[DMOC_SPEED].ftorquereq; // Value that is passed to function 
         if (LcdmsgsetTaskQHandle != NULL)
             xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc3, 0);
+#else
+        lcdi2cfunc4.u.u32two[0] = dmocctl[DMOC_SPEED].speedact; // Value that is passed to function 
+        lcdi2cfunc4.u.ftwo[1]   = dmocctl[DMOC_SPEED].ftorquereq; // Value that is passed to function 
+        if (LcdmsgsetTaskQHandle != NULL)
+            xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc4, 0);
+
+#endif          
 			}
 
 			/* LCD output from queue pointers. */

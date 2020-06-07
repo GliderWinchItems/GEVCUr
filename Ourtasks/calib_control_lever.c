@@ -167,9 +167,13 @@ static void init(void)
  ************************************************************************************************************* */
 /* LCDI2C 4x20 msg. */
 static struct LCDMSGSET lcdmsgcl1;
+  #ifdef TWOCALLSWITHONEARGUMENT 	
 static struct LCDMSGSET lcdmsgcl2;
 static void lcdmsgfunc1(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CL %5.1f%%  ",u.f);}
 static void lcdmsgfunc2(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c2,CLROW,11,"%5d    ",u.u32);}
+  #else
+static void lcdmsgfunc3(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CL %5.1f%%   adc%5d",u.ftwo[0],u.u32two[1]);}
+  #endif
 
 void lcdout(void)
 {
@@ -177,7 +181,7 @@ void lcdout(void)
 	if (flag_clcalibed == 0) return; 
 
 /* Note: pacing of this is because it is called from defaultTask loop */
- 		
+#ifdef TWOCALLSWITHONEARGUMENT 		
 	/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
 	// This avoids 'printf' semaphores stalling the program calling 'lcdout'
  	lcdmsgcl1.u.f = clfunc.curpos; // Value that is passed to function 
@@ -195,9 +199,16 @@ void lcdout(void)
 
 	if (LcdmsgsetTaskQHandle != NULL)
    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
+#else
 
-   	/* LCD uart display. */
- 	lcdprintf(&pbuflcd1,CLROW,0,"CL %5.1f%% %5d     ",clfunc.curpos,adc1.abs[0].adcfil); // LCD
+ 	lcdmsgcl1.u.ftwo[0] = clfunc.curpos; // Value that is passed to function 
+   	lcdmsgcl1.u.u32two[1] = adc1.abs[0].adcfil; // Value that is passed to function 
+	lcdmsgcl1.ptr = lcdmsgfunc3;   // Pointer to the function
+
+	if (LcdmsgsetTaskQHandle != NULL)
+   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
+#endif
+
 
 	return;
 }
@@ -210,7 +221,7 @@ static void lcdclearrow(uint8_t row)
 {
 	/* Clear a row string.       
 //                20 spaces:  01234567890123456789*/
-	lcdprintf(&pbuflcd1,row,0,"                    ");
+//	lcdprintf(&pbuflcd1,row,0,"                    ");
 }
 /* ***********************************************************************************************************
  * float calib_control_lever(void);
@@ -222,8 +233,10 @@ uint32_t ccldbg;
 
 float calib_control_lever(void)
 {
+#ifdef INCLUDELCDUARTSTARTUPCODE
 	uint8_t byt[32];
 	uint8_t* p;
+#endif	
 	float ftmp;
 	float fcur;
 	float frange;
@@ -252,11 +265,11 @@ float calib_control_lever(void)
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
 			clfunc.state = INITLCD1;
-// Skipe LCD uart intiialization sequence
+// Skip LCD uart intiialization sequence
 //			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line
 			clfunc.state = INITLCD7; // NEXT: CL forward			
 			break;
-
+#ifdef INCLUDELCDUARTSTARTUPCODE
 		case INITLCD1: // Delay further LCD commands until time expires.
 			if ((int)(clfunc.timx - DTWTIME) > 0)
 				break;
@@ -312,7 +325,7 @@ float calib_control_lever(void)
 				break;
 			clfunc.timx = DTWTIME + INITDELAY7;
 			clfunc.state = INITLCD7; // NEXT: CL forward
-
+#endif
 		case INITLCD7: // Clear all for rows of LCD
 			if ((int)(clfunc.timx - DTWTIME) > 0)
 				break; // Still waiting for timeout
@@ -420,7 +433,6 @@ float calib_control_lever(void)
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
 				lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVERb   %5d  ",clfunc.toctr++);  
-//				lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER!   %5d  ",clfunc.toctr++);
 				clfunc.timx = DTWTIME + CLTIMEOUT; 
 			}
 			break;
@@ -435,7 +447,6 @@ float calib_control_lever(void)
 			if (frange < clfunc.range_er)
 			{
 				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL RANGE ERROR      ");			
-//		lcdprintf (&pbuflcd1,   CLROW,0,"CL RANGE ERROR %0.1f",frange);
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 				clfunc.state = INITLCD1;
 				clfunc.timx = DTWTIME + CLTIMEOUT*2; 		

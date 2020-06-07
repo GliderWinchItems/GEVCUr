@@ -160,6 +160,7 @@ taskENTER_CRITICAL();
 			// Create buffer semaphore
 			plb->semaphore = xSemaphoreCreateMutex(); // Semaphore for this buffer
 			if (plb->semaphore == NULL) morse_trap(234);
+
 			xSemaphoreGive(plb->semaphore); // Initialize
 
 			taskEXIT_CRITICAL();
@@ -228,7 +229,8 @@ void StartLcdTask(void* argument)
 			// Send the glorious text of liberation! (Or, at least some ASCII)
   			lcdPrintStr(p1,plb->pbuf, plb->size);
 
- // 			xSemaphoreGive( plb->semaphore );
+//			if (plb->semaphore == NULL) morse_trap(3245);
+ //				xSemaphoreGive( plb->semaphore ); // Buffer now free for re-use
 		}
 	}
   }
@@ -290,7 +292,7 @@ int lcdi2cprintf(struct LCDTASK_LINEBUF** pplb, int row, int col, const char *fm
 
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
-//	xSemaphoreTake(plb->semaphore, 5000);
+//	xSemaphoreTake(plb->semaphore, 100);
 
 	plb->linereq = row;
 	plb->colreq  = col;
@@ -334,7 +336,8 @@ int lcdi2cputs(struct LCDTASK_LINEBUF** pplb, int row, int col, char* pchr)
 
 	/* Block (for a while) if this buffer is not yet available. 
       when the buffer has been sent. */
-	xSemaphoreTake(plb->semaphore, 100);
+//	if (plb->semaphore == NULL) morse_trap(3244);
+//		xSemaphoreTake(plb->semaphore, 100);
 
 	// Save cursor position
 	plb->linereq   = row; 	
