@@ -175,8 +175,9 @@ void GevcuStates_GEVCU_INIT(void)
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg3   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-static void lcdi2cmsg3(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+static void lcdmsg3    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
 
 //#define DEHRIGTEST // Uncomment to skip contactor response waits
 
@@ -190,7 +191,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		// Repeat msg on LCD I2C unit
-		lcdi2cfunc.ptr = lcdi2cmsg3; 
+		lcdi2cfunc.ptr = lcdi2cmsg3a; 
 		 if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 	}
@@ -213,6 +214,15 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
 	{ // LCD msg here?
+		if (msgflag == 1)
+		{
+			if (LcdmsgsetTaskQHandle != NULL) 
+			{
+				lcdi2cfunc.ptr = lcdi2cmsg3b; 
+	    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+	    		msgflag = 2;
+	    	}
+	    }
 		return;
 	}
 #endif
@@ -293,6 +303,14 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 		// Place ptr to struct w ptr 
 		 if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+	}
+
+	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE)
+	{ // Here SAFE/ACTIVE switch is now in SAFE (CLOSE) position
+		/* Go back into safe mode,. */
+		msgflag = 0; // Allow next LCD msg to be sent once
+		gevcufunction.state = GEVCU_SAFE_TRANSITION;
+		return;
 	}
 
 #ifndef DEHRIGTEST

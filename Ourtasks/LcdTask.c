@@ -223,14 +223,14 @@ void StartLcdTask(void* argument)
 			// Get LCDPARAMS pointer from lcd unit block
 			p1 = &ptmp->lcdparams;
     
-    		// Set cursor row/column for this hunit
+    		// Set cursor row/column for this unit
 			lcdSetCursorPosition(p1,plb->colreq,plb->linereq);
 
 			// Send the glorious text of liberation! (Or, at least some ASCII)
   			lcdPrintStr(p1,plb->pbuf, plb->size);
 
 //			if (plb->semaphore == NULL) morse_trap(3245);
- //				xSemaphoreGive( plb->semaphore ); // Buffer now free for re-use
+//			xSemaphoreGive( plb->semaphore ); // Buffer now free for re-use
 		}
 	}
   }
@@ -288,7 +288,7 @@ int lcdi2cprintf(struct LCDTASK_LINEBUF** pplb, int row, int col, const char *fm
 	struct LCDTASK_LINEBUF* plb = *pplb;
 	va_list argp;
 
-	if (plb == NULL) return 0;
+	if (plb == NULL) morse_trap(381); //return 0;
 
 	/* Block if this buffer is not available. SerialSendTask will 'give' the semaphore 
       when the buffer has been sent. */
@@ -298,7 +298,8 @@ int lcdi2cprintf(struct LCDTASK_LINEBUF** pplb, int row, int col, const char *fm
 	plb->colreq  = col;
 
 	/* Block if vsnprintf is being uses by someone else. */
-	xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );
+	BaseType_t ret = xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );
+	if (ret == pdFAIL) morse_trap(382); // 
 
 	/* Construct line of data.  Stop filling buffer if it is full. */
 	va_start(argp, fmt);
@@ -309,14 +310,16 @@ int lcdi2cprintf(struct LCDTASK_LINEBUF** pplb, int row, int col, const char *fm
 	if (plb->size > plb->bufmax) 
 			plb->size = plb->bufmax;
 
-	/* Release semaphore controlling vsnprintf. */
-	xSemaphoreGive( vsnprintfSemaphoreHandle );
-
 	/* JIC */
 	if (plb->size == 0) return 0;
 
 	/* Place Buffer Control Block pointer on queue to LcdTask */
-	xQueueSendToBack(LcdTaskQHandle, pplb, 0);
+	ret = xQueueSendToBack(LcdTaskQHandle, pplb, 0);
+	if (ret == pdFAIL) morse_trap(383);
+
+	/* Release semaphore controlling vsnprintf. */
+	xSemaphoreGive( vsnprintfSemaphoreHandle );
+
 
 	return plb->size;
 }
@@ -352,6 +355,7 @@ int lcdi2cputs(struct LCDTASK_LINEBUF** pplb, int row, int col, char* pchr)
 		plb->size = sz;	// No
 
 	/* Place pointer to Buffer Control Block pointer on queue to LcdTask */
-	xQueueSendToBack(LcdTaskQHandle, pplb, 0);
+	BaseType_t ret = xQueueSendToBack(LcdTaskQHandle, pplb, 0);
+	if (ret == pdFAIL) morse_trap(384);
 	return plb->size; 
 }
