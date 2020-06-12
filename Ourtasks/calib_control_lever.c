@@ -73,8 +73,6 @@ static const struct BEEPQ beepf = { 60,20,1}; // We are waiting for your prompt
 /* LCD output buffer pointers. */
 static struct SERIALSENDTASKBCB* pbufmon1;    // HUARTMON (Monitor UART)
 static struct SERIALSENDTASKBCB* pbuflcd1;    // HUART (LCD uart)
-static struct LCDTASK_LINEBUF*   pbuflcdi2c1; // Ptr to buffer #1 LCDI2C unit 4x20
-static struct LCDTASK_LINEBUF*   pbuflcdi2c2; // Ptr to buffer #2 CDLI2C unit 4x20
 
 enum CLSTATE
 {
@@ -169,10 +167,10 @@ static void init(void)
 static struct LCDMSGSET lcdmsgcl1;
   #ifdef TWOCALLSWITHONEARGUMENT 	
 static struct LCDMSGSET lcdmsgcl2;
-static void lcdmsgfunc1(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CL %5.1f%%  ",u.f);}
-static void lcdmsgfunc2(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c2,CLROW,11,"%5d    ",u.u32);}
+static void lcdmsgfunc1(union LCDSETVAR u ){lcdi2cprintf(&punitd4x20,CLROW,0,"CL %5.1f%%  ",u.f);}
+static void lcdmsgfunc2(union LCDSETVAR u ){lcdi2cprintf(&punitd4x20,CLROW,11,"%5d    ",u.u32);}
   #else
-static void lcdmsgfunc3(union LCDSETVAR u ){lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CL %5.1f%%   adc%5d",u.ftwo[0],u.u32two[1]);}
+static void lcdmsgfunc3(union LCDSETVAR u ){lcdi2cprintf(&punitd4x20,CLROW,0,"CL %5.1f%%   adc%5d",u.ftwo[0],u.u32two[1]);}
   #endif
 
 void lcdout(void)
@@ -253,14 +251,6 @@ float calib_control_lever(void)
 		loopctr = 0;
 	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
   	    if (punitd4x20 == NULL) morse_trap(2326);
-
-		if (pbuflcdi2c1 == NULL)
-		    pbuflcdi2c1 = xLcdTaskintgetbuf(punitd4x20, 32);
-		if (pbuflcdi2c1 == NULL) morse_trap(2327);				
-
-		if (pbuflcdi2c2 == NULL)
-		    pbuflcdi2c2 = xLcdTaskintgetbuf(punitd4x20, 32);
-		if (pbuflcdi2c2 == NULL) morse_trap(2328);				
 
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
@@ -348,7 +338,7 @@ float calib_control_lever(void)
 			/* Both limit switches should not be ON at the same time! */
 			if ((psw_cl_fs_no->on == 0) && (psw_cl_rst_n0->on == 0))	
 			{  //                           01234567890123456789  
-				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL ERR: BOTH SWS ON ");
+				lcdi2cputs(&punitd4x20,CLROW,0,"CL ERR: BOTH SWS ON ");
 //				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 
@@ -356,7 +346,7 @@ float calib_control_lever(void)
 				clfunc.timx = DTWTIME + CLTIMEOUT*1; 		
 				break;
 			}		                     // "...................." 
-			lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
+			lcdi2cprintf(&punitd4x20,CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr++);
 //			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
 //			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = DTWTIME + CLTIMEOUT;
@@ -386,7 +376,7 @@ float calib_control_lever(void)
 			}
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
-				lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVER  %5d  ",clfunc.toctr++);
+				lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVER  %5d  ",clfunc.toctr++);
 //				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 				clfunc.timx = DTWTIME + CLTIMEOUT;
 			}
@@ -409,7 +399,7 @@ float calib_control_lever(void)
 				if ((int)(clfunc.timx - DTWTIME) < 0)
 				{
 //					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
- 					lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVERa   %5d  ",clfunc.toctr++);
+ 					lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVERa   %5d  ",clfunc.toctr++);
 //					lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}
@@ -432,7 +422,7 @@ float calib_control_lever(void)
 
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
-				lcdi2cprintf(&pbuflcdi2c1,CLROW,0,"CLOSE LEVERb   %5d  ",clfunc.toctr++);  
+				lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVERb   %5d  ",clfunc.toctr++);  
 				clfunc.timx = DTWTIME + CLTIMEOUT; 
 			}
 			break;
@@ -446,7 +436,7 @@ float calib_control_lever(void)
 			/* Sanity check. */
 			if (frange < clfunc.range_er)
 			{
-				lcdi2cputs(&pbuflcdi2c1,CLROW,0,"CL RANGE ERROR      ");			
+				lcdi2cputs(&punitd4x20,CLROW,0,"CL RANGE ERROR      ");			
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 				clfunc.state = INITLCD1;
 				clfunc.timx = DTWTIME + CLTIMEOUT*2; 		

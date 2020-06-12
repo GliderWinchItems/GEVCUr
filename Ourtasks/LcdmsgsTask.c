@@ -54,39 +54,6 @@ void StartLcdmsgsTask(void* argument)
 	// Wait until LcdTask has completed instantiation of LCD units
 	while (punitd4x20 == NULL) osDelay(2);
 
-	// Four one line buffers for 4x20 unit 
-	struct LCDTASK_LINEBUF* pu01 = xLcdTaskintgetbuf(punitd4x20,20);
-	struct LCDTASK_LINEBUF* pu02 = xLcdTaskintgetbuf(punitd4x20,20);
-	struct LCDTASK_LINEBUF* pu03 = xLcdTaskintgetbuf(punitd4x20,20);
-	struct LCDTASK_LINEBUF* pu04 = xLcdTaskintgetbuf(punitd4x20,20);
-	if (pu01 == NULL) morse_trap(701);
-	if (pu02 == NULL) morse_trap(702);
-	if (pu03 == NULL) morse_trap(703);
-	if (pu04 == NULL) morse_trap(704);
-
-#ifdef LCD4x16and2x16
-	// Four one line buffers for 4x16 unit 
-	struct LCDTASK_LINEBUF* pu11 = xLcdTaskintgetbuf(punitd4x16,16);
-	struct LCDTASK_LINEBUF* pu12 = xLcdTaskintgetbuf(punitd4x16,16);
-	struct LCDTASK_LINEBUF* pu13 = xLcdTaskintgetbuf(punitd4x16,16);
-	struct LCDTASK_LINEBUF* pu14 = xLcdTaskintgetbuf(punitd4x16,16);
-	if (pu11 == NULL) morse_trap(711);
-	if (pu12 == NULL) morse_trap(712);
-	if (pu13 == NULL) morse_trap(713);
-	if (pu14 == NULL) morse_trap(714);
-
-	// Two one line buffers for 2x16 unit 
-	struct LCDTASK_LINEBUF* pu21 = xLcdTaskintgetbuf(punitd2x16,16);
-	struct LCDTASK_LINEBUF* pu22 = xLcdTaskintgetbuf(punitd2x16,16);
-	struct LCDTASK_LINEBUF* pu23 = xLcdTaskintgetbuf(punitd2x16,16);
-	struct LCDTASK_LINEBUF* pu24 = xLcdTaskintgetbuf(punitd2x16,16);
-	if (pu21 == NULL) morse_trap(721);
-	if (pu22 == NULL) morse_trap(722);
-	if (pu23 == NULL) morse_trap(723);
-	if (pu24 == NULL) morse_trap(724);
-#endif	
-
-
 	/* Let other's know msging is ready. */
 	LcdmsgsTaskflag = 1;
 

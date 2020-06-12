@@ -11,7 +11,6 @@
 #include "ADCTask.h"
 #include "adctask.h"
 #include "LEDTask.h"
-
 #include "GevcuEvents.h"
 #include "GevcuStates.h"
 #include "GevcuTask.h"
@@ -19,25 +18,19 @@
 #include "contactor_control.h"
 #include "yprintf.h"
 #include "lcdprintf.h"
-
 #include "gevcu_idx_v_struct.h"
 #include "morse.h"
 #include "adcparamsinit.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
 #include "control_law_v1.h"
-
 #include "LcdTask.h"
 #include "LcdmsgsetTask.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay
 
-
 extern struct LCDI2C_UNIT* punitd4x20; // Pointer LCDI2C 4x20 unit
-
-/* LCD output buffer pointer. */
-static struct LCDTASK_LINEBUF*   pbuflcdi2s1; // Ptr to a LCDI2C unit 4x20
 
 enum GEVCU_INIT_SUBSTATEA
 {
@@ -75,10 +68,10 @@ void payloadfloat(uint8_t *po, float f)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg1   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
-static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_INT           ");}
+static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_INT           ");}
 
 static void lcdmsg2    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD uart
-static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
+static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
 
  /* LCDI2C 4x20 msg. */
 static struct LCDMSGSET lcdi2cfunc;
@@ -97,11 +90,6 @@ void GevcuStates_GEVCU_INIT(void)
 		/* Wait for task that instantiates the LCD display. */
 		while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
   		if (punitd4x20 == NULL) morse_trap(2326);
-
-  		/* Get LCD I2C buffer used by GevcuStates. */
-		if (pbuflcdi2s1 == NULL)
-	    	pbuflcdi2s1 = xLcdTaskintgetbuf(punitd4x20, 32);
-		if (pbuflcdi2s1 == NULL) morse_trap(82);				
 
 		msgflag = 0; // One-msg flag, JIC
 
@@ -176,8 +164,8 @@ void GevcuStates_GEVCU_INIT(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg3    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
+static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
 
 //#define DEHRIGTEST // Uncomment to skip contactor response waits
 
@@ -242,7 +230,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg4   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE          ");}
-static void lcdi2cmsg4(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_SAFE          ");}
+static void lcdi2cmsg4(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_SAFE          ");}
 
 void GevcuStates_GEVCU_SAFE(void)
 {
@@ -287,7 +275,7 @@ void GevcuStates_GEVCU_SAFE(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg5   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
-static void lcdi2cmsg5(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
+static void lcdi2cmsg5(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
 
 void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 {
@@ -344,7 +332,7 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg6   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE        ");}
-static void lcdi2cmsg6(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_ACTIVE        ");}
+static void lcdi2cmsg6(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ACTIVE        ");}
 
 
 void GevcuStates_GEVCU_ACTIVE(void)
@@ -383,10 +371,10 @@ void GevcuStates_GEVCU_ACTIVE(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 static void lcdmsg7   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
-static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
+static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
 
 static void lcdmsg8   (void){lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");}
-static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&pbuflcdi2s1,           GEVCUTSK,0,"GEVCU_ARM           ");}
+static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ARM           ");}
 
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {

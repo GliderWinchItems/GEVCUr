@@ -439,13 +439,13 @@ DiscoveryF4 LEDs --
 	Qidret = lcdmsg_init(16);
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
-  /* LCD I2C message handling. (taskpriority, max queued items). */
+  /* LCD I2C: message handling. (taskpriority, number buffers). */
   osThreadId retThrd =  xLcdTaskCreate(0,16);
   if (retThrd == NULL) morse_trap(123);
 
-  retThrd= xLcdmsgsTaskCreate(0, 16);
-  if (retThrd == NULL) morse_trap(124);
-
+  /* LCD I2C: message generation (calls to 'printf or'puts). 
+  'printf and overrun stalls take place in this task.  
+  (task priority, number in queue of pointer|union) */
   retThrd= xLcdmsgsetTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(125);
 
@@ -983,15 +983,6 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 // LCD msg: Main 
 //      
-/* LCD I2C output buffer pointer. */
-static struct LCDTASK_LINEBUF*   pbuflcdi2cm1; // Ptr to LCDI2C unit 4x20 buffer #1 in main
-  #ifdef TWOCALLSWITHONEARGUMENT  
-static struct LCDTASK_LINEBUF*   pbuflcdi2cm2; // Ptr to LCDI2C unit 4x20 buffer #2 in main
-static struct LCDTASK_LINEBUF*   pbuflcdi2cm3; // Ptr to LCDI2C unit 4x20 buffer #3 in main
-  #else
-static struct LCDTASK_LINEBUF*   pbuflcdi2cm4; // Ptr to LCDI2C unit 4x20 buffer #4 in main
-  #endif
-
 static struct LCDMSGSET lcdi2cfunc1;
   #ifdef TWOCALLSWITHONEARGUMENT  
 static struct LCDMSGSET lcdi2cfunc2;
@@ -1000,12 +991,12 @@ static struct LCDMSGSET lcdi2cfunc3;
 static struct LCDMSGSET lcdi2cfunc4;
   #endif
 //                                                                         "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&pbuflcdi2cm1,0,0,"GEVCUr 20-06-09 0008");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 20-06-09 0008");}
   #ifdef TWOCALLSWITHONEARGUMENT  
-static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm2,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
-static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm3,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
+static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
+static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
   #else
-static void lcdi2cmsgM1c(union LCDSETVAR u){lcdi2cprintf(&pbuflcdi2cm4,DMOCSPDTQ, 0,"S%6i   T%6.1f  ",u.u32two[0],u.ftwo[1]);}
+static void lcdi2cmsgM1c(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i   T%6.1f  ",u.u32two[0],u.ftwo[1]);}
   #endif
 
 // LCD UART msg
@@ -1079,9 +1070,6 @@ void StartDefaultTask(void const * argument)
       if (punitd4x20 == NULL) morse_trap(2326);
 
   // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
-  if (pbuflcdi2cm1 == NULL)
-      pbuflcdi2cm1 = xLcdTaskintgetbuf(punitd4x20, 32);
-  if (pbuflcdi2cm1 == NULL) morse_trap(82); 
   lcdi2cfunc1.ptr = lcdi2cmsgm1;
 
   if (LcdmsgsetTaskQHandle == NULL) morse_trap(2323);
@@ -1089,29 +1077,17 @@ void StartDefaultTask(void const * argument)
 
   // Get buffers and partially initialize for later use.
 #ifdef TWOCALLSWITHONEARGUMENT  
-  if (pbuflcdi2cm2 == NULL)
-      pbuflcdi2cm2 = xLcdTaskintgetbuf(punitd4x20, 32);
-  if (pbuflcdi2cm2 == NULL) morse_trap(82); 
   lcdi2cfunc2.ptr = lcdi2cmsgM1a;
-  
-  if (pbuflcdi2cm3 == NULL)
-      pbuflcdi2cm3 = xLcdTaskintgetbuf(punitd4x20, 32);
-  if (pbuflcdi2cm3 == NULL) morse_trap(82); 
   lcdi2cfunc3.ptr = lcdi2cmsgM1b;
-
 #else
 // One call with two arguments
-if (pbuflcdi2cm4 == NULL)
-      pbuflcdi2cm4 = xLcdTaskintgetbuf(punitd4x20, 32);
-  if (pbuflcdi2cm4 == NULL) morse_trap(82); 
   lcdi2cfunc4.ptr = lcdi2cmsgM1c;
 #endif
 
 #ifdef TESTLCDPRINTF
 	uint32_t lcdrow = 0;
 	uint32_t lcdctr = 0;
-	uint32_t lcdret = 0;
-	
+	uint32_t lcdret = 0;	
 #endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS

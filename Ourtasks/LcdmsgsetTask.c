@@ -40,7 +40,7 @@ struct LCDMSGSET lsv;
  * osThreadId xLcdmsgsetTaskCreate(uint32_t taskpriority, uint16_t numbcb);
  * @brief	: Create task; task handle created is global for all to enjoy!
  * @param	: taskpriority = Task priority (just as it says!)
- * @param	: numbcb = number of message requests allowed in queue
+ * @param	: numbcb = number of message generation requests allowed in queue
  * @return	: LcdmsgsTaskHandle
  * *************************************************************************/
 osThreadId xLcdmsgsetTaskCreate(uint32_t taskpriority, uint16_t numbcb)
