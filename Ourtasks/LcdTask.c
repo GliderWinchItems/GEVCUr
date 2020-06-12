@@ -254,7 +254,7 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 
 	/* Construct line of data.  Stop filling buffer if it is full. */
 	va_start(argp, fmt);
-	padd->size = vsnprintf((char*)&padd->buf[0], LCDLINEMAX, fmt, argp);
+	padd->size = vsnprintf((char*)&padd->buf[0], LCDLINEMAX+2, fmt, argp);
 	va_end(argp);
 
 	/* Release semaphore controlling vsnprintf. */
@@ -272,12 +272,9 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 	while ((xQueueSendToBack(LcdTaskQHandle, &padd, OSDELAY1) == pdFAIL) && (ct++ < QDELAY1) )
 	if (ct >= QDELAY1) morse_trap(384);
 
-
-
 	/* Advance pointer to next available buffer. */
 	tmp = padd->size;
 	padd += 1; if (padd == pend) padd = pbegin;
-
 
 	/* Overrun stall. Wait for open buffer position. */
 	// This prevents the *NEXT* entry into this routine from overrunning
@@ -286,7 +283,6 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 	ct = 0;
 	while ((padd == ptaken) && (ct++ < QDELAY2)) osDelay(OSDELAY2);
 	if (ct >= QDELAY2) morse_trap(385);
-
 
 	return tmp;
 }

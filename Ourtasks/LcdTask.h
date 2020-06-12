@@ -21,7 +21,7 @@ struct LCDTASK_LINEBUF
 	 int8_t size;               // Number of bytes to be sent
   uint8_t linereq;            // Line number requested(0 - n)
   uint8_t colreq;             // Column number requested(0 - n)
-  uint8_t buf[LCDLINEMAX];    // Data to display
+  uint8_t buf[LCDLINEMAX+1];  // Data to display (plus zero terminator)
 };
 
 struct LCDPARAMS 
