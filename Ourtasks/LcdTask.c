@@ -260,6 +260,8 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 	/* Release semaphore controlling vsnprintf. */
 	xSemaphoreGive( vsnprintfSemaphoreHandle );
 
+	if (padd->size < 0) return 0; // Error encountered
+
 	/* If vsnprintf tried to write too many chars, limit the count. */
 	if (padd->size > (LCDLINEMAX+1)) padd->size = LCDLINEMAX;
 
@@ -308,7 +310,7 @@ int lcdi2cputs(struct LCDI2C_UNIT** pplb, int row, int col, char* pchr)
 	padd->linereq = row;  // Line (e.g. 0 - 3)
 	padd->colreq  = col;  // Column (e.g. 0 - 18)
 
-	strncpy((char*)&padd->buf[0],pchr,LCDLINEMAX);	// Copy and limit size.
+	strncpy((char*)&padd->buf[0],pchr,LCDLINEMAX+1);	// Copy and limit size.
 
 	/* Set size sent. */
 	if (sz >= LCDLINEMAX)	// Did strcpy truncate?
