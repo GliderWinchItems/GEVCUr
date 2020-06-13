@@ -1019,9 +1019,10 @@ static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmo
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
+  //MX_USB_DEVICE_Init();
 //  /* USER CODE BEGIN 5 */
 
-//osDelay(0); // Debugging HardFault
+//osDelay(90); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS

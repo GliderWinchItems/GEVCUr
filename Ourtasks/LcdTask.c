@@ -260,9 +260,9 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 	/* Release semaphore controlling vsnprintf. */
 	xSemaphoreGive( vsnprintfSemaphoreHandle );
 
-	if (padd->size < 0) return 0; // Error encountered
+	if (padd->size < 0) return 0; // vsnprintf error encountered
 
-	/* If vsnprintf tried to write too many chars, limit the count. */
+	/* If vsnprintf truncated the writing, limit the count. */
 	if (padd->size > (LCDLINEMAX+1)) padd->size = LCDLINEMAX;
 
 	/* Place pointer to Buffer Control Block pointer on queue to LcdTask */
