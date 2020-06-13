@@ -346,7 +346,7 @@ float calib_control_lever(void)
 				clfunc.timx = DTWTIME + CLTIMEOUT*1; 		
 				break;
 			}		                     // "...................." 
-			lcdi2cprintf(&punitd4x20,CLROW,0,"FULL FWD LEVER %5d abcdefg",clfunc.toctr++);
+			lcdi2cprintf(&punitd4x20,CLROW,0,"FULL FWD LEVER %5d ",clfunc.toctr++);
 //			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
 //			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
 			clfunc.timx = DTWTIME + CLTIMEOUT;
@@ -399,7 +399,7 @@ float calib_control_lever(void)
 				if ((int)(clfunc.timx - DTWTIME) < 0)
 				{
 //					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
- 					lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVERa   %5d ",clfunc.toctr++);
+ 					lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVERa   %5d",clfunc.toctr++);
 //					lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}

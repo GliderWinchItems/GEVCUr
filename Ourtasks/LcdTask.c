@@ -254,14 +254,14 @@ int lcdi2cprintf(struct LCDI2C_UNIT** pplb, int row, int col, const char *fmt, .
 
 	/* Construct line of data.  Stop filling buffer if it is full. */
 	va_start(argp, fmt);
-	padd->size = vsnprintf((char*)&padd->buf[0], LCDLINEMAX+2, fmt, argp);
+	padd->size = vsnprintf((char*)&padd->buf[0], LCDLINEMAX+1, fmt, argp);
 	va_end(argp);
 
 	/* Release semaphore controlling vsnprintf. */
 	xSemaphoreGive( vsnprintfSemaphoreHandle );
 
-	/* JIC */
-	if (padd->size == 0) return 0;
+	/* If vsnprintf tried to write too many chars, limit the count. */
+	if (padd->size > (LCDLINEMAX+1)) padd->size = LCDLINEMAX;
 
 	/* Place pointer to Buffer Control Block pointer on queue to LcdTask */
 	//   When queue is full, wait a limited amount of time for LCDTask to
