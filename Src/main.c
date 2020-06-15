@@ -254,7 +254,7 @@ int main(void)
 
 	/* Setup TX linked list for CAN  */
    // CAN1 (CAN_HandleTypeDef *phcan, uint8_t canidx, uint16_t numtx, uint16_t numrx);
-	pctl0 = can_iface_init(&hcan1, 0, 32, 64);
+	pctl0 = can_iface_init(&hcan1, 0, 32, 32);
 	if (pctl0 == NULL) morse_trap(7); // Panic LED flashing
 	if (pctl0->ret < 0) morse_trap(77);
 
@@ -326,7 +326,8 @@ DiscoveryF4 LEDs --
   /* init code for USB_DEVICE */
 
 //taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
+  osDelay(0);
 //taskEXIT_CRITICAL();
 
 
@@ -379,10 +380,10 @@ DiscoveryF4 LEDs --
 	xMailboxTaskCreate(2); // (arg) = priority
 
 	/* Create GatewayTask */
-	xGatewayTaskCreate(1); // (arg) = priority
+	xGatewayTaskCreate(2); // (arg) = priority
 
 	/* GEVCUr state machine. */
-	Thrdret = xGevcuTaskCreate(1); // (arg) = priority
+	Thrdret = xGevcuTaskCreate(2); // (arg) = priority
 	if (Thrdret == NULL) morse_trap(216);
 
 	/* Create Mailbox control block w 'take' pointer for each CAN module. */
@@ -763,7 +764,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 35000; //15700;
+  sConfigOC.Pulse = 35000;//15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -1020,7 +1021,7 @@ void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
   //MX_USB_DEVICE_Init();
-//  /* USER CODE BEGIN 5 */
+  /* USER CODE BEGIN 5 */
 
 //osDelay(90); // Debugging HardFault
 
