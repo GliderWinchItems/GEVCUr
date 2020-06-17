@@ -256,7 +256,8 @@ extern CAN_HandleTypeDef hcan1;
 				do
 				{
 					/* Get pointer into CAN msg circular buffer */
-					pncan = can_iface_get_CANmsg(ptake[i]);
+//					pncan = can_iface_get_CANmsg(ptake[i]);
+					pncan = Mailboxgetbuf(i);
 					if (pncan != NULL)
 					{			
 					/* Convert binary to the ascii/hex format for PC. */

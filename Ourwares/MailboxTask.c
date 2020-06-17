@@ -19,6 +19,11 @@ extern osThreadId GatewayTaskHandle;
 /* One struct for each CAN module, e.g. CAN 1, 2, 3, ... */
 struct MAILBOXCANNUM mbxcannum[STM32MAXCANNUM] = {0};
 
+#ifdef GATEWAYTASKINCLUDED
+#define GATEWAYBUFSIZE 16
+	struct MBXTOGATEBUF mbxgatebuf[STM32MAXCANNUM] = {0};
+#endif
+
 osThreadId MailboxTaskHandle; // This wonderful task handle
 
 void StartMailboxTask(void const * argument);
@@ -253,7 +258,49 @@ taskENTER_CRITICAL();
 taskEXIT_CRITICAL();
 	return pmbx;
 }
+/* *************************************************************************
+ * struct CANRCVBUFN* Mailboxgetbuf(int i);
+ * @brief	: Get NCAN buffer from Mailbox circular buffer
+ * @param	: i = index for CAN unit (0, 1)\
+ * @return  : NULL = none available; otherwise, points to NCAN msg
+ * *************************************************************************/
+#ifdef GATEWAYTASKINCLUDED
+struct CANRCVBUFN* Mailboxgetbuf(int i)
+{
+	struct CANRCVBUFN* ptmp;
 
+	/* JIC: do not exceed setup indices. */
+	if ((i != 0) 
+	#ifdef CONFIGCAN2 
+		&& (i != 1)
+	#endif 
+		) return NULL;
+
+	if (mbxgatebuf[i].ptake == mbxgatebuf[i].padd) 
+		return NULL;
+
+	ptmp = mbxgatebuf[i].ptake++;
+	if (mbxgatebuf[i].ptake == mbxgatebuf[i].pend) 
+		mbxgatebuf[i].ptake = mbxgatebuf[i].pbegin;
+	return ptmp;
+}
+#endif
+/* *************************************************************************
+ * static void gatebufsetup(struct CANTAKEPTR* p);
+ * @brief	: Allocate array for CAN msgs to be passed to GatewayTask
+ * @param	: p = pointer to pointer struct for managing circular buffer
+ * *************************************************************************/
+#ifdef GATEWAYTASKINCLUDED
+ static void gatebufsetup(struct MBXTOGATEBUF* p)
+ {
+	p->padd = (struct CANRCVBUFN*)calloc(GATEWAYBUFSIZE, sizeof(struct CANRCVBUFN));
+	if (p->padd == NULL) morse_trap(341);
+	p->ptake  = p->padd;
+	p->pbegin = p->padd;
+	p->pend   = p->padd + GATEWAYBUFSIZE;
+	return;
+ }
+#endif
 /* *************************************************************************
  * osThreadId xMailboxTaskCreate(uint32_t taskpriority);
  * @brief	: Create task; task handle created is global for all to enjoy!
@@ -268,6 +315,14 @@ osThreadId xMailboxTaskCreate(uint32_t taskpriority)
   MailboxTaskHandle = osThreadCreate(osThread(MailboxTask), NULL);
 
 	vTaskPrioritySet( MailboxTaskHandle, taskpriority );
+
+#ifdef GATEWAYTASKINCLUDED
+	gatebufsetup(&mbxgatebuf[0]); // CAN1
+  #ifdef CONFIGCAN2 // CAN2 setup
+	gatebufsetup(&mbxgatebuf[1]); // CAN2
+  #endif
+#endif
+
 	return MailboxTaskHandle;
 }
 /* *************************************************************************
@@ -324,8 +379,22 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
 
 					if (pncan != NULL)
 					{ // Here, CAN msg is available
-						flag = 1;
+						flag = 1; // Flag notifies gateway task later
 						loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
+
+				#ifdef GATEWAYTASKINCLUDED
+						/* JIC: do not exceed setup indices. */
+						if ((i == 0) 
+						#ifdef CONFIGCAN2 
+							|| (i == 1)
+						#endif 
+							)							
+						{
+							*mbxgatebuf[i].padd++ = *pncan; // Save CAN msg for gateway task.
+							if (mbxgatebuf[i].padd == mbxgatebuf[i].pend) 
+								mbxgatebuf[i].padd  = mbxgatebuf[i].pbegin;
+						}
+				#endif
 					}
 				} while (pncan != NULL);
 

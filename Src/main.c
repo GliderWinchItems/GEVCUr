@@ -329,7 +329,7 @@ DiscoveryF4 LEDs --
 //  MX_USB_DEVICE_Init();
 //taskEXIT_CRITICAL();
 
-
+//osDelay(1);
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
 	Thrdret = xSerialTaskSendCreate(1);	// Create task and set Task priority
@@ -1037,7 +1037,7 @@ void StartDefaultTask(void const * argument)
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
