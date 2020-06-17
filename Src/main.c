@@ -326,8 +326,8 @@ DiscoveryF4 LEDs --
   /* init code for USB_DEVICE */
 
 //taskENTER_CRITICAL();
-  MX_USB_DEVICE_Init();
-  osDelay(0);
+//  MX_USB_DEVICE_Init();
+//  osDelay(0);
 //taskEXIT_CRITICAL();
 
 
@@ -992,7 +992,7 @@ static struct LCDMSGSET lcdi2cfunc3;
 static struct LCDMSGSET lcdi2cfunc4;
   #endif
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrP2 20200613 14");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrP2 20200616 15");}
   #ifdef TWOCALLSWITHONEARGUMENT  
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}

@@ -453,7 +453,7 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *phcan)
 	struct CAN_CTLBLOCK* pctl = getpctl(phcan); // Lookup our pointer
 
 	/* Loop back CAN =>TX<= msgs. */
-volatile	struct CAN_POOLBLOCK* p = pctl->pend.plinknext;
+volatile	struct CAN_POOLBLOCK* p = pctl->pxprv->plinknext;//pctl->pend.plinknext;
 	struct CANRCVBUFN ncan;
 	ncan.pctl = pctl;
 	ncan.can = p->can;

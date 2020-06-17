@@ -23,6 +23,17 @@
 #define MBXNOTEBITCAN2 (1 << 1)	// Notification bit for CAN2 msgs
 #define MBXNOTEBITCAN3 (1 << 2)	// Notification bit for CAN3 msgs
 
+
+/* Circular buffer pointers for Mailbox-to-Gateway CAN msgs */
+struct MBXTOGATEBUF
+{
+	struct CANRCVBUFN* pbegin;
+	struct CANRCVBUFN* pend;
+	struct CANRCVBUFN* padd;
+	struct CANRCVBUFN* ptake;
+	struct CANRCVBUFN* pbuf;
+};
+
 /* Notification block for linked list */
 struct CANNOTIFYLIST
 {
@@ -108,6 +119,11 @@ struct CANNOTIFYLIST* MailboxTask_enable_notifications (struct MAILBOXCAN* pmbx)
 /*	@brief	: Disable, enable mailbox notifications
  * @param	: pmbx = pointer to mailbox
  * @return	: Pointer to notification block, for calling task; NULL = task not found
+ * *************************************************************************/
+struct CANRCVBUFN* Mailboxgetbuf(int i);
+/* @brief	: Get NCAN buffer from Mailbox circular buffer
+ * @param	: i = index for CAN unit (0, 1)\
+ * @return  : NULL = none available; otherwise, points to NCAN msg
  * *************************************************************************/
 
 extern osThreadId MailboxTaskHandle;
