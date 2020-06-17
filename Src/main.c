@@ -326,8 +326,8 @@ DiscoveryF4 LEDs --
   /* init code for USB_DEVICE */
 
 //taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//  osDelay(0);
+  //MX_USB_DEVICE_Init();
+  //osDelay(0);
 //taskEXIT_CRITICAL();
 
 
@@ -453,7 +453,7 @@ DiscoveryF4 LEDs --
 
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
+  //MX_USB_DEVICE_Init();
 //taskEXIT_CRITICAL();
 
 /* =================================================== */
@@ -1020,10 +1020,10 @@ static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmo
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  //MX_USB_DEVICE_Init();
+//  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-//osDelay(90); // Debugging HardFault
+//osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS
