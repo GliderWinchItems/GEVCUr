@@ -178,6 +178,9 @@ void lcdout(void)
 	/* Do not update until calibration complete. */
 	if (flag_clcalibed == 0) return; 
 
+	/* Skip LCD msg when contactor fault msgs need to be displayed. */
+	if ((lcdcontext & LCDX_CNTR) != 0) return;
+
 /* Note: pacing of this is because it is called from defaultTask loop */
 #ifdef TWOCALLSWITHONEARGUMENT 		
 	/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
@@ -490,6 +493,7 @@ float calib_control_lever(void)
 					clfunc.curpos =  0; // Force 0.0%
 //					lcdout(); // Output to LCD
 					flag_clcalibed = 1; // Set calibrated flag
+					lcdcontext |= LCDX_CLIB; // Flag for LCD msg priority
 					break;	// Done
 				}
 				else

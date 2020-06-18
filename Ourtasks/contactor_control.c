@@ -72,12 +72,18 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 
 	uint32_t ctr = gevcufunction.swtim1ctr;
 
+	/* Set context for LCD line usage. */
+	if ((pcan->cd.uc[0] & 0xf) == FAULTED) 
+		lcdcontext |= LCDX_CNTR; // Contactor faulted
+	else
+		lcdcontext &= ~LCDX_CNTR; // Not faulted
+
 	/* Check requested state: CONNECT or DISCONNECT. */
 	if (cntctrctl.req == CMDRESET)
 	{ // Here, do a reset which does the disconnecting process. */
 		cntctrctl.cmdsend  = CMDRESET;
-		cntctrctl.nextctr = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
-		cntctrctl.state = CTL_CLEARFAULT; // Start connect sequence when CMDCONNECT given
+		cntctrctl.nextctr  = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
+		cntctrctl.state    = CTL_CLEARFAULT; // Start connect sequence when CMDCONNECT given
 		return;	
 	}
 	/* Here, not RESET means CONNECT. */
@@ -104,7 +110,7 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		if ((pcan->cd.uc[0] & 0xf) != CONNECTED)
 		{
 			cntctrctl.ctr += 1;
-			if (cntctrctl.ctr > 30)
+			if (cntctrctl.ctr > 300)
 			{ // It is taking too long. Re-start
 				cntctrctl.state = CTL_INITTIM;
 				break;
@@ -117,11 +123,19 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 	case CTL_CONNECTED1: // Last LCD msg display
 		contactor_control_msg(pcan); // LCD display
 		cntctrctl.state = CTL_CONNECTED;
+		break;
 
 	case CTL_CONNECTED:
-		// Here no need to respond to received msgs.
-		// 'contactor_control_time' will continue to send CONNECT msgs
+		if ((pcan->cd.uc[0] & 0xf) != DISCONNECTED)
+		{
+			contactor_control_msg(pcan); // LCD display
+			cntctrctl.state = CTL_DISCONNECTED;
+		}
 		break;
+
+	case CTL_DISCONNECTED:
+
+		break;		
 
 	default:
 		morse_trap(343); // Never should happen.

@@ -42,10 +42,8 @@ enum LCD_STATE
 	LCD_CHR
 };
 
-#define DELAY_ROW 1; // Delay for row 
-#define DELAY_COL 1; // Delay for col
-#define DELAY_CHR 1; // Delay following each char
-#define DELAY_SETRC 20; // Delay following set cursor row column
+/* LCD Display */
+uint8_t lcdcontext; // Context: Flag bits for LCD line msg priority
 
 TaskHandle_t LcdTaskHandle = NULL;
 

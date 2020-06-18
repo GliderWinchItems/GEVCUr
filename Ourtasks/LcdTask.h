@@ -13,6 +13,11 @@
 #include "stm32f4xx_hal.h"
 #include "semphr.h"
 
+#define LCDX_CLIB  0x01  // 1 = CL Calibration complete
+#define LCDX_CNTR  0x02  // 1 = Contactor is in fault condition
+#define LCDX_DMOC  0x04  // 1 = DMOC is in fault condition
+
+
 #define LCDLINEMAX 20   // Max length of LCD line
 /* I2C Line buffer */
 struct LCDTASK_LINEBUF
@@ -95,6 +100,8 @@ extern TaskHandle_t   LcdTaskHandle;
 extern struct LCDI2C_UNIT* punitd4x20;
 extern struct LCDI2C_UNIT* punitd4x16;
 extern struct LCDI2C_UNIT* punitd2x16;
+
+extern uint8_t lcdcontext; // Context: Flag bits for LCD line msg priority
 
 extern volatile uint8_t LcdTaskflag;
 

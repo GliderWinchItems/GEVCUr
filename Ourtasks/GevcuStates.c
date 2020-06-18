@@ -67,10 +67,10 @@ void payloadfloat(uint8_t *po, float f)
  * @brief	: Initialization sequence: One Time Only
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg1   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
+//static void lcdmsg1   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
 static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_INT           ");}
 
-static void lcdmsg2    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD uart
+//static void lcdmsg2    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD uart
 static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
 
  /* LCDI2C 4x20 msg. */
@@ -78,7 +78,7 @@ static struct LCDMSGSET lcdi2cfunc;
 
 void GevcuStates_GEVCU_INIT(void)
 {	
-	void (*ptr2)(void); // Pointer to queue LCD msg
+//	void (*ptr2)(void); // Pointer to queue LCD msg
 	struct SWITCHPTR* p;
 
 	uint8_t loopctr = 0;
@@ -103,10 +103,10 @@ void GevcuStates_GEVCU_INIT(void)
 			msgflag = 1; // Don't keep banging away with the same msg
 
 			// Msg on UART LCD
-			ptr2 = &lcdmsg1; // LCD msg pointer
-			xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//			ptr2 = &lcdmsg1; // LCD msg pointer
+//			xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
-			// Repeat msg on LCD I2C unit
+			// LCD I2C unit msg
 			lcdi2cfunc.ptr = lcdi2cmsg1;
 			// Place ptr to struct w ptr 
 		 	if (LcdmsgsetTaskQHandle != NULL)
@@ -137,8 +137,8 @@ void GevcuStates_GEVCU_INIT(void)
 			if (msgflag == 0)
 			{ 
 				msgflag = 1; // Don't keep banging away with the same msg
-				ptr2 = &lcdmsg2; // LCD msg pointer
-				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//				ptr2 = &lcdmsg2; // LCD msg pointer
+//				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 				// Repeat msg on LCD I2C unit
 				lcdi2cfunc.ptr = lcdi2cmsg2a;
@@ -163,7 +163,6 @@ void GevcuStates_GEVCU_INIT(void)
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg3    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
 static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
 static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
 
@@ -171,12 +170,12 @@ static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEV
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
-	void (*ptr2)(void) = &lcdmsg3; // LCD msg pointer
+//	void (*ptr2)(void) = &lcdmsg3; // LCD msg pointer
 
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg3a; 
@@ -229,18 +228,18 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg4   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE          ");}
+//static void lcdmsg4   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_SAFE          ");}
 static void lcdi2cmsg4(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_SAFE          ");}
 
 void GevcuStates_GEVCU_SAFE(void)
 {
-	void (*ptr2)(void) = &lcdmsg4; // LCD msg pointer
+//	void (*ptr2)(void) = &lcdmsg4; // LCD msg pointer
 
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
 
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg4;
@@ -274,17 +273,17 @@ void GevcuStates_GEVCU_SAFE(void)
  * @brief	: Contactor & DMOC are ready. Keep fingers to yourself.
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg5   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
+//static void lcdmsg5   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
 static void lcdi2cmsg5(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ACTIVE_TRANSIT");}
 
 void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 {
-	void (*ptr2)(void) = &lcdmsg5; // LCD msg pointer
+//	void (*ptr2)(void) = &lcdmsg5; // LCD msg pointer
 
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 				// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg5;
@@ -331,18 +330,18 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
  * @brief	: Contactor & DMOC are ready. Keep fingers to yourself.
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg6   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE        ");}
+//static void lcdmsg6   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ACTIVE        ");}
 static void lcdi2cmsg6(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ACTIVE        ");}
 
 
 void GevcuStates_GEVCU_ACTIVE(void)
 {
-	void (*ptr2)(void) = &lcdmsg6; // LCD msg pointer
+//	void (*ptr2)(void) = &lcdmsg6; // LCD msg pointer
 
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg6;
 		// Place ptr to struct w ptr 
@@ -370,15 +369,15 @@ void GevcuStates_GEVCU_ACTIVE(void)
  * @brief	: Do everything needed to get into state
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdmsg7   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
+//static void lcdmsg7   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
 static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
 
-static void lcdmsg8   (void){lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");}
+//static void lcdmsg8   (void){lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");}
 static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ARM           ");}
 
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {
-	void (*ptr2)(void); // Pointer to queue LCD msg
+//	void (*ptr2)(void); // Pointer to queue LCD msg
 
 		/* Make sure Op has CL in zero position. */
 		if (clfunc.curpos > 0)
@@ -386,8 +385,8 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 			if (msgflag == 0)
 			{ 
 				msgflag = 1; // Don't keep banging away with the same msg
-				ptr2 = &lcdmsg7; // LCD msg pointer
-				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//				ptr2 = &lcdmsg7; // LCD msg pointer
+//				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 						// Repeat msg on LCD I2C unit
 				lcdi2cfunc.ptr = lcdi2cmsg7;
 				// Place ptr to struct w ptr 
@@ -397,8 +396,8 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 			return;
 		}
 
-		ptr2 = &lcdmsg8; // LCD msg pointer
-		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
+//		ptr2 = &lcdmsg8; // LCD msg pointer
+//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg8;
