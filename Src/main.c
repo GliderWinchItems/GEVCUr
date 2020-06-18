@@ -992,17 +992,18 @@ static struct LCDMSGSET lcdi2cfunc3;
 static struct LCDMSGSET lcdi2cfunc4;
   #endif
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrP2 20200618 18");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrP2 20200618 19");}
   #ifdef TWOCALLSWITHONEARGUMENT  
 static void lcdi2cmsgM1a(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i  ",   u.u32);}
 static void lcdi2cmsgM1b(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 9,"T%6.1f  ",u.f);}
   #else
-static void lcdi2cmsgM1c(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i   T%6.1f  ",u.u32two[0],u.ftwo[1]);}
+static void lcdi2cmsgM1c(union LCDSETVAR u){ 
+  if ((lcdcontext & LCDX_CNTR) == 0) // Skip if Contactor is in Fault: do not overwrite Contactor error msg
+  lcdi2cprintf(&punitd4x20,DMOCSPDTQ, 0,"S%6i   T%6.1f  ",u.u32two[0],u.ftwo[1]);}
   #endif
 
 // LCD UART msg
-struct SERIALSENDTASKBCB* pbuflcd;
-static void lcdmsgM1(void){lcdprintf(&pbuflcd,DMOCSPDTQ,0,"S%6i     T%6.1f ",dmocctl[DMOC_SPEED].speedact,dmocctl[DMOC_SPEED].ftorquereq);}
+//struct SERIALSENDTASKBCB* pbuflcd;
 
 
 /* USER CODE END 4 */
@@ -1023,7 +1024,7 @@ void StartDefaultTask(void const * argument)
 //  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-//osDelay(0); // Debugging HardFault
+osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 #define DISPLAYSTACKUSAGEFORTASKS
@@ -1035,7 +1036,6 @@ void StartDefaultTask(void const * argument)
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
-//#define TESTLCDPRINTF
 //#define DMOCTESTS
 //#define CONTROLV1DEBUG
 
@@ -1060,11 +1060,6 @@ void StartDefaultTask(void const * argument)
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
 	if (pbuf4 == NULL) morse_trap(12);
 
-	pbuflcd = getserialbuf(&HUARTLCD,64);
-	if (pbuflcd == NULL) morse_trap(12);
-
-	void (*ptrM1)(void) = &lcdmsgM1; // LCD msg pointer
-
   /* LCD I2C msgs used in this task. */
   // Wait for LcdTask to instantiate 4x20 #1 unit. */
   uint8_t loopctr = 0;
@@ -1084,12 +1079,6 @@ void StartDefaultTask(void const * argument)
 #else
 // One call with two arguments
   lcdi2cfunc4.ptr = lcdi2cmsgM1c;
-#endif
-
-#ifdef TESTLCDPRINTF
-	uint32_t lcdrow = 0;
-	uint32_t lcdctr = 0;
-	uint32_t lcdret = 0;	
 #endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
@@ -1204,8 +1193,7 @@ uint8_t ratepace = 0;
 			/* Generate LCD msg for speed actual and commanded torque. */
 			if (flag_clcalibed != 0)
 			{
-HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin, GPIO_PIN_SET); // GREEN
-				xQueueSendToBack(lcdmsgQHandle,&ptrM1,0); // LCD uart
+//HAL_GPIO_TogglePin(GPIOD, LED_GREEN_Pin); // GREEN
 
 #ifdef TWOCALLSWITHONEARGUMENT 
         // LCD I2C: two values requires two calls
@@ -1260,12 +1248,6 @@ HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin, GPIO_PIN_SET); // GREEN
 			if (slowtimectr >= 16)
 			{
 				slowtimectr = 0;
-#ifdef TESTLCDPRINTF
-extern uint32_t lcddbg;
-		lcdret = lcdprintf(&pbuflcd,lcdrow,0,"\n\r01234 %2d %3d %1d",lcdrow,lcdctr,lcddbg);
-		lcdctr += 1;	lcdrow += 1; if (lcdrow >= 4) lcdrow = 0;
-		lcdret = yprintf(&pbuf1,"\n\rlcdret: %d lcdctr: %d lcddbg: %d",lcdret, lcdctr,lcddbg);
-#endif
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
@@ -1333,7 +1315,6 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			{
 				medtimectr = 0;
 			
-/* ##### timer not counted down ##### */
 		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
 #ifdef SHOWSERIALPARALLELSTUFF
