@@ -137,10 +137,6 @@ void GevcuStates_GEVCU_INIT(void)
 			if (msgflag == 0)
 			{ 
 				msgflag = 1; // Don't keep banging away with the same msg
-//				ptr2 = &lcdmsg2; // LCD msg pointer
-//				xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
-
-				// Repeat msg on LCD I2C unit
 				lcdi2cfunc.ptr = lcdi2cmsg2a;
 				if (LcdmsgsetTaskQHandle != NULL)
 	 		   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
@@ -162,9 +158,9 @@ void GevcuStates_GEVCU_INIT(void)
  * void GevcuStates_GEVCU_SAFE_TRANSITION(void);
  * @brief	: Peace and quiet, waiting for hapless Op.
  * *************************************************************************/
-//  20 chars will over-write all display chars from previous msg:       12345678901234567890
-static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
+//  20 chars will over-write all display chars from previous msg:             12345678901234567890
+static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
 
 //#define DEHRIGTEST // Uncomment to skip contactor response waits
 

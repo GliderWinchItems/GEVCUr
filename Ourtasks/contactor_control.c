@@ -11,6 +11,7 @@
 #include "contactor_control_msg.h"
 #include "LcdTask.h"
 #include "LcdmsgsetTask.h"
+#include "lcdprintf.h"
 
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 
@@ -65,6 +66,10 @@ void contactor_control_time(uint32_t ctr)
  * @brief	: Handle contactor command CAN msgs being received
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
+static struct LCDMSGSET lcdi2cfunc1;
+//                                                                             "12345678901234567890"
+static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,CNCTRLCDA,0,"CNTR CLEAR FAULT%4d",u.u32);} 
+
 void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 {
 	/* Update contactor msg payload command byte */
@@ -79,14 +84,14 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		lcdcontext &= ~LCDX_CNTR; // Not faulted
 
 	/* Check requested state: CONNECT or DISCONNECT. */
-	if (cntctrctl.req == CMDRESET)
+	if ((cntctrctl.req & CMDRESET) != 0)
 	{ // Here, do a reset which does the disconnecting process. */
 		cntctrctl.cmdsend  = CMDRESET;
 		cntctrctl.nextctr  = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
 		cntctrctl.state    = CTL_CLEARFAULT; // Start connect sequence when CMDCONNECT given
 		return;	
 	}
-	/* Here, not RESET means CONNECT. */
+	/* Here, not CMDRESET means CONNECT. */
 
 	switch(cntctrctl.state)
 	{
@@ -95,12 +100,16 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		if (pcan->cd.uc[1] != 0)
 		{ // A fault is showing
 			cntctrctl.ctr += 1;
-			if (cntctrctl.ctr < 4)
-			{ // Try to clear it a bunch of times
+			if (cntctrctl.ctr > 4)
+			{ // 
+				cntctrctl.ctr = 0;
+				lcdi2cfunc1.ptr = lcdi2cmsg1;
+				lcdi2cfunc1.u.u32 = cntctrctl.ctr;
+				xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);
 				break;
 			}
-		// Here. Give up and try a connect anyway.
 		}
+		// Here CMDRESET results in fault cleared, and disconnected?
 		cntctrctl.ctr = 0;
 		cntctrctl.state = CTL_CONNECTING;
 
