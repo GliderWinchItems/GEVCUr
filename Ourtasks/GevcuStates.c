@@ -40,6 +40,7 @@ enum GEVCU_INIT_SUBSTATEA
 
 /* Flag queue LCD msg only once. defaultTask will call these lcdprintf functions. */
 static uint8_t msgflag = 0; // 0 = send; 1 = don't send
+static uint8_t msgslow = 0; // Counter for pacing repeated msgs
 
 /* *************************************************************************
  * void payloadfloat(uint8_t *po, float f);
@@ -144,8 +145,9 @@ void GevcuStates_GEVCU_INIT(void)
 			break;
 		}
 
-		/* Go into safe mode,. */
+		/* Transition into safe mode,. */
 		msgflag = 0; // Allow next LCD msg to be sent once
+		msgslow = 255; // Pacing counter 
 		gevcufunction.state = GEVCU_SAFE_TRANSITION;
 		break;
 
@@ -161,6 +163,8 @@ void GevcuStates_GEVCU_INIT(void)
 //  20 chars will over-write all display chars from previous msg:             12345678901234567890
 static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
 static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
+static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
+static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
 
 //#define DEHRIGTEST // Uncomment to skip contactor response waits
 
@@ -193,6 +197,31 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	cntctrctl.req = CMDRESET;
 
 
+	if (cntctrctl.nrflag != 0)
+	{ // Here, contactor is not responding
+		msgslow += 1;
+		if (msgslow >= 48)
+		{ 
+			msgslow = 0;
+			lcdi2cfunc.ptr = lcdi2cmsg3c; 
+   			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+   		}
+		return;
+	}
+
+	if ((cntctrctl.cmdrcv & 0xf) == OTOSETTLING)
+	{ // Waiting for contactor initialization "settling"
+		msgslow += 1;
+		if (msgslow >= 48)
+		{ 
+			msgslow = 0;
+			lcdi2cfunc.ptr = lcdi2cmsg3d; 
+   			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+   		}
+		return;
+	}
+
+
 #ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
@@ -216,6 +245,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
 
 	msgflag = 0; // Allow next LCD msg to be sent once
+
 	gevcufunction.state = GEVCU_SAFE;
 	return;
 }

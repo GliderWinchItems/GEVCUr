@@ -26,6 +26,10 @@ void contactor_control_init(void)
 	cntctrctl.state    = CTL_INITTIM;
 	cntctrctl.req      = CMDRESET;  // Start off disconnected
 	cntctrctl.sendflag = 0;
+	cntctrctl.responsectr = 0;    // No response counter
+	cntctrctl.nrflag   = 1;  // No response state is not responding
+
+
 
 	/* Initialize keepalive CAN msg. */
 	cntctrctl.canka.pctl       = pctl0; // CAN control block ptr, from main.c
@@ -40,8 +44,28 @@ void contactor_control_init(void)
  * @brief	: Timer input to state machine
  * @param	: ctr = sw1ctr time ticks
  ************************************************************************************************************* */
+static struct LCDMSGSET lcdi2cfunc2;
+//                                                                             "12345678901234567890"
+static void lcdi2cmsg2(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,CNCTRLCDA,0,"CNTR NO RESPNSE%5d",u.u32);} 
+
 void contactor_control_time(uint32_t ctr)
 {
+	cntctrctl.responsectr += 1;    // No response counter
+	if (cntctrctl.responsectr >= CNCTR_NORESPONSECT)
+	{ // Here, too many time ticks without a received msg.
+	/* Set context for LCD line usage. */
+		lcdcontext |= LCDX_CNTR; // Contactor faulted
+		cntctrctl.nrflag = 1;
+		cntctrctl.slow += 1;
+		if (cntctrctl.slow >= CNCTR_SLOW)
+		{ 
+			cntctrctl.slow = 0;
+			lcdi2cfunc2.ptr = lcdi2cmsg2;
+			lcdi2cfunc2.u.u32 = cntctrctl.responsectr;
+			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc2, 0);
+		}
+	}
+
 	if (cntctrctl.state == CTL_INITTIM)
 	{ // OTO 
 		cntctrctl.nextctr  = ctr + CNCTR_KATICKS; // Time to send next KA msg
@@ -69,9 +93,19 @@ void contactor_control_time(uint32_t ctr)
 static struct LCDMSGSET lcdi2cfunc1;
 //                                                                             "12345678901234567890"
 static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,CNCTRLCDA,0,"CNTR CLEAR FAULT%4d",u.u32);} 
+static void lcdi2cmsg3(union LCDSETVAR u){lcdi2cputs  (&punitd4x20,CNCTRLCDA,0,"                    ");} // Line of blanks
 
 void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 {
+	/* Any msg received resets no-response counter and msg. */
+	if (cntctrctl.responsectr >= CNCTR_NORESPONSECT)
+	{ // Here we were in a no-response situation
+		lcdi2cfunc1.ptr = lcdi2cmsg3; // Clear NO RESPONSE msg
+		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);
+	}
+	cntctrctl.responsectr = 0; // Reset no-response counter
+	cntctrctl.nrflag = 0;
+
 	/* Update contactor msg payload command byte */
 	cntctrctl.cmdrcv = pcan->cd.uc[0]; // Extract command byte from contactor
 
