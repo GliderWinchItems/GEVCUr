@@ -25,6 +25,7 @@
 Sourced location: ../contactor/OurTasks/ContactorTask.h
 */
 #define CMDCONNECT (1 << 7) // 1 = Connect requested; 0 = Disconnect requested
+#define CMDDISCONNECT 0
 #define CMDRESET   (1 << 6) // 1 = Reset fault requested; 0 = no command
 
 enum CONTACTOR_CONTROL_STATE

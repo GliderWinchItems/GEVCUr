@@ -166,8 +166,6 @@ static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WA
 static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
 static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
 
-//#define DEHRIGTEST // Uncomment to skip contactor response waits
-
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
 //	void (*ptr2)(void) = &lcdmsg3; // LCD msg pointer
@@ -222,7 +220,6 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	}
 
 
-#ifndef DEHRIGTEST
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
 	{ // LCD msg here?
@@ -237,7 +234,6 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	    }
 		return;
 	}
-#endif
 
 	msgflag = 0; // Send LCD msg once
 
@@ -325,16 +321,13 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 		gevcufunction.state = GEVCU_SAFE_TRANSITION;
 		return;
 	}
-
-#ifndef DEHRIGTEST
+	
 	/* Wait for CONNECTED. */
 	if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
 	{ // Put a stalled loop timeout here?
 		cntctrctl.req = CMDCONNECT;
 		return;
 	}
-
-#endif
 
 	/* Contactor connected. */
 
