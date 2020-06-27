@@ -143,9 +143,11 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 				break;
 			}
 		}
-		// Here CMDRESET results in fault cleared, and disconnected?
+		/* Leave in disconnected state until someone calls for connect. */
+		cntctrctl.cmdsend  = CMDDISCONNECT;
 		cntctrctl.ctr = 0;
-		cntctrctl.state = CTL_CONNECTING;
+		cntctrctl.state = CTL_DISCONNECTED;
+		break;
 
 	case CTL_CONNECTING:
 		cntctrctl.cmdsend  = CMDCONNECT;
@@ -177,7 +179,11 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		break;
 
 	case CTL_DISCONNECTED:
-
+		/* Wait for someone to call for connect. */
+		if (cntctrctl.cmdsend == CMDCONNECT)
+		{
+			cntctrctl.state = CTL_CONNECTING;
+		}
 		break;		
 
 	default:
