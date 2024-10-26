@@ -9,6 +9,30 @@
 
 #include <stdio.h>
 
+enum CLSTATE
+{
+	INITLCD,
+	INITLCD1,
+	INITLCD2,
+	INITLCD3,
+	INITLCD4,
+	INITLCD5,
+	INITLCD6,
+	INITLCD7,
+	CLOSE1,
+	CLOSE1WAIT,
+	CLOSE1MAX,
+	OPEN1,
+	OPEN1WAIT,
+	OPEN1MAX,
+	CLOSE2,
+	CLOSE2WAIT,
+	CLCREADY,   // CL calibration complete
+	SEQDONE,
+	SEQDONE1
+};
+
+
 struct CLFUNCTION
 {
 // Min and maximum values observed for control lever

@@ -58,12 +58,15 @@ struct CNTCTRCTL
 {
 	struct CANTXQMSG canka; // CAN keepalive msg
 	uint32_t nextctr;
+	 int32_t responsectr; // No response timeout counter
 	uint16_t ctr;     // Repetition counter
 	uint8_t state;    // State machine
 	uint8_t cmdrcv;   // Latest payload[0] with command
 	uint8_t cmdsend;  // Command we send
 	uint8_t sendflag; // 1 = send CAN msg, 0 = skip
 	uint8_t req;      // Request code: 0 = connect, 1 = disconnect
+	uint8_t slow;     // ctr to slow LCD updates
+	uint8_t nrflag;   // 1 = no-response (to CAN msgs) state; 0 = responding
 };
 
 /* ***********************************************************************************************************/

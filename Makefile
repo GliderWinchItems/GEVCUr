@@ -122,7 +122,7 @@ C_SOURCES += Ourtasks/adc_idx_v_struct.c
 C_SOURCES += Ourtasks/iir_f1.c
 C_SOURCES += Ourtasks/iir_f2.c
 C_SOURCES += Ourtasks/BeepTask.c
-C_SOURCES += Ourtasks/lcdprintf.c
+#C_SOURCES += Ourtasks/lcdprintf.c
 C_SOURCES += Ourtasks/GevcuTask.c
 C_SOURCES += Ourtasks/GevcuStates.c
 C_SOURCES += Ourtasks/GevcuEvents.c
@@ -142,6 +142,10 @@ C_SOURCES += Ourtasks/led_chasing.c
 C_SOURCES += Ourtasks/contactor_control_msg.c
 C_SOURCES += Ourtasks/lcdmsg.c
 C_SOURCES += Ourtasks/control_law_v0.c
+#C_SOURCES += Ourtasks/control_law_v1.c
+C_SOURCES += Ourtasks/lcd_hd44780_i2c.c
+C_SOURCES += Ourtasks/LcdTask.c
+C_SOURCES += Ourtasks/LcdmsgsetTask.c
 
 # /* USER CODE END */ 
 
