@@ -90,7 +90,7 @@ void GevcuStates_GEVCU_INIT(void)
 
 		/* Wait for task that instantiates the LCD display. */
 		while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
-  		if (punitd4x20 == NULL) morse_trap(2326);
+  		if (punitd4x20 == NULL) morse_trap(235);
 
 		msgflag = 0; // One-msg flag, JIC
 

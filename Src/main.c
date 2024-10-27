@@ -47,7 +47,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
@@ -91,6 +90,10 @@
 #include "calib_control_lever.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
+#include "LcdTask.h"
+#include "lcd_hd44780_i2c.h"
+#include "LcdmsgsTask.h"
+#include "LcdmsgsetTask.h"
 
 
 /* USER CODE END Includes */
@@ -207,6 +210,7 @@ void CallbackdefaultTaskTimer(void const * argument);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 	BaseType_t ret;	   // Used for returns from function calls
 	osMessageQId Qidret; // Function call return
@@ -217,7 +221,6 @@ int main(void)
 //while (pclr < (uint32_t*)(0x2000bb80 + 32768)) *pclr++ = 0x66666666;
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -312,7 +315,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, (384+128));
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -434,6 +437,16 @@ DiscoveryF4 LEDs --
 	Qidret = lcdmsg_init(16);
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
+  /* LCD I2C: message handling. (taskpriority, number buffers). */
+  osThreadId retThrd =  xLcdTaskCreate(0,16);
+  if (retThrd == NULL) morse_trap(123);
+
+  /* LCD I2C: message generation (calls to 'printf or'puts). 
+  'printf and overrun stalls take place in this task.  
+  (task priority, number in queue of pointer|union) */
+  retThrd= xLcdmsgsetTaskCreate(0, 16);
+  if (retThrd == NULL) morse_trap(125);  
+
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
@@ -445,7 +458,7 @@ DiscoveryF4 LEDs --
 
   /* Start scheduler */
   osKernelStart();
- 
+
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -468,11 +481,13 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -486,7 +501,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -518,7 +534,8 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
@@ -536,7 +553,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_11;
   sConfig.Rank = 1;
@@ -545,7 +563,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_12;
   sConfig.Rank = 2;
@@ -553,7 +572,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_14;
   sConfig.Rank = 3;
@@ -561,7 +581,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_15;
   sConfig.Rank = 4;
@@ -569,7 +590,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
   sConfig.Rank = 5;
@@ -578,7 +600,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_VREFINT;
   sConfig.Rank = 6;
@@ -748,7 +771,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 35001;//15700;
+  sConfigOC.Pulse = 15700;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -875,10 +898,10 @@ static void MX_USART6_UART_Init(void)
 
 }
 
-/** 
+/**
   * Enable DMA controller clock
   */
-static void MX_DMA_Init(void) 
+static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
@@ -924,6 +947,8 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -963,10 +988,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-
+static struct LCDMSGSET lcdi2cfunc1;
+//                                                                       "12345678901234567890"
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"stpLVLWD 20201115 09");}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -982,9 +1011,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-//taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//taskEXIT_CRITICAL();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
 //osDelay(0); // Debugging HardFault
@@ -1053,6 +1080,15 @@ void StartDefaultTask(void const * argument)
 	testtx.maxretryct = 8;
 	testtx.bits = 0;
 #endif
+
+ /* LCD I2C msgs used in this task. */
+  // Wait for LcdTask to instantiate 4x20 #1 unit. */
+  uint8_t loopctr = 0;
+  while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
+      if (punitd4x20 == NULL) morse_trap(2326);
+
+  // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
+  lcdi2cfunc1.ptr = lcdi2cmsgm1;  
 
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
@@ -1346,7 +1382,7 @@ yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
 			}	
 	  	}
 	}
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* CallbackdefaultTaskTimer function */
@@ -1408,7 +1444,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
@@ -1416,5 +1452,3 @@ morse_trap(222);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

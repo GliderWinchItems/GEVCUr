@@ -112,6 +112,7 @@ void Error_Handler(void);
 #define LED_BLUE_GPIO_Port GPIOD
 #define Beeper_Pin GPIO_PIN_8
 #define Beeper_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments
@@ -139,5 +140,3 @@ extern UART_HandleTypeDef huart6;
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

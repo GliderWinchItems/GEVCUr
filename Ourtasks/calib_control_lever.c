@@ -231,7 +231,7 @@ float calib_control_lever(void)
 		/* We can't do this in the 'init' since the LCD may not have been instantiated. */
 		loopctr = 0;
 	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
-  	    if (punitd4x20 == NULL) morse_trap(2326);
+  	    if (punitd4x20 == NULL) morse_trap(233);
 
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
