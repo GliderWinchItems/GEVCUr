@@ -39,7 +39,7 @@ struct CDCTXTASKBCB
   * @param	: size = number of bytes in each buffer
   * @return	: NULL = calloc failed; not NULL = pointer to 1st struct with buff ptrs
   ******************************************************************************/
- osMessageQId xCdcTxTaskSendCreate(uint32_t taskpriority);
+osMessageQId xCdcTxTaskSendCreate(uint32_t taskpriority);
 /* @brief	: Create task; task handle created is global for all to enjoy!
  * @param	: taskpriority = Task priority (just as it says!)
  * @return	: Handle to queue

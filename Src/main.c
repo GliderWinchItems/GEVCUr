@@ -995,7 +995,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 static struct LCDMSGSET lcdi2cfunc1;
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"stpLVLWD 20201115 09");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.10.28 0A");}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1087,8 +1087,11 @@ void StartDefaultTask(void const * argument)
   while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
       if (punitd4x20 == NULL) morse_trap(2326);
 
-  // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
-  lcdi2cfunc1.ptr = lcdi2cmsgm1;  
+    // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
+  lcdi2cfunc1.ptr = lcdi2cmsgm1;
+
+  if (LcdmsgsetTaskQHandle == NULL) morse_trap(2323);
+    xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);   
 
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED

@@ -7,13 +7,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -23,13 +22,6 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "cdc_rxbuffTaskCAN.h"
-#include "morse.h"
-
-uint32_t cdcifctr;
 
 /* USER CODE END INCLUDE */
 
@@ -70,10 +62,6 @@ uint32_t cdcifctr;
   */
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-/* Define size for the receive and transmit buffer over CDC */
-/* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -273,38 +261,9 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-
-	pcdcbuf_add->len = *Len; // Save number of bytes
-
-	if (pcdcbuf_add->len >= CDCOUTBUFFSIZE)
-	{
-		morse_trap(444);
-	}
-
-	/* Advance to next cdc buffer. */
-	pcdcbuf_add += 1;
-	if (pcdcbuf_add >= &cdcbuf[CDCOUTNUMBUF])
-		pcdcbuf_add = &cdcbuf[0];
-
-cdcifctr += 1;
-
-	/* Notify cdc_rxbuff.c that there is new data. */
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	if (CdcRxTaskReceiveCANHandle != NULL) // JIC startup timing problem
-	{
-		vTaskNotifyGiveFromISR(CdcRxTaskReceiveCANHandle,
-				&xHigherPriorityTaskWoken);
-	}
-	
-	/* Don't request more reads until buffers get unloaded. */
-//	if (pcdcbuf_add == cdcbuf_ptake) // About to overrun?
-//	  return (USBD_OK);
-
-  /* Start next read request. */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &pcdcbuf_add->u8[0]);
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
-
   /* USER CODE END 6 */
 }
 
@@ -327,9 +286,6 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   if (hcdc->TxState != 0){
     return USBD_BUSY;
   }
-
-if(Buf == NULL) morse_trap(445);
-
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
   /* USER CODE END 7 */
