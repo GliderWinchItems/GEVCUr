@@ -24,10 +24,10 @@
 #include "LcdmsgsetTask.h"
 #include "DTW_counter.h"
 
+uint32_t dbgcc1;
+
 /* Send position percent to LCD. */
 #define SENDLCDPOSITIONTOUART
-
-
 
 /* GevcuTask counts 'sw1timer' ticks for various timeouts.
 	 Gevcu polling timer (ka_k): 4 * (1/512), 128/sec
@@ -235,7 +235,7 @@ float calib_control_lever(void)
 
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
-			clfunc.state = INITLCD1;
+//			clfunc.state = INITLCD1;
 // Skip LCD uart intiialization sequence
 //			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line
 			clfunc.state = INITLCD7; // NEXT: CL forward			
@@ -323,7 +323,9 @@ float calib_control_lever(void)
 //				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 
+#ifdef INCLUDELCDUARTSTARTUPCODE
 				clfunc.state = INITLCD1;
+#endif				
 				clfunc.timx = DTWTIME + CLTIMEOUT*1; 		
 				break;
 			}		                     // "...................." 
@@ -419,7 +421,9 @@ float calib_control_lever(void)
 			{                                // 01234567890123456789
 				lcdi2cputs(&punitd4x20,CLROW,0,"CL RANGE ERROR      ");			
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
+#ifdef INCLUDELCDUARTSTARTUPCODE
 				clfunc.state = INITLCD1;
+#endif					
 				clfunc.timx = DTWTIME + CLTIMEOUT*2; 		
 				break;		
 			}
@@ -498,6 +502,7 @@ float calib_control_lever(void)
 			break;
 
 		// Program Gone Wild trap
+dbgcc1 = 	clfunc.state;		
 		default: morse_trap (80);
 		}
 	return clfunc.curpos;

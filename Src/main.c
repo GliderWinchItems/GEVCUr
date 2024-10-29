@@ -1128,13 +1128,16 @@ uint32_t spispctr_prev = 0;
 #endif
 
 #ifdef STARTUPCHASINGLEDS
-#include "calib_control_lever.h"
 struct LEDREQ spiledx;
 spiledx.bitnum = 0; // Start with bit 0
 struct LEDREQ spiledx_prev;
 spiledx_prev.bitnum = 15; // Sart with previous bit 15
 uint8_t chasectr = 0; // Counter for slowing down output rate
 #endif
+
+// Assure CL state
+clfunc.state = INITLCD;
+
 
 #ifdef TESTBEEPER
 struct BEEPQ beepqtest;
