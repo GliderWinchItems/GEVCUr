@@ -1027,7 +1027,7 @@ void StartDefaultTask(void const * argument)
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
-#define DMOCTESTS
+//#define DMOCTESTS
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1183,7 +1183,7 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 // ================== SLOW ==============================================
 /* Countdown timer notifications. */
 			slowtimectr += 1;
-			if (slowtimectr >= 16)
+			if (slowtimectr >= 64)
 			{
 				slowtimectr = 0;
 #ifdef TESTLCDPRINTF

@@ -12,12 +12,6 @@
 enum CLSTATE
 {
 	INITLCD,
-	INITLCD1,
-	INITLCD2,
-	INITLCD3,
-	INITLCD4,
-	INITLCD5,
-	INITLCD6,
 	INITLCD7,
 	CLOSE1,
 	CLOSE1WAIT,
@@ -31,7 +25,6 @@ enum CLSTATE
 	SEQDONE,
 	SEQDONE1
 };
-
 
 struct CLFUNCTION
 {
@@ -68,4 +61,3 @@ extern struct CLFUNCTION clfunc;
 extern uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 extern uint8_t flag_cllcdrdy;  // 0 = LCD not initialized; 1 = LCD OK to use
 #endif 
-

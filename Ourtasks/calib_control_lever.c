@@ -24,8 +24,6 @@
 #include "LcdmsgsetTask.h"
 #include "DTW_counter.h"
 
-uint32_t dbgcc1;
-
 /* Send position percent to LCD. */
 #define SENDLCDPOSITIONTOUART
 
@@ -212,22 +210,16 @@ uint32_t ccldbg;
 
 float calib_control_lever(void)
 {
-#ifdef INCLUDELCDUARTSTARTUPCODE
-	uint8_t byt[32];
-	uint8_t* p;
-#endif	
 	float ftmp;
 	float fcur;
 	float frange;
 	uint32_t loopctr;
 
-
-
 		switch (clfunc.state)
 		{ // The following is a one-time only sequenceSPLASHDELAY
 		case INITLCD: // Half-second delay for splash screen to clear
 
-				/* LCD (I2C) lcdi2cprintf buffer. */
+		/* LCD (I2C) lcdi2cprintf buffer. */
 		/* We can't do this in the 'init' since the LCD may not have been instantiated. */
 		loopctr = 0;
 	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
@@ -235,74 +227,15 @@ float calib_control_lever(void)
 
 			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
-//			clfunc.state = INITLCD1;
-// Skip LCD uart intiialization sequence
-//			lcdprintf_init(&pbuflcd1);	// Do init sequence in one uart line
 			clfunc.state = INITLCD7; // NEXT: CL forward			
-			break;
-#ifdef INCLUDELCDUARTSTARTUPCODE
-		case INITLCD1: // Delay further LCD commands until time expires.
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			p = lcd_off(&byt[0]); // LCD OFF
-			*p = 0;
-			lcdputs(&pbuflcd1, (char*)&byt[0]);
-			clfunc.timx = DTWTIME + INITDELAY2;
-			clfunc.state = INITLCD2;
-			break;
 
-		case INITLCD2: 
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			p = lcd_on(&byt[0]); // LCD ON
-			*p = 0;
-			lcdputs(&pbuflcd1, (char*)&byt[0]);
-			clfunc.timx = DTWTIME + INITDELAY3;
-			clfunc.state = INITLCD3;
-			break;
-
-		case INITLCD3: 
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			p = lcd_clear(&byt[0]); // LCD CLEAR
-			*p = 0;
-			lcdputs(&pbuflcd1, (char*)&byt[0]);
-			clfunc.timx = DTWTIME + INITDELAY4;
-			clfunc.state = INITLCD4;
-			break;
-
-		case INITLCD4: 
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			p = lcd_backlight(&byt[0], LCD_BACKLIGHT_LEVEL); // LCD Backlight
-			*p = 0;
-			lcdputs(&pbuflcd1, (char*)&byt[0]);
-			clfunc.timx = DTWTIME + INITDELAY5;
-			clfunc.state = INITLCD5;
-			break;
-
-		case INITLCD5: 
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			p = lcd_moveCursor(&byt[0],0,0); // LCD MOVE CURSOR
-			*p = 0;
-			lcdputs(&pbuflcd1, (char*)&byt[0]);
-			clfunc.timx = DTWTIME + INITDELAY6;
-			clfunc.state = INITLCD6; // NEXT: CL forward
-			break;
-
-		case INITLCD6: // Complete wait of MOVE CURSOR
-			if ((int)(clfunc.timx - DTWTIME) > 0)
-				break;
-			clfunc.timx = DTWTIME + INITDELAY7;
-			clfunc.state = INITLCD7; // NEXT: CL forward
-#endif
 		case INITLCD7: // Clear all for rows of LCD
 			if ((int)(clfunc.timx - DTWTIME) > 0)
 				break; // Still waiting for timeout
 			if (clrrowctr < 4) // Do all four rows
 			{
 				lcdclearrow(clrrowctr); // Send 20 spaces to clear line
+				// Time delay between each row
 				clfunc.timx = DTWTIME + CLLINEDELAY;
 				clrrowctr += 1; // Advance row number
 				break;
@@ -320,18 +253,14 @@ float calib_control_lever(void)
 			if ((psw_cl_fs_no->on == 0) && (psw_cl_rst_n0->on == 0))	
 			{  //                           01234567890123456789  
 				lcdi2cputs(&punitd4x20,CLROW,0,"CL ERR: BOTH SWS ON ");
-//				lcdprintf (&pbuflcd1,   CLROW,0,"CL ERR: BOTH SWS ON ");
-				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 
-#ifdef INCLUDELCDUARTSTARTUPCODE
-				clfunc.state = INITLCD1;
-#endif				
+				if ((int)(clfunc.timx - DTWTIME) > 0)
+					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 				clfunc.timx = DTWTIME + CLTIMEOUT*1; 		
 				break;
-			}		                     // "...................." 
+			}
 			lcdi2cprintf(&punitd4x20,CLROW,0,"FULL FWD LEVER %5d",clfunc.toctr++);
-//			lcdprintf   (&pbuflcd1,   CLROW,0,"FULL FWD LEVER %5d  ",clfunc.toctr  );
-//			xQueueSendToBack(BeepTaskQHandle,&beep2,portMAX_DELAY);
+//			xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
 			clfunc.timx = DTWTIME + CLTIMEOUT;
 			clfunc.state = OPEN1WAIT;
 			break;
@@ -360,10 +289,8 @@ float calib_control_lever(void)
 			if ((int)(clfunc.timx - DTWTIME) < 0)
 			{
 				lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVER    %5d",clfunc.toctr++);
-//				lcdprintf (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 				clfunc.timx = DTWTIME + CLTIMEOUT;
 			}
-//			if ((spisp_rd[0].u16 & CL_FS_NO) == 0) // Non-debounced
 			if (psw_cl_fs_no->db_on == 0) // Debounced
 				break;				
 			// Here, sw for forward position has gone open
@@ -383,7 +310,6 @@ float calib_control_lever(void)
 				{
 //					xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
  					lcdi2cprintf(&punitd4x20,CLROW,0,"CLOSE LEVERa   %5d",clfunc.toctr++);
-//					lcdprintf   (&pbuflcd1,   CLROW,0,"CLOSE LEVER    %5d  ",clfunc.toctr++);
 					clfunc.state = CLOSE1; // Timed out--re-beep the Op
 				}
 				break;
@@ -421,9 +347,6 @@ float calib_control_lever(void)
 			{                                // 01234567890123456789
 				lcdi2cputs(&punitd4x20,CLROW,0,"CL RANGE ERROR      ");			
 				xQueueSendToBack(BeepTaskQHandle,&beepf,portMAX_DELAY);
-#ifdef INCLUDELCDUARTSTARTUPCODE
-				clfunc.state = INITLCD1;
-#endif					
 				clfunc.timx = DTWTIME + CLTIMEOUT*2; 		
 				break;		
 			}
@@ -501,9 +424,8 @@ float calib_control_lever(void)
 			}
 			break;
 
-		// Program Gone Wild trap
-dbgcc1 = 	clfunc.state;		
-		default: morse_trap (80);
+			// Program Gone Wild trap; state not in list
+			default: morse_trap (80);
 		}
 	return clfunc.curpos;
 }

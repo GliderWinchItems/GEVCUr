@@ -75,7 +75,6 @@ void StartCanTxTask(void const * argument)
   /* Infinite RTOS Task loop */
   for(;;)
   {
-HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13); // ORANGE
 		Qret = xQueueReceive(CanTxQHandle,&txq,portMAX_DELAY);
 		if (Qret == pdPASS) // Break loop if not empty
 		{
@@ -84,9 +83,18 @@ HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13); // ORANGE
  *				: -1 = Buffer overrun (no free slots for the new msg)
  *				: -2 = Bogus CAN id rejected
  *				: -3 = control block pointer NULL */
-//			if (ret == -1) morse_trap(91);
+			if (ret == -1) morse_trap(91);
 			if (ret == -2) morse_trap(92);
 			if (ret == -3) morse_trap(93);
+
+static volatile uint32_t dbgCAN1;
+dbgCAN1 += 1;
+if (dbgCAN1 >= 64)
+{ 
+	dbgCAN1 = 0;
+	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13); // ORANGE
+}
+
 		}
   }
 }

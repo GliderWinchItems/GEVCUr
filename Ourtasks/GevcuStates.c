@@ -162,9 +162,9 @@ void GevcuStates_GEVCU_INIT(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:             12345678901234567890
 static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
-static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
-static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
+//static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
+//static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
+//static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
@@ -193,7 +193,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
-
+#if 0
 	if (cntctrctl.nrflag != 0)
 	{ // Here, contactor is not responding
 		msgslow += 1;
@@ -232,7 +232,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	    }
 		return;
 	}
-
+#endif
 	msgflag = 0; // Send LCD msg once
 
    led_safe.mode    = LED_ON;
