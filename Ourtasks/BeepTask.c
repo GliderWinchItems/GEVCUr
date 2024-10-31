@@ -25,6 +25,7 @@ void StartBeepTask(void* argument)
 {
 //	BaseType_t Qret;	// queue receive return
 	struct BEEPQ beep;
+	BaseType_t Qret;	// queue receive return
 	int i;
 
 //osDelay(1000);
@@ -35,6 +36,7 @@ void StartBeepTask(void* argument)
 		/* Wait indefinitely for someone to load something into the queue */
 		/* Skip over empty returns, and zero time durations */
 		xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
+		if (Qret != pdPASS) continue;
 
 		for (i = 0; i < beep.repct; i++)
 		{

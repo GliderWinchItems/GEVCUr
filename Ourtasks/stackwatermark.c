@@ -27,6 +27,7 @@ void stackwatermark_show(osThreadId TaskHandle, struct SERIALSENDTASKBCB** ppbcb
 
 		/* Get stack high water mark for tasks of interest. */
 		stackwatermark = uxTaskGetStackHighWaterMark( TaskHandle );
+		if (TaskHandle == NULL) morse_trap(337);
 
 		yprintf(ppbcb, "\n\rStack: %s %3d",pchar, (int)stackwatermark);
 		

@@ -18,7 +18,7 @@
 #include "calib_control_lever.h"
 #include "LEDTask.h"
 #include "BeepTask.h"
-
+#include "DTW_counter.h"
 
 /* email: Tue, 11 Feb 2020 03:14:30 +0000 (02/10/2020 10:14:30 PM)
 
@@ -114,12 +114,28 @@ static uint8_t led_chasing_state = 0;
 static uint8_t allonctr = 0;
 static const struct BEEPQ beep1 = {200,300,2}; // End of sequence
 
+static uint32_t DTWdelta;
+#define CHASEPACE (168000000/(250*160000)) // 250 ms chasectr ticks
+
+static uint8_t otoinit;
+
 /* *************************************************************************
  * void led_chasing(void);
  *	@brief	: Step through LEDs until CL calibrates
  * *************************************************************************/
 void led_chasing(void)
 {
+	if (otoinit == 0)
+	{
+		otoinit = 1;
+		DTWdelta = DTWdelta + CHASEPACE;
+	}
+	if ((int)(DTWTIME - DTWdelta) > 0)
+	{
+		DTWdelta = DTWdelta + CHASEPACE;
+		chasectr += 1;
+	}
+
 	switch (flag_clcalibed)
 	{
 	case 0:

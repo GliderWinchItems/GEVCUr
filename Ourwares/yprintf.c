@@ -25,10 +25,11 @@ int yprintf_init(void)
 {
 	if (sw == 0)
 	{
-		sw = -1;
+		sw = 1;
 //		osSemaphoreDef(vsnprintfSemaphore);
 //		vsnprintfSemaphoreHandle = osSemaphoreCreate(osSemaphore(vsnprintfSemaphore), 1);
-		vsnprintfSemaphoreHandle = xSemaphoreCreateMutex();
+		vsnprintfSemaphoreHandle = xSemaphoreCreateBinary();
+		xSemaphoreGive( vsnprintfSemaphoreHandle );
 	}
 	return sw;
 }
@@ -40,6 +41,9 @@ int yprintf_init(void)
  * @param	: ... = usual printf arguments
  * @return	: Number of chars "printed"
  * ************************************************************************************** */
+
+uint32_t yctr = 0;
+
 int yprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
 {
 	struct SERIALSENDTASKBCB* pbcb = *ppbcb;
@@ -53,12 +57,13 @@ int yprintf(struct SERIALSENDTASKBCB** ppbcb, const char *fmt, ...)
 
 	/* Block if vsnprintf is being uses by someone else. */
 	xSemaphoreTake( vsnprintfSemaphoreHandle, portMAX_DELAY );
-
+//xSemaphoreTake( vsnprintfSemaphoreHandle, 8000 );
 	/* Construct line of data.  Stop filling buffer if it is full. */
 //	va_start(argp, fmt);
 	va_start(argp, fmt);
 	pbcb->size = vsnprintf((char*)(pbcb->pbuf),pbcb->maxsize, fmt, argp);
 	va_end(argp);
+yctr += 1;
 
 	/* Limit byte count in BCB to be put on queue, from vsnprintf to max buffer sizes. */
 	if (pbcb->size > pbcb->maxsize) 

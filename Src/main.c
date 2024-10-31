@@ -315,7 +315,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384-32);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -995,7 +995,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 static struct LCDMSGSET lcdi2cfunc1;
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.10.28 0A");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.10.30 ..");}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1154,8 +1154,12 @@ lcdflag = 1;
 uint16_t slowtimectr = 0; // Approx 1/sec
 uint16_t medtimectr = 0;  // Approx 8/sec
 
+osDelay(50);
+yprintf(&pbuf4,"\n\n\r##########..Start GEVCUr..#########");
+yprintf(&pbuf1,"\n\r......2........\n\r");
+slowtimectr = 128;
 
-//osDelay(1);
+osDelay(5);
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 // ===== BEGIN FOR LOOP ==============================
 
@@ -1195,10 +1199,11 @@ extern uint32_t lcddbg;
 
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
+    yprintf(&pbuf1,"\n\r");
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 13; showctr++)
+for (showctr = 0; showctr < 15; showctr++)
 {
 				switch (showctr)
 				{
@@ -1215,15 +1220,19 @@ case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,"SpiOutTask---");break;
 case  9: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
 case 10: stackwatermark_show(BeepTaskHandle,   &pbuf3,"BeepTask-----");break;
 case 11: stackwatermark_show(LEDTaskHandle,    &pbuf4,"LEDTask------");break;
+case 12: stackwatermark_show(LcdmsgsetTaskHandle,&pbuf1,"LcdmsgsetTask");break;
+case 13: stackwatermark_show(LcdTaskHandle,    &pbuf1,"LcdTask------");break;
 
-case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 14:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
 				}
 }
+yprintf(&pbuf3,"\n\rTIC DUR: %d", DTWTIME - t2_DSUFT);
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
+
 
 
 #endif

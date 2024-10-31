@@ -66,6 +66,7 @@ QueueHandle_t  xCanTxTaskCreate(uint32_t taskpriority, int32_t queuesize)
  * void StartCanTxTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+static volatile struct CANTXQMSG dbgtxq;
 void StartCanTxTask(void const * argument)
 {
    BaseType_t Qret;	// queue receive return
@@ -84,7 +85,11 @@ void StartCanTxTask(void const * argument)
  *				: -2 = Bogus CAN id rejected
  *				: -3 = control block pointer NULL */
 			if (ret == -1) morse_trap(91);
-			if (ret == -2) morse_trap(92);
+			if (ret == -2)
+			{
+dbgtxq = txq; // Save where we can find it
+				morse_trap(92);
+			}
 			if (ret == -3) morse_trap(93);
 
 static volatile uint32_t dbgCAN1;

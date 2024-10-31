@@ -210,7 +210,7 @@ taskEXIT_CRITICAL();
   	UBaseType_t uxPriority,
   	TaskHandle_t *pxCreatedTask );   
  */
-	BaseType_t ret = xTaskCreate(&StartLcdTask,"LcdI2CTask",96,NULL,taskpriority,&LcdTaskHandle);
+	BaseType_t ret = xTaskCreate(&StartLcdTask,"LcdI2CTask",128+64,NULL,taskpriority,&LcdTaskHandle);
 	if (ret != pdPASS) morse_trap(35);//return NULL;
 
 	/* Create a queue of buffer pointers that point into the circular buffer (see above) */

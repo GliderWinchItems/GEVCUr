@@ -68,10 +68,7 @@ void payloadfloat(uint8_t *po, float f)
  * @brief	: Initialization sequence: One Time Only
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
-//static void lcdmsg1   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_INT           ");}
 static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_INT           ");}
-
-//static void lcdmsg2    (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD uart
 static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
 
  /* LCDI2C 4x20 msg. */
@@ -102,10 +99,6 @@ void GevcuStates_GEVCU_INIT(void)
 		if (msgflag == 0)
 		{ 
 			msgflag = 1; // Don't keep banging away with the same msg
-
-			// Msg on UART LCD
-//			ptr2 = &lcdmsg1; // LCD msg pointer
-//			xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
 
 			// LCD I2C unit msg
 			lcdi2cfunc.ptr = lcdi2cmsg1;
@@ -162,9 +155,9 @@ void GevcuStates_GEVCU_INIT(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:             12345678901234567890
 static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
-//static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
-//static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
-//static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
+static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
+static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
+static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
@@ -173,9 +166,6 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
-
-		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg3a; 
 		 if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
@@ -193,7 +183,8 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
-#if 0
+
+#if 1
 	if (cntctrctl.nrflag != 0)
 	{ // Here, contactor is not responding
 		msgslow += 1;
@@ -220,7 +211,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 
 	/* Wait until contactor shows DISCONNECTED state. */
 	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
-	{ // LCD msg here?
+	{ 
 		if (msgflag == 1)
 		{
 			if (LcdmsgsetTaskQHandle != NULL) 
@@ -253,18 +244,11 @@ static void lcdi2cmsg4(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVC
 
 void GevcuStates_GEVCU_SAFE(void)
 {
-//	void (*ptr2)(void) = &lcdmsg4; // LCD msg pointer
-
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-
-//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
-
-		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg4;
-		// Place ptr to struct w ptr 
-		 if (LcdmsgsetTaskQHandle != NULL)
+		if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 	}
 		
@@ -298,14 +282,9 @@ static void lcdi2cmsg5(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVC
 
 void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 {
-//	void (*ptr2)(void) = &lcdmsg5; // LCD msg pointer
-
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
-
-				// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg5;
 		// Place ptr to struct w ptr 
 		 if (LcdmsgsetTaskQHandle != NULL)
@@ -353,13 +332,9 @@ static void lcdi2cmsg6(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVC
 
 void GevcuStates_GEVCU_ACTIVE(void)
 {
-//	void (*ptr2)(void) = &lcdmsg6; // LCD msg pointer
-
 	if (msgflag == 0)
 	{ 
 		msgflag = 1; // Don't keep banging away with the same msg
-//		xQueueSendToBack(lcdmsgQHandle,&ptr2,0);
-		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg6;
 		// Place ptr to struct w ptr 
 		 if (LcdmsgsetTaskQHandle != NULL)
@@ -388,21 +363,16 @@ void GevcuStates_GEVCU_ACTIVE(void)
 //  20 chars will over-write all display chars from previous msg:       12345678901234567890
 //static void lcdmsg7   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
 static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
-
-//static void lcdmsg8   (void){lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"GEVCU_ARM           ");}
-static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_RETRIEVE      ");}
+static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ARM           ");}
 
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {
-//	void (*ptr2)(void); // Pointer to queue LCD msg
 	/* Make sure Op has CL in zero position. */
 	if (clfunc.curpos > 0)
 	{
 		if (msgflag == 0)
 		{
 			msgflag = 1; // Don't keep banging away with the same msg
-
-			// Repeat msg on LCD I2C unit
 			lcdi2cfunc.ptr = lcdi2cmsg7;
 			// Place ptr to struct w ptr 
 	 		if (LcdmsgsetTaskQHandle != NULL)
@@ -410,9 +380,7 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 		}
 		return;
 	}
-		// Repeat msg on LCD I2C unit
 		lcdi2cfunc.ptr = lcdi2cmsg8;
-		// Place ptr to struct w ptr 
 		 if (LcdmsgsetTaskQHandle != NULL)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 

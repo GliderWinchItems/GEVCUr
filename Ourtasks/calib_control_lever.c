@@ -40,7 +40,7 @@
 /* LCD splash screen delay. */
 #define SPLASHDELAY  (T1MS*500) 
 /* LCD delay following command */
-#define LCDLINEDELAY (T1MS*20)   // 20 ms
+#define LCDLINEDELAY (T1MS* 20)  // 20 ms
 #define INITDELAY2   (T1MS* 20)  // OFF (32 ms)
 #define INITDELAY3   (T1MS* 20)  // ON  (32 ms)
 #define INITDELAY4   (T1MS* 20)  // CLEAR (~400 ms)

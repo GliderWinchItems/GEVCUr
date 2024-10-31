@@ -31,8 +31,9 @@ struct LCDMSGSET lsv;
 		if (ret == pdPASS)
 		{	
 //HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
-			if (lsv.ptr != NULL)  // jic a NULL ptr got on the queue
-		  	  (*lsv.ptr)(lsv.u);  // Go do something
+			if (lsv.ptr == NULL) morse_trap(338); // jic a NULL ptr got on the queue
+		  	(*lsv.ptr)(lsv.u);  // Go do something
+osDelay(1);
 		}
 	}
 }
@@ -46,7 +47,7 @@ struct LCDMSGSET lsv;
 osThreadId xLcdmsgsetTaskCreate(uint32_t taskpriority, uint16_t numbcb)
 {
 	BaseType_t 	ret = xTaskCreate(&StartLcdmsgsetTask,"LcdmsgsetTask",\
-		384,NULL,taskpriority,&LcdmsgsetTaskHandle);
+		128,NULL,taskpriority,&LcdmsgsetTaskHandle);
 	if (ret != pdPASS) morse_trap(401);//return NULL;
 
 	LcdmsgsetTaskQHandle = xQueueCreate(numbcb, sizeof(struct LCDMSGSET) );
