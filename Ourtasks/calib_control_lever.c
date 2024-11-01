@@ -24,18 +24,12 @@
 #include "LcdmsgsetTask.h"
 #include "DTW_counter.h"
 
-/* Send position percent to LCD. */
-#define SENDLCDPOSITIONTOUART
-
 /* GevcuTask counts 'sw1timer' ticks for various timeouts.
 	 Gevcu polling timer (ka_k): 4 * (1/512), 128/sec
 */
 
 #define T1S (168000000)     // Number of DTW ticks in one second
 #define T1MS (T1S/1000)     // Number of DTW ticks in one millisecond
-
-/* Uncomment to enable LCD position going to monitor uart. */
-//#define SENDLCDPOSITIONTOUART
 
 /* LCD splash screen delay. */
 #define SPLASHDELAY  (T1MS*500) 
@@ -77,14 +71,14 @@ struct SWITCHPTR* psw_cl_fs_no;
 struct SWITCHPTR* psw_cl_rst_n0;
 
 /* ***********************************************************************************************************
- * static void init(void);
+ * void calib_control_lever_init(void);
  * @brief	: Prep for CL calibration
  ************************************************************************************************************* */
 /*
 This initialization is what would be in a file 'calib_control_lever_idx_v_struct.[ch]' if
 the CL would become a separate function.
 */
-static void init(void)
+void calib_control_lever_init(void)
 {
 	clfunc.min    = 65521;
    clfunc.max     = 0;
@@ -100,16 +94,7 @@ static void init(void)
 
 	clfunc.range_er = 25000; // Minimum range for calbirated CL
 
-	/* LCD (uart) lcdprintf buffer */
-	pbuflcd1 = getserialbuf(&HUARTLCD,32);
-	if (pbuflcd1 == NULL) morse_trap(81);
-
-#ifdef SENDLCDPOSITIONTOUART
-   pbufmon1 = getserialbuf(&HUARTMON,48);
-#endif
-
 	/* Initialize switches for debouncing. */
-
 	// Control Lever Fullscale Normally open. */
 	psw_cl_fs_no = switch_pb_add(
 		NULL,            /* task handle = this task    */
@@ -225,7 +210,7 @@ float calib_control_lever(void)
 	    while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
   	    if (punitd4x20 == NULL) morse_trap(233);
 
-			init(); // #### Initialize ####
+//			init(); // #### Initialize ####
 			clfunc.timx = DTWTIME + SPLASHDELAY;
 			clfunc.state = INITLCD7; // NEXT: CL forward			
 

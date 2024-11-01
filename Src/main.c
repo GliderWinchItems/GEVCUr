@@ -447,6 +447,8 @@ DiscoveryF4 LEDs --
   retThrd= xLcdmsgsetTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(125);  
 
+  calib_control_lever_init();
+
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
 //  MX_USB_DEVICE_Init();
@@ -1232,10 +1234,8 @@ default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); 
 yprintf(&pbuf3,"\n\rTIC DUR: %d", DTWTIME - t2_DSUFT);
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
-
-
-
 #endif
+
 
 #ifdef TESTBEEPER
 			xQueueSendToBack(BeepTaskQHandle,&beepqtest,portMAX_DELAY);

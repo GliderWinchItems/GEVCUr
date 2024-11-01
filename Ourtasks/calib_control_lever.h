@@ -56,6 +56,10 @@ float calib_control_lever(void);
 void lcdout(void);
 /* @brief	: Output CL position to LCD
  ************************************************************************************************************* */
+ void calib_control_lever_init(void);
+/* @brief	: Prep for CL calibration
+ ************************************************************************************************************* */
+
 
 extern struct CLFUNCTION clfunc;
 extern uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
