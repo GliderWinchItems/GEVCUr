@@ -447,7 +447,9 @@ DiscoveryF4 LEDs --
   retThrd= xLcdmsgsetTaskCreate(0, 16);
   if (retThrd == NULL) morse_trap(125);  
 
+  /* Set switches before tasks begin running. */
   calib_control_lever_init();
+  GevcuTask_init_switches();
 
   /* init code for USB_DEVICE */
 //taskENTER_CRITICAL();
@@ -997,7 +999,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 static struct LCDMSGSET lcdi2cfunc1;
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.10.30 ..");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.11.01 .1");}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1067,7 +1069,7 @@ void StartDefaultTask(void const * argument)
 	uint32_t heapsize;
 	uint32_t showctr = 0;
 	uint32_t t1_DSUFT; // DTW time  
-	uint32_t t2_DSUFT;
+	uint32_t t2_DSUFT = 0;
 #endif
 
 #ifdef SENDCANTESTMSGSINABURST
@@ -1162,6 +1164,7 @@ yprintf(&pbuf1,"\n\r......2........\n\r");
 slowtimectr = 128;
 
 osDelay(5);
+
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 // ===== BEGIN FOR LOOP ==============================
 

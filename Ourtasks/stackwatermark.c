@@ -8,7 +8,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "SerialTaskSend.h"
-
+#include "morse.h"
 #include "stackwatermark.h"
 #include "yprintf.h"
 

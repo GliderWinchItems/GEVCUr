@@ -49,14 +49,10 @@ Discovery) such a normalization is not needed and the sampled temperature data c
 directly used to determine the temperature as described in Section 2.2.1: Temperature
 sensor calibration.
 
-
 Vdd = 3300*(*VREFINT_CAL_ADDR)/ADC_raw;
 
 Temp(degree) = (V_sense - V_25)/Avg_slope + 25
-
 */
-
-#define VREFINT_CAL_ADDR 
 
 /* Calibration values common to all ADC modules. */
 struct ADCCALCOMMON adcommon;

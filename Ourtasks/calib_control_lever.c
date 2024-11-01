@@ -62,11 +62,6 @@ static const struct BEEPQ beep2 = {200,50,1}; // Full open prompt
 static const struct BEEPQ beep3 = {100,40,1}; // Success beeping
 static const struct BEEPQ beepf = { 60,20,1}; // We are waiting for your prompt
 
-/* LCD output buffer pointers. */
-static struct SERIALSENDTASKBCB* pbufmon1;    // HUARTMON (Monitor UART)
-static struct SERIALSENDTASKBCB* pbuflcd1;    // HUART (LCD uart)
-
-
 struct SWITCHPTR* psw_cl_fs_no;
 struct SWITCHPTR* psw_cl_rst_n0;
 

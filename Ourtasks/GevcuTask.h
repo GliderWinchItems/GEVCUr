@@ -250,6 +250,9 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority);
 void StartGevcuTask(void const * argument);
 /*	@brief	: Task startup
  * *************************************************************************/
+ void GevcuTask_init_switches(void);
+/* @brief	: Set up switches
+ * *************************************************************************/
 
 extern struct GEVCUFUNCTION gevcufunction;
 extern osThreadId GevcuTaskHandle;
