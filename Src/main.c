@@ -197,6 +197,12 @@ void CallbackdefaultTaskTimer(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
+/* Detect the processor ID. GevcurStates uses this. */
+#define Unique_device_ID_register 0x1fff7a10 // DEH rig ID
+uint32_t deh_rigid[3] = {0x00260027, 0x3131470e, 0x31343533};
+uint32_t this_rig_id[3];
+uint8_t deh_rig; // 3 = deh's f4 rig; != 3 means not deh's f4; 
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -229,6 +235,15 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 	DTW_counter_init();
+
+  uint32_t* prigid =(uint32_t*)Unique_device_ID_register;
+  uint32_t* pdehrig = &deh_rigid[0];
+  for (int i = 0; i < 3; i++)
+  {
+    if (*pdehrig == *prigid)
+      deh_rig += 1;
+  }
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -1160,7 +1175,12 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 
 osDelay(50);
 yprintf(&pbuf4,"\n\n\r##########..Start GEVCUr..#########");
-yprintf(&pbuf1,"\n\r......2........\n\r");
+if (deh_rig == 3)
+  yprintf(&pbuf1,"\n\r... DEH f4 detected ......\n\r");
+else
+  yprintf(&pbuf1,"\n\r... Assume rig has contactor attached ......\n\r");
+
+
 slowtimectr = 128;
 
 osDelay(5);

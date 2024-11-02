@@ -79,9 +79,9 @@
 #define PB_ARM      (1 <<  5)	//	77 57  P8-5  IN 2 F
 #define PB_PREP     (1 <<  4)	//	77 67  P8-6  IN 3 E
 #define CL_RST_N0   (1 <<  3)	//	7F 77  P8-7  IN 4 D
-#define CP_ZTENSION (1 <<  2) // 77 73  P8-8  IN 5 C
-#define CP_ZODOMTR  (1 <<  1) // 77 75  P8-9  IN 6 B
-#define CL_FS_NO    (1 <<  0)	// 7F 7E  P8_10 IN 7 A
+#define CP_ZTENSION (1 <<  2)   //  77 73  P8-8  IN 5 C
+#define CP_ZODOMTR  (1 <<  1)   //  77 75  P8-9  IN 6 B
+#define CL_FS_NO    (1 <<  0)	//  7F 7E  P8_10 IN 7 A
 
 // High byte not yet connected (?)
 #define CP_SPARE1  (1 << 15)  // Not on connector   IN 15 A
@@ -93,7 +93,6 @@
 #define CP_GUILLO  (1 <<  9)  // Guillotine   P8-12 IN  9 G
 #define CP_BRAKE   (1 <<  8)  // Brake        P8-11 IN  8 H 
 // * - Not connected
-
 
 // GEVCUr switch re-use
 #define CP_REVERSETORQ  CP_ZTENSION // Changes sign of torque command

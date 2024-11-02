@@ -31,6 +31,7 @@
 #define GEVCULCDMSGLONG (128*30) // Very long delay
 
 extern struct LCDI2C_UNIT* punitd4x20; // Pointer LCDI2C 4x20 unit
+extern uint8_t deh_rig; // 3 == deh's f4 detected; not 3 == someone else's f4 
 
 enum GEVCU_INIT_SUBSTATEA
 {
@@ -184,53 +185,50 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
 
-#if 0
-	if (cntctrctl.nrflag != 0)
-	{ // Here, contactor is not responding
-		msgslow += 1;
-		if (msgslow >= 48)
-		{ 
-			msgslow = 0;
-			lcdi2cfunc.ptr = lcdi2cmsg3c; 
-   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
-  	}
-		return;
-	}
+	if (deh_rig != 3) // deh's rig skips contactor check
+	{ // Here, the rig is assumed to have a contactor active
+		if (cntctrctl.nrflag != 0)
+		{ // Here, contactor is not responding
+			msgslow += 1;
+			if (msgslow >= 48)
+			{ 
+				msgslow = 0;
+				lcdi2cfunc.ptr = lcdi2cmsg3c; 
+	   		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+	  	}
+			return;
+		}
 
-	if ((cntctrctl.cmdrcv & 0xf) == OTOSETTLING)
-	{ // Waiting for contactor initialization "settling"
-		msgslow += 1;
-		if (msgslow >= 48)
-		{ 
-			msgslow = 0;
-			lcdi2cfunc.ptr = lcdi2cmsg3d; 
-   			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
-   		}
-		return;
-	}
+		if ((cntctrctl.cmdrcv & 0xf) == OTOSETTLING)
+		{ // Waiting for contactor initialization "settling"
+			msgslow += 1;
+			if (msgslow >= 48)
+			{ 
+				msgslow = 0;
+				lcdi2cfunc.ptr = lcdi2cmsg3d; 
+	   			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+	   		}
+			return;
+		}
 
-	/* Wait until contactor shows DISCONNECTED state. */
-	if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
-	{ 
-		if (msgflag == 1)
-		{
-			if (LcdmsgsetTaskQHandle != NULL) 
+		/* Wait until contactor shows DISCONNECTED state. */
+		if ((cntctrctl.cmdrcv & 0xf) != DISCONNECTED)
+		{ 
+			if (msgflag == 1)
 			{
-				lcdi2cfunc.ptr = lcdi2cmsg3b; 
-	    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
-	    		msgflag = 2;
-	    	}
-	    }
+				if (LcdmsgsetTaskQHandle != NULL) 
+				{
+					lcdi2cfunc.ptr = lcdi2cmsg3b; 
+		    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+		    		msgflag = 2;
+		    	}
+		    }
+		}
 		return;
 	}
-#endif
-	msgflag = 0; // Send LCD msg once
-
-   led_safe.mode    = LED_ON;
 	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
-
+   	led_safe.mode    = LED_ON;
 	msgflag = 0; // Allow next LCD msg to be sent once
-
 	gevcufunction.state = GEVCU_SAFE;
 	return;
 }
@@ -341,6 +339,13 @@ void GevcuStates_GEVCU_ACTIVE(void)
 	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 	}
 
+	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE )
+	{ // Here SAFE/ACTIVE switch is in ACTIVE position
+		gevcufunction.state = GEVCU_SAFE_TRANSITION;
+		msgflag = 0; // Allow next LCD msg to be sent once
+		return;
+	}	
+
 	/* Wait for ARM pushbutton to be pressed. */	
 	if (gevcufunction.psw[PSW_PB_ARM]->db_on != SW_CLOSED)
 		return;
@@ -403,6 +408,13 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
  * *************************************************************************/
 void GevcuStates_GEVCU_ARM(void)
 {
+	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE )
+	{ // Here SAFE/ACTIVE switch is in ACTIVE position
+		gevcufunction.state = GEVCU_SAFE_TRANSITION;
+		msgflag = 0; // Allow next LCD msg to be sent once
+		return;
+	}
+
 	/* Pressing PREP returns to ACTIVE, (not armed) state. */
 	if (gevcufunction.psw[PSW_PB_PREP]->db_on == SW_CLOSED)
 	{
