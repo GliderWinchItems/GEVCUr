@@ -766,7 +766,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 35000;
+  htim1.Init.Period = 35125; //35000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -1012,9 +1012,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 static struct LCDMSGSET lcdi2cfunc1;
-//                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   241101:2019");}
+// LCD splash screen                                                        "12345678901234567890"
+static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   241102:1149");}
+static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh241102:1149");}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1106,8 +1109,11 @@ void StartDefaultTask(void const * argument)
   while ((punitd4x20 == NULL) && (loopctr++ < 10)) osDelay(10);
       if (punitd4x20 == NULL) morse_trap(2326);
 
-    // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
-  lcdi2cfunc1.ptr = lcdi2cmsgm1;
+  // Initial "splash:" msg on line 1 of lcdi2c 4x20 #1 display
+  if (deh_rig == 3) // 3 = deh's f4 rig; != 3 means not deh's f4; )
+    lcdi2cfunc1.ptr = lcdi2cmsgm1deh;
+  else
+    lcdi2cfunc1.ptr = lcdi2cmsgm1;
 
   if (LcdmsgsetTaskQHandle == NULL) morse_trap(2323);
     xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc1, 0);   
