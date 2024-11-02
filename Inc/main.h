@@ -127,7 +127,7 @@ extern UART_HandleTypeDef huart6;
 // Gateway task (for Mailbox use)
 #define GATEWAYTASKINCLUDED // Include gateway
 
-//#define USEUSBFORCANMSGS // Use USB for gateway to PC
+#define USEUSBFORCANMSGS // Use USB for gateway to PC
 
 //#define CONFIGCAN2	// Configure for CAN2
 
