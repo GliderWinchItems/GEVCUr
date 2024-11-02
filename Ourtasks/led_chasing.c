@@ -115,7 +115,7 @@ static uint8_t allonctr = 0;
 static const struct BEEPQ beep1 = {200,300,2}; // End of sequence
 
 static uint32_t DTWdelta;
-#define CHASEPACE (168000000/(250*160000)) // 250 ms chasectr ticks
+#define CHASEPACE (168000000/(500*160000)) // 500 ms chasectr ticks
 
 static uint8_t otoinit;
 
@@ -128,11 +128,12 @@ void led_chasing(void)
 	if (otoinit == 0)
 	{
 		otoinit = 1;
-		DTWdelta = DTWdelta + CHASEPACE;
+		DTWdelta = DTWTIME + CHASEPACE;
+		chasectr = 0;
 	}
 	if ((int)(DTWTIME - DTWdelta) > 0)
 	{
-		DTWdelta = DTWdelta + CHASEPACE;
+		DTWdelta = DTWTIME + CHASEPACE;
 		chasectr += 1;
 	}
 
@@ -149,31 +150,27 @@ void led_chasing(void)
 			break;
 
 		case 1: // Time all LEDs on
-			chasectr += 1; // Timing counter
 			if (chasectr <=10) break;
-
+			chasectr = 0;
 			// Turn all LEDs off and time
 			spisp_wr[0].u16 = 0x0000; // Set all LEDs OFF
-			chasectr = 0;
 			led_chasing_state = 2;
 			break;
 
 		case 2:
-			chasectr += 1; // Timing counter
 			if (chasectr <= 10) break;
+			chasectr = 0;
 			seqctr = 0;
 			spiledx.bitnum = ledmap[0]; // First one in sequence
 			spiledx_prev.bitnum = ledmap[2]; // Use not the first one
-			chasectr = 0;
 			allonctr += 1;
-			if (allonctr > 1)
+			if (allonctr > 2)
 				led_chasing_state = 3;
 			else
 				led_chasing_state = 0;
 			break;
 
 		case 3:
-			chasectr += 1; // Timing counter
 			if (chasectr > 1)
 			{ // Next step
 				chasectr = 0; // Reset time counter
@@ -190,7 +187,7 @@ void led_chasing(void)
 				/* Step to next LED to be displayed. */
 				seqctr += 1;   // Advance sequence ctr
 				if (ledmap[seqctr] == 0xFF) 
-				{
+				{ // Here, end-of-sequence code 
 					xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
 					seqctr = 0;
 					led_chasing_state = 4;
@@ -201,7 +198,6 @@ void led_chasing(void)
 			break;
 
 		case 4:
-			chasectr += 1; // Timing counter
 			if (chasectr > 1)
 			{
 				chasectr = 0; // Reset time counter

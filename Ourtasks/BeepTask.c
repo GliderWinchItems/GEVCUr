@@ -9,7 +9,7 @@
 #include "queue.h"
 #include "cmsis_os.h"
 #include "malloc.h"
-
+#include "morse.h"
 #include "BeepTask.h"
 
 extern TIM_HandleTypeDef htim1;
@@ -35,8 +35,8 @@ void StartBeepTask(void* argument)
   {
 		/* Wait indefinitely for someone to load something into the queue */
 		/* Skip over empty returns, and zero time durations */
-		xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
-		if (Qret != pdPASS) continue;
+		Qret = xQueueReceive(BeepTaskQHandle,&beep,portMAX_DELAY);
+		if (Qret != pdPASS) morse_trap(443);//continue;
 
 		for (i = 0; i < beep.repct; i++)
 		{

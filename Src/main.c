@@ -1014,7 +1014,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 static struct LCDMSGSET lcdi2cfunc1;
 //                                                                       "12345678901234567890"
-static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr 2024.11.01 .1");}
+static void lcdi2cmsgm1 (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   241101:2019");}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1040,7 +1040,7 @@ void StartDefaultTask(void const * argument)
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
