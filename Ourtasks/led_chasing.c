@@ -164,7 +164,7 @@ void led_chasing(void)
 			spiledx.bitnum = ledmap[0]; // First one in sequence
 			spiledx_prev.bitnum = ledmap[2]; // Use not the first one
 			allonctr += 1;
-			if (allonctr > 2)
+			if (allonctr > 1)
 				led_chasing_state = 3;
 			else
 				led_chasing_state = 0;

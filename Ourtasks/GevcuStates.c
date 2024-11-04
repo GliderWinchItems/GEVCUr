@@ -228,8 +228,8 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 		return;
 	}
 #endif
-	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
    	led_safe.mode    = LED_ON;
+	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
 	msgflag = 0; // Allow next LCD msg to be sent once
 	gevcufunction.state = GEVCU_SAFE;
 	return;

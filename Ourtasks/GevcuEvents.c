@@ -177,7 +177,6 @@ pdbg07mbx = gevcufunction.pmbx_cid_cntctr_keepalive_r;
 	
 	/* Send pointer to CAN msg to contactor control. */
 	contactor_control_CANrcv(&gevcufunction.pmbx_cid_cntctr_keepalive_r->ncan.can);
-		
 	return;
 }	
 /* *************************************************************************

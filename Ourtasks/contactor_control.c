@@ -139,7 +139,7 @@ void contactor_control_CANsend(void)
 
 	cntctrctl.sendflag = 0; // Reset flag
 	
-	/* Send contarctor keepalive/command CAN msg. */
+	/* Send contactor keepalive/command CAN msg. */
 	// Set command that has been setup above
 	cntctrctl.canka.can.cd.uc[0] = cntctrctl.cmdsend;
 
