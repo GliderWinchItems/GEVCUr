@@ -185,6 +185,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 	/* Request contactor to DISCONNECT. */
 	cntctrctl.req = CMDRESET;
 
+#if 0
 	if (deh_rig != 3) // deh's rig skips contactor check
 	{ // Here, the rig is assumed to have a contactor active
 		if (cntctrctl.nrflag != 0)
@@ -226,6 +227,7 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 		}
 		return;
 	}
+#endif
 	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
    	led_safe.mode    = LED_ON;
 	msgflag = 0; // Allow next LCD msg to be sent once
