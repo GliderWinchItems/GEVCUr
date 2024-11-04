@@ -467,9 +467,9 @@ DiscoveryF4 LEDs --
   GevcuTask_init_switches();
 
   /* init code for USB_DEVICE */
-taskENTER_CRITICAL();
-  MX_USB_DEVICE_Init();
-taskEXIT_CRITICAL();
+//taskENTER_CRITICAL();
+//  MX_USB_DEVICE_Init();
+//taskEXIT_CRITICAL();
 
 /* =================================================== */
 
