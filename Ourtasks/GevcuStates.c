@@ -298,14 +298,15 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 		gevcufunction.state = GEVCU_SAFE_TRANSITION;
 		return;
 	}
-#if 0	 // DEH rig w/o contactor
+
+	if (deh_rig != 3)
 	/* Wait for CONNECTED. */
 	if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
 	{ // Put a stalled loop timeout here?
 		cntctrctl.req = CMDCONNECT;
 		return;
 	}
-#endif
+
 	/* Contactor connected. */
 
 	led_prep_pb.mode = LED_OFF; // PREP Pushbutton off
