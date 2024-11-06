@@ -18,7 +18,7 @@ osMessageQId lcdmsgsetQHandle;
  * *************************************************************************/
  osMessageQId lcdmsgset_init(uint16_t qsize)
 {
-	lcdmsgQHandle = xQueueCreate(qsize, sizeof(struct LCDMSGSET) );
+	lcdmsgsetQHandle = xQueueCreate(qsize, sizeof(struct LCDMSGSET) );
 	if (lcdmsgsetQHandle == NULL) return NULL;
 	return lcdmsgsetQHandle;
 }

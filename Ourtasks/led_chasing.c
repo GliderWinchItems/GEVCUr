@@ -103,7 +103,6 @@ static const uint8_t ledmap[] =
 	LED_ARM_PB,
 	0xFF	/* End of sequence */
 };
-
 struct LEDREQ spiledx      = {LED_SAFE   ,0}; // Current LED ON
 struct LEDREQ spiledx_prev = {LED_ARM_PB ,1}; // Previous LED (to be turned OFF)
 

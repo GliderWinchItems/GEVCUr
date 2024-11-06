@@ -360,6 +360,7 @@ void GevcuStates_GEVCU_ACTIVE(void)
 	led_prep.mode = LED_OFF; // PREP state LED
 	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
+
 	msgflag = 0; // Allow next LCD msg to be sent once
 	gevcufunction.state = GEVCU_ARM_TRANSITION;
 	return;
@@ -368,10 +369,9 @@ void GevcuStates_GEVCU_ACTIVE(void)
  * void GevcuStates_GEVCU_ARM_TRANSITION(void);
  * @brief	: Do everything needed to get into state
  * *************************************************************************/
-//  20 chars will over-write all display chars from previous msg:       12345678901234567890
-//static void lcdmsg7   (void)             {lcdprintf (&gevcufunction.pbuflcd3,GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
-static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
-static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_ARM           ");}
+//  20 chars will over-write all display chars from previous msg:             12345678901234567890
+static void lcdi2cmsg7(union LCDSETVAR u){lcdi2cputs(&punitd4x20, GEVCUTSK,0,"ARM: MOVE CL ZERO   ");}
+static void lcdi2cmsg8(union LCDSETVAR u){lcdi2cputs(&punitd4x20, GEVCUTSK,0,"GEVCU_ARM           ");}
 
 void GevcuStates_GEVCU_ARM_TRANSITION(void)
 {
@@ -388,22 +388,22 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
 		}
 		return;
 	}
-		lcdi2cfunc.ptr = lcdi2cmsg8;
-		 if (LcdmsgsetTaskQHandle != NULL)
-	    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
+	lcdi2cfunc.ptr = lcdi2cmsg8;
+	 if (LcdmsgsetTaskQHandle != NULL)
+    	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 
-		led_arm_pb.mode = LED_OFF; // ARM Pushbutton LED
-		xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
+	led_arm_pb.mode = LED_OFF; // ARM Pushbutton LED
+	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
-		led_prep.mode = LED_OFF; // PREP state LED
-		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
+	led_prep.mode = LED_OFF; // PREP state LED
+	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
-		led_arm.mode = LED_ON; // ARM state LED
-		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
+	led_arm.mode = LED_ON; // ARM state LED
+	xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
-		msgflag = 0; // Allow next LCD msg to be sent once
-		gevcufunction.state = GEVCU_ARM;
-		return;
+	msgflag = 0; // Allow next LCD msg to be sent once
+	gevcufunction.state = GEVCU_ARM;
+	return;
 }
 /* *************************************************************************
  * void GevcuStates_GEVCU_ARM(void);
@@ -411,7 +411,10 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
  * *************************************************************************/
 void GevcuStates_GEVCU_ARM(void)
 {
+led_arm.mode = LED_ON; // ARM state LED
+xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);	
 	if (gevcufunction.psw[PSW_PR_SAFE]->db_on == SWP_CLOSE )
+		
 	{ // Here SAFE/ACTIVE switch is in ACTIVE position
 		gevcufunction.state = GEVCU_SAFE_TRANSITION;
 		msgflag = 0; // Allow next LCD msg to be sent once

@@ -330,7 +330,7 @@ DiscoveryF4 LEDs --
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384-32);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 448);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -345,11 +345,11 @@ DiscoveryF4 LEDs --
 
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
-	Thrdret = xSerialTaskSendCreate(1);	// Create task and set Task priority
+	Thrdret = xSerialTaskSendCreate(osPriorityNormal+0);	// Create task and set Task priority
 	if (Thrdret == NULL) morse_trap(225);
 
 	/* Create serial receiving task. */
-	ret = xSerialTaskReceiveCreate(1);
+	ret = xSerialTaskReceiveCreate(osPriorityNormal+0);
 	if (ret != pdPASS) morse_trap(224);
 
 	/* Setup semaphore for yprint and sprintf et al. */
@@ -363,11 +363,11 @@ DiscoveryF4 LEDs --
 	if (pret == NULL) morse_trap(223);
 	
 	/* USB-CDC queue and task creation */
-	Qidret = xCdcTxTaskSendCreate(3); // arg = Priority level
+	Qidret = xCdcTxTaskSendCreate(osPriorityNormal+0); // arg = Priority level
 	if (Qidret < 0) morse_trap(221); // Panic LED flashing
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
-  Qidret = xCanTxTaskCreate(2, 64); // CanTask priority, Number of msgs in queue
+  Qidret = xCanTxTaskCreate(osPriorityNormal+2, 64); // CanTask priority, Number of msgs in queue
 	if (Qidret < 0) morse_trap(220); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
@@ -389,13 +389,13 @@ DiscoveryF4 LEDs --
 	// See canfilter_setup.h
 
 	/* Create MailboxTask */
-	xMailboxTaskCreate(2); // (arg) = priority
+	xMailboxTaskCreate(osPriorityNormal+2); // (arg) = priority
 
 	/* Create GatewayTask */
-	xGatewayTaskCreate(1); // (arg) = priority
+	xGatewayTaskCreate(osPriorityNormal+1); // (arg) = priority
 
 	/* GEVCUr state machine. */
-	Thrdret = xGevcuTaskCreate(1); // (arg) = priority
+	Thrdret = xGevcuTaskCreate(osPriorityNormal+2); // (arg) = priority
 	if (Thrdret == NULL) morse_trap(216);
 
 	/* Create Mailbox control block w 'take' pointer for each CAN module. */
@@ -431,19 +431,19 @@ DiscoveryF4 LEDs --
 //	if (Thrdret == NULL) morse_trap(20); // Panic LED flashing
 
 	/* Spi shift register task. */
-	Thrdret = xSpiOutTaskCreate(1);
+	Thrdret = xSpiOutTaskCreate(osPriorityNormal+1);
 	if (Thrdret == NULL) morse_trap(213); // Panic LED flashing
 
 	/* Beeper task (taskpriority, beepqsize) */
-	Thrdret = xBeepTaskCreate(0, 32);
+	Thrdret = xBeepTaskCreate(osPriorityNormal+0, 32);
 	if (Thrdret == NULL) morse_trap(212); // Panic LED flashing
 
 	/* LED task (taskpriority, max queued items) .*/
-	Thrdret = xLEDTaskCreate(0, 32);
+	Thrdret = xLEDTaskCreate(osPriorityNormal+0, 32);
 	if (Thrdret == NULL) morse_trap(211); // Panic LED flashing
 
 	/* ADC summing, calibration, etc. */
-	xADCTaskCreate(3); // (arg) = priority
+	xADCTaskCreate(osPriorityNormal+2); // (arg) = priority
 
 	/* Start SPI for switch/led shift register. */
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
@@ -453,13 +453,13 @@ DiscoveryF4 LEDs --
 	if (Qidret < 0) morse_trap(210); // Panic LED flashing
 
   /* LCD I2C: message handling. (taskpriority, number buffers). */
-  osThreadId retThrd =  xLcdTaskCreate(0,16);
+  osThreadId retThrd =  xLcdTaskCreate(osPriorityNormal+0,32);
   if (retThrd == NULL) morse_trap(123);
 
   /* LCD I2C: message generation (calls to 'printf or'puts). 
   'printf and overrun stalls take place in this task.  
   (task priority, number in queue of pointer|union) */
-  retThrd= xLcdmsgsetTaskCreate(0, 16);
+  retThrd= xLcdmsgsetTaskCreate(osPriorityNormal+0,32);
   if (retThrd == NULL) morse_trap(125);  
 
   /* Set switches before tasks begin running. */
@@ -467,9 +467,11 @@ DiscoveryF4 LEDs --
   GevcuTask_init_switches();
 
   /* init code for USB_DEVICE */
-//taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//taskEXIT_CRITICAL();
+#ifdef USEUSBFORCANMSGS
+  taskENTER_CRITICAL();
+    MX_USB_DEVICE_Init();
+  taskEXIT_CRITICAL();
+#endif  
 
 /* =================================================== */
 
@@ -766,7 +768,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 35125; //35000;
+  htim1.Init.Period = 35000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -790,7 +792,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 35125;
+  sConfigOC.Pulse = 3500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -1015,8 +1017,8 @@ static void MX_GPIO_Init(void)
 
 static struct LCDMSGSET lcdi2cfunc1;
 // LCD splash screen                                                        "12345678901234567890"
-static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   241102:1149");}
-static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh241102:1149");}
+static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   241105:2257");}
+static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh241105:2257");}
 
 /* USER CODE END 4 */
 
@@ -1043,7 +1045,7 @@ void StartDefaultTask(void const * argument)
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST
@@ -1191,12 +1193,13 @@ slowtimectr = 128;
 
 osDelay(5);
 
-	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
+	xTimerChangePeriod( defaultTaskTimerHandle,pdMS_TO_TICKS(63),0);
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
 	{
 		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
+//    xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
 		noteused = 0;
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{

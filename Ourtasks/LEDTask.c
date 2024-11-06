@@ -46,10 +46,10 @@ osMessageQId LEDTaskQHandle;
 
 struct LEDCTL
 {
-	uint16_t bitmsk; // spi bit mask (1 << led_bitnum)
-	uint8_t mode; // Mode: off,on,blink...
-	uint8_t ctr;  // Timing counter
-	uint8_t on;   // Present on/off status
+	uint16_t bitmsk;// spi bit mask (1 << led_bitnum)
+	uint8_t  mode;  // Mode: off,on,blink...
+	uint8_t  ctr;   // Timing counter
+	uint8_t  on;    // Present on/off status
 };
 
 /* Linked list for LEDs currently in blink mode. */
@@ -69,8 +69,9 @@ struct LEDLIST
 };
 
 /* Entry for each possible LED. */
+#define MAXLEDLIST 20
 static struct LEDLIST* phead;
-static struct LEDLIST ledlist[17];
+static struct LEDLIST ledlist[MAXLEDLIST];
 
 /* Preset counter ticks for blink modes. */
 static const uint16_t dur_off[] = 
@@ -80,7 +81,7 @@ static const uint16_t dur_off[] =
 	32, /* Blink slow */
 	 5, /* Blink fast */
 	64, /* Blink 1sec */
-   64  /* Blink short wink */
+    64  /* Blink short wink */
 };
 static const uint16_t dur_on[] = 
 { /* Blinking: ON timing count. */
@@ -89,7 +90,7 @@ static const uint16_t dur_on[] =
 	32, /* Blink slow */
 	 3, /* Blink fast */
 	64, /* Blink 1sec */
-    8  /* Blink short wink */
+     8  /* Blink short wink */
 };
 
 osMessageQId LEDTaskQHandle;
@@ -107,7 +108,7 @@ static void init(void)
 		ledlist[i].ctl.ctr    = 0;
 		ledlist[i].ctl.on     = 0;
 		ledlist[i].ctl.bitmsk = (1 << i);
-		ledlist[i].next = (struct LEDLIST*)NOTONLIST; // Not on list
+		ledlist[i].next = (struct LEDLIST*)NOTONLIST; // Not on list ptr
 		ledlist[i].prev = NULL; // List link
 	
 	}
@@ -121,8 +122,6 @@ static void init(void)
  * @param	: p = pointer to LED struct item to be blinked
  * @param	: mode = blink mode code
  * *************************************************************************/
-
-
 static void blink_init(struct LEDLIST* p, uint8_t mode)
 {
 #ifdef USELEDLISTARRAYSCAN
@@ -172,7 +171,7 @@ static void blink_init(struct LEDLIST* p, uint8_t mode)
  * *************************************************************************/
 static void blink(void)
 {
-	struct LEDLIST* p1 = phead;
+	struct LEDLIST* p1;
 
 #ifdef USELEDLISTARRAYSCAN
 /* Go through array looking and handle active blinkers. */
@@ -204,13 +203,13 @@ static void blink(void)
 				p1->ctl.ctr = dur_off[p1->ctl.mode];
 			}
 		}
-    }
+     }
 	 p1 += 1;
 	}
 	return;
 
 #else /* Linked list method. */
-
+	p1 = phead;
 	if (p1 == NULL) return; // List empty
 
 if (p1 == (struct LEDLIST*)NOTONLIST) morse_trap(292);
@@ -378,7 +377,7 @@ osThreadId xLEDTaskCreate(uint32_t taskpriority, uint32_t ledqsize)
 	init(); // Initialized led struct array
 
 	BaseType_t ret = xTaskCreate(&StartLEDTask, "LEDTask",\
-     128, NULL, taskpriority, &LEDTaskHandle);
+     128+0, NULL, taskpriority, &LEDTaskHandle);
 	if (ret != pdPASS) return NULL;
 
 	LEDTaskQHandle = xQueueCreate(ledqsize, sizeof(struct LEDREQ) );

@@ -45,7 +45,7 @@
 #define CLRESEND     (T1MS*800)  // Timeout for re-sending LCD msg.
 #define CLLINEDELAY  (T1MS* 80)  // Time delay for 20 char line (9600 baud)
 
-static uint8_t clrrowctr = 0;
+static uint8_t clrrowctr = 1;
 
 extern struct LCDI2C_UNIT* punitd4x20; // Pointer LCDI2C 4x20 unit
 
@@ -121,6 +121,7 @@ void calib_control_lever_init(void)
  ************************************************************************************************************* */
 /* LCDI2C 4x20 msg. */
 static struct LCDMSGSET lcdmsgcl1;
+//#define TWOCALLSWITHONEARGUMENT 
   #ifdef TWOCALLSWITHONEARGUMENT 	
 static struct LCDMSGSET lcdmsgcl2;
 static void lcdmsgfunc1(union LCDSETVAR u ){lcdi2cprintf(&punitd4x20,CLROW,0,"CL %5.1f%%  ",u.f);}
@@ -137,7 +138,7 @@ void lcdout(void)
 	/* Skip LCD msg when contactor fault msgs need to be displayed. */
 	if ((lcdcontext & LCDX_CNTR) != 0) return;
 
-/* Note: pacing of this is because it is called from defaultTask loop */
+/* Note: pacing of this is because it is called from defaultTask loop */	
 #ifdef TWOCALLSWITHONEARGUMENT 		
 	/* Load the struct and place a pointer to it on a queue for execution by LcdmsgsetTask. */
 	// This avoids 'printf' semaphores stalling the program calling 'lcdout'
@@ -158,14 +159,13 @@ void lcdout(void)
    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl2, 0);
 #else
 
- 	lcdmsgcl1.u.ftwo[0] = clfunc.curpos; // Value that is passed to function 
-   	lcdmsgcl1.u.u32two[1] = adc1.abs[0].adcfil; // Value that is passed to function 
+ 	lcdmsgcl1.u.ftwo[0]   = clfunc.curpos; // float that is passed to function 
+  lcdmsgcl1.u.u32two[1] = adc1.abs[0].adcfil; // u32 that is passed to function 
 	lcdmsgcl1.ptr = lcdmsgfunc3;   // Pointer to the function
 
 	if (LcdmsgsetTaskQHandle != NULL)
    		xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
 #endif
-
 
 	return;
 }
@@ -176,9 +176,9 @@ void lcdout(void)
  ************************************************************************************************************* */
 static void lcdclearrow(uint8_t row)
 {
-	/* Clear a row string.       
-//                20 spaces:  01234567890123456789*/
-//	lcdprintf(&pbuflcd1,row,0,"                    ");
+	/* Clear a row:               01234567890123456789*/
+	lcdi2cputs(&punitd4x20,row,0,"                    ");
+	return;
 }
 /* ***********************************************************************************************************
  * float calib_control_lever(void);

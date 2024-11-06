@@ -100,21 +100,21 @@ void StartGatewayTask(void const * argument)
 	/* PC, or other CAN, to CAN msg */
 	// Pre-load fixed elements for queue to CAN 'put' 
 
-#ifdef CONFIGCAN2 // CAN2 implemented
 	// CAN1
 	struct CANTXQMSG canqtx1;
 	canqtx1.pctl       = pctl0;
 	canqtx1.maxretryct = 8;
 	canqtx1.bits       = 0; // /NART
-#endif
 
-   // CAN2
+#ifdef CONFIGCAN2 // CAN2 implemented
+  // CAN2
 	struct CANTXQMSG canqtx2;
-	canqtx2.pctl = pctl1;
+	canqtx2.pctl       = pctl1;
 	canqtx2.maxretryct = 8;
 	canqtx2.bits       = 0; // /NART
+#endif
 
-	// PC -> CAN1 (no PC->CAN2)
+	// PC -> CAN1 (there is no PC->CAN2)
 	struct CANTXQMSG pccan1;
 	pccan1.pctl       = pctl0;
 	pccan1.maxretryct = 8;
@@ -199,9 +199,12 @@ extern CAN_HandleTypeDef hcan1;
 	HAL_CAN_Start(&hcan2); // CAN2
 #endif
 
-//taskENTER_CRITICAL();
-//  MX_USB_DEVICE_Init();
-//taskEXIT_CRITICAL();
+	/* Start USB device. */
+#ifdef USEUSBFORCANMSGS
+	taskENTER_CRITICAL();
+	  MX_USB_DEVICE_Init();
+	taskEXIT_CRITICAL();
+#endif	
 
   /* Infinite RTOS Task loop */
   for(;;)
@@ -223,9 +226,9 @@ extern CAN_HandleTypeDef hcan1;
 					if (pncan != NULL)
 					{			
 					/* Convert binary to the ascii/hex format for PC. */
-						canqtx2.can = pncan->can; // Save a local copy
+						canqtx1.can = pncan->can; // Save a local copy
 						xSemaphoreTake(pbuf3->semaphore, 5000);
-						gateway_CANtoPC(&pbuf3, &canqtx2.can);
+						gateway_CANtoPC(&pbuf3, &canqtx1.can);
 
 					/* === CAN1 -> PC === */			
 						vSerialTaskSendQueueBuf(&pbuf3); // Place on queue for usart2 sending
@@ -240,7 +243,7 @@ extern CAN_HandleTypeDef hcan1;
 
 #ifdef CONFIGCAN2 // CAN2 setup
 					/* === CAN1 -> CAN2 === */
-						xQueueSendToBack(CanTxQHandle,&canqtx2,portMAX_DELAY);
+						xQueueSendToBack(CanTxQHandle,&canqtx1,portMAX_DELAY);
 #endif
 					}
 				} while (pncan != NULL);	// Drain the buffer
@@ -260,9 +263,9 @@ extern CAN_HandleTypeDef hcan1;
 					if (pncan != NULL)
 					{			
 					/* Convert binary to the ascii/hex format for PC. */
-						canqtx1.can = pncan->can;	// Save a local copy
+						canqtx2.can = pncan->can;	// Save a local copy
 						xSemaphoreTake(pbuf4->semaphore, 5000);
-						gateway_CANtoPC(&pbuf4, &canqtx1.can);
+						gateway_CANtoPC(&pbuf4, &canqtx2.can);
 
 					/* === CAN2 -> PC === */			
 						vSerialTaskSendQueueBuf(&pbuf4); // Place on queue for usart2 sendingpctocanc
@@ -275,9 +278,8 @@ extern CAN_HandleTypeDef hcan1;
 						xQueueSendToBack(CdcTxTaskSendQHandle,&cdc3,1500);
    #endif
 
-
 					/* === CAN1 -> CAN2 === */
-						xQueueSendToBack(CanTxQHandle,&canqtx1,portMAX_DELAY);
+						xQueueSendToBack(CanTxQHandle,&canqtx2,portMAX_DELAY);
 					}
 				} while (pncan != NULL);	// Drain the buffer
 			}
@@ -353,4 +355,3 @@ dbuggateway1 += 1;
 #endif
   }
 }
-

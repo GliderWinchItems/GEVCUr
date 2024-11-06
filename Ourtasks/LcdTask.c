@@ -116,8 +116,8 @@ taskENTER_CRITICAL();
 	punit->lcdparams.numrows  = numrow;  // number of LCD rows
 	punit->lcdparams.numcols  = numcol;  // number of LCD columns
 	punit->lcdparams.address  = address << 1; // Shifted address
-   	punit->lcdparams.lines    = numrow;
-   	punit->lcdparams.columns  = numcol;
+ 	punit->lcdparams.lines    = numrow;
+ 	punit->lcdparams.columns  = numcol;
 
 	punit->state = LCD_IDLE; // Start off in idle (after final intialization)
 
@@ -149,8 +149,9 @@ void StartLcdTask(void* argument)
   punitd4x20 = xLcdTaskcreateunit(&hi2c1,0x27,4,20);
   if (punitd4x20 == NULL) morse_trap(227);
 
-  osThreadId retThrd= xLcdmsgsetTaskCreate(0, 32);
-  if (retThrd == NULL) morse_trap(125);
+// This has been handled in 'main.c'
+ // osThreadId retThrd= xLcdmsgsetTaskCreate(0, 32);
+ // if (retThrd == NULL) morse_trap(125);
 
     /* Let Tasks know that we are ready accept msgs. */
     LcdTaskflag = 1;
