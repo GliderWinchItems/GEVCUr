@@ -121,6 +121,7 @@ void GevcuStates_GEVCU_INIT(void)
 	      led_safe.mode = 1; // LED_SAFE on
 			break;
 		}
+led_safe.who = 13;		
 		xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
 		msgflag = 0; // Allow next LCD msg to be sent once
 		gevcufunction.substateA = GISA_WAIT;
@@ -156,9 +157,11 @@ void GevcuStates_GEVCU_INIT(void)
  * *************************************************************************/
 //  20 chars will over-write all display chars from previous msg:             12345678901234567890
 static void lcdi2cmsg3a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"GEVCU_SAFE_TRANSITIO");}
+#if 0
 static void lcdi2cmsg3b(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"WAIT CONTACTOR OPEN ");}
 static void lcdi2cmsg3c(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NO-RESPONS");}
 static void lcdi2cmsg3d(union LCDSETVAR u){lcdi2cputs(&punitd4x20,GEVCUTSK,0,"CONTACTOR NOT INITed");}
+#endif
 
 void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 {
@@ -176,10 +179,15 @@ void GevcuStates_GEVCU_SAFE_TRANSITION(void)
 		led_arm.mode     = LED_OFF; // ARM LED
 		led_prep_pb.mode = LED_OFF; // PREP Pushbutton LED
 		led_prep.mode    = LED_OFF; // PREP LED
+led_safe.who = 14;		
 	xQueueSendToBack(LEDTaskQHandle, &led_safe   ,portMAX_DELAY);
+led_arm_pb.who = 15;	
 	xQueueSendToBack(LEDTaskQHandle, &led_arm_pb ,portMAX_DELAY);
+led_arm.who = 16;	
 	xQueueSendToBack(LEDTaskQHandle, &led_arm    ,portMAX_DELAY);
+led_prep_pb.who = 17;	
 	xQueueSendToBack(LEDTaskQHandle, &led_prep_pb,portMAX_DELAY);
+led_prep.who = 17;
 	xQueueSendToBack(LEDTaskQHandle, &led_prep   ,portMAX_DELAY);
 
 	/* Request contactor to DISCONNECT. */
@@ -258,9 +266,11 @@ void GevcuStates_GEVCU_SAFE(void)
 		gevcufunction.state = GEVCU_ACTIVE_TRANSITION;
 
 		led_safe.mode = LED_OFF; // LED_SAFE off
+led_safe.who = 18;		
 		xQueueSendToBack(LEDTaskQHandle,&led_safe,portMAX_DELAY);
 
 		led_prep.mode = LED_BLINKFAST; // PREP Pushbutton LED fast blink mode
+led_prep.who = 19;		
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 		/* Request contactor to CONNECT. */
@@ -310,12 +320,15 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 	/* Contactor connected. */
 
 	led_prep_pb.mode = LED_OFF; // PREP Pushbutton off
+led_prep.who = 20;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 	led_prep.mode = LED_ON; // PREP state led on
+led_prep.who = 21;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 	led_arm_pb.mode = LED_BLINKFAST; // ARM Pushbutton LED fast blink mode
+led_arm_pb.who = 22;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
 	msgflag = 0; // Allow next LCD msg to be sent once
@@ -355,9 +368,11 @@ void GevcuStates_GEVCU_ACTIVE(void)
 	
 	/* Here, ARM_PB pressed, requesting ARMed state. */
 	led_arm_pb.mode = LED_ON; // ARM Pushbutton LED
+led_arm_pb.who = 23;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
 	led_prep.mode = LED_OFF; // PREP state LED
+led_prep.who = 24;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 
@@ -393,12 +408,15 @@ void GevcuStates_GEVCU_ARM_TRANSITION(void)
     	xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdi2cfunc, 0);
 
 	led_arm_pb.mode = LED_OFF; // ARM Pushbutton LED
+led_arm_pb.who = 25;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
 	led_prep.mode = LED_OFF; // PREP state LED
+led_prep.who = 26;
 	xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 	led_arm.mode = LED_ON; // ARM state LED
+led_arm.who = 27;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
 	msgflag = 0; // Allow next LCD msg to be sent once
@@ -425,9 +443,11 @@ xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 	if (gevcufunction.psw[PSW_PB_PREP]->db_on == SW_CLOSED)
 	{
 		led_prep.mode = LED_ON; // PREP state led on
+led_prep.who = 28;		
 		xQueueSendToBack(LEDTaskQHandle,&led_prep,portMAX_DELAY);
 
 		led_arm.mode = LED_OFF; // ARM state LED
+led_arm.who = 29;		
 		xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 
 		/* Set DMOC torque to zero. */

@@ -299,6 +299,9 @@ static void blink_cancel(struct LEDLIST* p)
  * void StartLEDTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+uint8_t LEDwhoidx;
+uint16_t LEDwho[64]; // Debug source of queue entry
+
 void StartLEDTask(void* argument)
 {
 	struct LEDREQ ledreq;
@@ -318,6 +321,10 @@ void StartLEDTask(void* argument)
 			qret = xQueueReceive(LEDTaskQHandle,&ledreq,0);
 			if (qret == pdPASS)
 			{ // Here, led request was on the queue
+
+LEDwho[LEDwhoidx] = (ledreq.who & 0XFF) | (ledreq.mode << 8);
+LEDwhoidx += 1; if (LEDwhoidx >= 64) LEDwhoidx = 0;
+
 				i = ledreq.bitnum; // Convenience variable
 				if (i > 15) morse_trap(86); // Bad queue bitnum (ignorant programmer)
 				p = &ledlist[i]; // More convenience and speed

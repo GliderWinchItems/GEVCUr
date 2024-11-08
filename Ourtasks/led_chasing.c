@@ -118,6 +118,7 @@ static uint32_t DTWdelta;
 
 static uint8_t otoinit;
 
+
 /* *************************************************************************
  * void led_chasing(void);
  *	@brief	: Step through LEDs until CL calibrates
@@ -136,89 +137,88 @@ void led_chasing(void)
 		chasectr += 1;
 	}
 
-	switch (flag_clcalibed)
+
+	switch (led_chasing_state)
 	{
-	case 0:
+	case 0: // Turn all LEDs on
+		spisp_wr[0].u16 = 0xffff; // Set all LEDs ON
+		chasectr = 0;
+		led_chasing_state = 1;
+		break;
 
-		switch (led_chasing_state)
-		{
-		case 0: // Turn all LEDs on
-			spisp_wr[0].u16 = 0xffff; // Set all LEDs ON
-			chasectr = 0;
-			led_chasing_state = 1;
-			break;
+	case 1: // Time all LEDs on
+		if (chasectr <=10) break;
+		chasectr = 0;
+		// Turn all LEDs off and time
+		spisp_wr[0].u16 = 0x0000; // Set all LEDs OFF
+		led_chasing_state = 2;
+		break;
 
-		case 1: // Time all LEDs on
-			if (chasectr <=10) break;
-			chasectr = 0;
-			// Turn all LEDs off and time
-			spisp_wr[0].u16 = 0x0000; // Set all LEDs OFF
-			led_chasing_state = 2;
-			break;
+	case 2:
+		if (chasectr <= 10) break;
+		chasectr = 0;
+		seqctr = 0;
+		spiledx.bitnum = ledmap[0]; // First one in sequence
+		spiledx_prev.bitnum = ledmap[2]; // Use not the first one
+		allonctr += 1;
+		if (allonctr > 1)
+			led_chasing_state = 3;
+		else
+			led_chasing_state = 0;
+		break;
 
-		case 2:
-			if (chasectr <= 10) break;
-			chasectr = 0;
-			seqctr = 0;
-			spiledx.bitnum = ledmap[0]; // First one in sequence
-			spiledx_prev.bitnum = ledmap[2]; // Use not the first one
-			allonctr += 1;
-			if (allonctr > 1)
-				led_chasing_state = 3;
-			else
-				led_chasing_state = 0;
-			break;
+	case 3:
+		if (chasectr > 1)
+		{ // Next step
+			chasectr = 0; // Reset time counter
 
-		case 3:
-			if (chasectr > 1)
-			{ // Next step
-				chasectr = 0; // Reset time counter
+			/* Send a lit LED down the row, over and over. */
+			spiledx.mode = LED_ON; // Turn current LED on
 
-				/* Send a lit LED down the row, over and over. */
-				spiledx.mode = LED_ON; // Turn current LED on
-				xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
+spiledx.who = 9;				
+			xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
+
+			spiledx_prev.mode = LED_OFF; // Turn previous LED off
+spiledx_prev.who = 10;				
+			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
+			
+			spiledx_prev = spiledx; // Update previous
 	
-				spiledx_prev.mode = LED_OFF; // Turn previous LED off
-				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-				
-				spiledx_prev = spiledx; // Update previous
-		
-				/* Step to next LED to be displayed. */
-				seqctr += 1;   // Advance sequence ctr
-				if (ledmap[seqctr] == 0xFF) 
-				{ // Here, end-of-sequence code 
-					xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
-					seqctr = 0;
-					led_chasing_state = 4;
-					break;
-				}
-				spiledx.bitnum = ledmap[seqctr]; // Map LED
+			/* Step to next LED to be displayed. */
+			seqctr += 1;   // Advance sequence ctr
+			if (ledmap[seqctr] == 0xFF) 
+			{ // Here, end-of-sequence code 
+				xQueueSendToBack(BeepTaskQHandle,&beep1,portMAX_DELAY);
+				seqctr = 0;
+				led_chasing_state = 4;
+				break;
 			}
-			break;
-
-		case 4:
-			if (chasectr > 1)
-			{
-				chasectr = 0; // Reset time counter
-				spiledx_prev.mode = LED_OFF; // Turn previous LED off
-				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-				led_chasing_state = 2;
-			}
-			break;
-
+			spiledx.bitnum = ledmap[seqctr]; // Map LED
 		}
 		break;
 
-	case 1:
-	// When Calibration complete turn off the latest lit LED
-		if (flag_clcalibed == 1)
+	case 4:
+		if (chasectr > 1)
 		{
-			flag_clcalibed = 2; // We are done until next reboot
+			chasectr = 0; // Reset time counter
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
+spiledx_prev.who = 11;				
+			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
+			led_chasing_state = 2;
+			allonctr = 15;
+			if (flag_clcalibed_started == 0)
+				break;
+
+			led_chasing_state = 5;
+			spiledx_prev.mode = LED_OFF; // Turn previous LED off
+spiledx_prev.who = 12;			
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 		}
+	case 5:			
+		break;
+
+	default: morse_trap(528);
 		break;
 	}
-
 	return;
 }

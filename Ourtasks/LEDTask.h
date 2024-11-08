@@ -24,6 +24,7 @@ struct LEDREQ
 {
 	uint8_t bitnum;	// Bit number (0 - 15)
 	uint8_t mode;     // LED mode code
+	uint8_t who; // Number to id entry 
 };
 
 /* *************************************************************************/

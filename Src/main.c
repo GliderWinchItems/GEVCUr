@@ -1342,8 +1342,10 @@ yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pd
 				chasectr = 0;
 				/* Send a lit LED down the row, over and over. */
 				spiledx.mode = LED_ON; // Turn current LED on
+spiledx.who = 1;        
 				xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
 
+spiledx_prev.who = 2;        
 				spiledx_prev.mode = LED_OFF; // Turn previous LED off
 				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 				
@@ -1356,6 +1358,7 @@ yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pd
 				if (flag_clcalibed == 1)
 				{
 			flag_clcalibed = 2;
+spiledx_prev.who = 3;              
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 				}

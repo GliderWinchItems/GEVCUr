@@ -52,6 +52,9 @@ extern struct LCDI2C_UNIT* punitd4x20; // Pointer LCDI2C 4x20 unit
 /* Flag to show others when CL calibration is complete. */
 uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 
+/* Flag to tell led_chasing.c that CL calibration started. */
+uint8_t flag_clcalibed_started;
+
 uint8_t flag_cllcdrdy;  // 0 = LCD not initialized; 1 = LCD OK to use
 
 struct CLFUNCTION clfunc;
@@ -258,6 +261,7 @@ float calib_control_lever(void)
 			}
 			clfunc.state = OPEN1MAX;
 			clfunc.timx = DTWTIME + CLRESEND;
+			flag_clcalibed_started = 1; // Let led_chasing know calib started
 			// Drop through to OPEN1MAX
 
 		case OPEN1MAX:
