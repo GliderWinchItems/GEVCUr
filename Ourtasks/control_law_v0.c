@@ -37,7 +37,6 @@ void control_law_v0_calc(struct DMOCCTL* pdmocctl)
 		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->fmaxtorque_pbopen;
 		led_retrieve.mode = LED_OFF;
 	}
-led_retrieve.who = 4;
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 	return;
 }

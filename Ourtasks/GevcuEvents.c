@@ -99,7 +99,6 @@ void GevcuEvents_03(void)
       led_climb.mode = LED_BLINKFAST;
 	else 	
       led_climb.mode = 0;
-led_climb.who = 5;      
 	xQueueSendToBack(LEDTaskQHandle,&led_climb,portMAX_DELAY);
 
 	p = gevcufunction.psw[PSW_ZODOMTR];
@@ -107,7 +106,6 @@ led_climb.who = 5;
 		led_retrieve.mode = 1;
 	else
 		led_retrieve.mode = 0;	
-	led_retrieve.who = 6;
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 
 	p = gevcufunction.psw[PSW_PB_ARM];
@@ -115,7 +113,6 @@ led_climb.who = 5;
 		led_arm_pb.mode = 1;
 	else
 		led_arm_pb.mode = 0;	
-led_arm_pb.who = 7;	
 	xQueueSendToBack(LEDTaskQHandle,&led_arm_pb,portMAX_DELAY);
 
 	p = gevcufunction.psw[PSW_PB_PREP];
@@ -123,7 +120,6 @@ led_arm_pb.who = 7;
 		led_prep_pb.mode = LED_BLINKWINK;
 	else
 		led_prep_pb.mode = 0;	
-led_arm_pb.who = 8;	
 	xQueueSendToBack(LEDTaskQHandle,&led_prep_pb,portMAX_DELAY);
 #endif
 

@@ -175,11 +175,9 @@ void led_chasing(void)
 			/* Send a lit LED down the row, over and over. */
 			spiledx.mode = LED_ON; // Turn current LED on
 
-spiledx.who = 9;				
 			xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
 
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
-spiledx_prev.who = 10;				
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 			
 			spiledx_prev = spiledx; // Update previous
@@ -202,7 +200,6 @@ spiledx_prev.who = 10;
 		{
 			chasectr = 0; // Reset time counter
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
-spiledx_prev.who = 11;				
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 			led_chasing_state = 2;
 			allonctr = 15;
@@ -211,7 +208,6 @@ spiledx_prev.who = 11;
 
 			led_chasing_state = 5;
 			spiledx_prev.mode = LED_OFF; // Turn previous LED off
-spiledx_prev.who = 12;			
 			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
 		}
 	case 5:			
