@@ -23,6 +23,14 @@
 #include "LcdTask.h"
 #include "LcdmsgsetTask.h"
 #include "DTW_counter.h"
+#include "common_can.h"
+#include "gevcu_idx_v_struct.h"
+#include "can_iface.h"
+#include "common_can.h"
+
+extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
+
+void send_can_clcp(void);
 
 /* GevcuTask counts 'sw1timer' ticks for various timeouts.
 	 Gevcu polling timer (ka_k): 4 * (1/512), 128/sec
@@ -56,6 +64,13 @@ uint8_t flag_clcalibed; // 0 = CL not calibrated; 1 = CL calib complete
 uint8_t flag_clcalibed_started;
 
 uint8_t flag_cllcdrdy;  // 0 = LCD not initialized; 1 = LCD OK to use
+
+/* CP status with CL setting. */
+#define CPCANMSGRATE_SAFE 5000
+#define CPCANMSGRATE_ACTIVE 250
+uint16_t ratectr; // Throttle CAN msg rate
+static struct CANTXQMSG cpclcan; // CP & CL status CAN msg
+
 
 struct CLFUNCTION clfunc;
 
@@ -114,6 +129,16 @@ void calib_control_lever_init(void)
 	 	SWMODE_NOW,      /* Debounce mode              */
 	 	SWDBMS(250),     /* Debounce ms: closing       */
 	   SWDBMS(20));     /* Debounce ms: opening       */ 
+
+		/* Initialize fixed data in CP/CL status CAN msg. */
+		cpclcan.pctl       = pctl0; // CAN1 control block ptr (from main.c)
+		cpclcan.maxretryct = 8;
+		cpclcan.bits       = 0; 
+		// CANID_HB_CPSWSCLV1_5: U8_U8_U16_U16_S16, CP:status:spare:sw err:sws on/off:CL +/- 10000');
+		cpclcan.can.id     = 0x32000000;
+		cpclcan.can.dlc    = 8;
+		cpclcan.can.cd.ull = 0; // Clear payload
+		ratectr = CPCANMSGRATE_SAFE/2; // Initial status msg 
 
 	return;
 }
@@ -411,6 +436,98 @@ float calib_control_lever(void)
 			// Program Gone Wild trap; state not in list
 			default: morse_trap (80);
 		}
+
+	send_can_clcp();
+
 	return clfunc.curpos;
 }
+/* ***********************************************************************************************************
+ * void send_can_clcp(void);
+ * @brief	: Output CL status, position, and instantiated switches. Throttle output rate
+ ************************************************************************************************************* */
+/*
+CP status msg--
+'CANID_HB_CPSWSCLV1_5','32000000','CP',      1,1,'U8_U8_U16_U16_S16','HB_CPSWSV1 5:status:spare:sw err:sws on/off:CL +/- 10000');
+'U8_U8_U16_U16_S16'  ,49,7,'[0]:uint8_t,[1]:uint8_t,[2:3]:uint16_t,[4:5]:uint16_t,[6:7]:int16_t');
+pay[0] - status
+    bit[7:2] = reserved
+		bit[1] 0 = no errs in sws; 1 = one or more sws have err, or are indeterminate
+    bit[0] 0 = not calibrated; 1 = CL calibrated;
+pay[1] = reserverd
+pay[2:3] = bit position for sws with err status
+pay[4:5] = bit position for sw on/off (1 = off)
+pay[6:7] = CL position percent * 100: +/- 10000 (100.00%)
 
+Switch position mapping--
+0 - Safe/Active switch pair after dpdt logic applied
+1 - Prep
+2 - ARM
+3 - Zero Odometer
+4 - Zero Tension
+5 - CL full foward
+6 - CL full rest
+7 - 15 reserved :Sw positions not reported default to OPEN
+
+*/
+void send_can_clcp(void)
+{
+	/* Throttle rate according state. */
+	ratectr += 1;
+	switch(gevcufunction.state)
+	{
+	case	GEVCU_INIT: // Slow rate
+	case	GEVCU_SAFE_TRANSITION:
+	case 	GEVCU_SAFE:
+		if (ratectr >= CPCANMSGRATE_SAFE)
+		{
+			ratectr = 0;
+		}
+		break;
+
+	default: // Fast rate
+		if (ratectr >= CPCANMSGRATE_ACTIVE)
+		{
+			ratectr = 0;
+		}
+		break;
+	}
+	if (ratectr == 0)
+	{ // Output status msg
+
+		/* pay[0] Status byte. */
+		cpclcan.can.cd.uc[0]  = flag_clcalibed; // 0 = not calibrated, 1 = calibrated
+		/* SAFE/ACTIVE sw is presently the only switch that can logically be
+		   indeterminate so we only have to check it for status. The others are
+		   naturally either on or off. */
+		// SAFE/ACTIVE is dpdt: 0 err; 1 safe; 2 active; 3 err  
+		if ((gevcufunction.psw[PSW_PR_SAFE]->on == 3) || (gevcufunction.psw[PSW_PR_SAFE]->on == 0))
+			cpclcan.can.cd.uc[0] |= 0x2; // Error
+
+		/* pay[1] = spare. */
+		cpclcan.can.cd.uc[1]  = 0; // Spare
+
+		/* pay[2:3] Switch err status. Bit position shows which sw has error. */
+		// SAFE/ACTIVE is dpdt: 0 err; 1 safe; 2 active; 3 err  
+		if ((gevcufunction.psw[PSW_PR_SAFE]->db_on & 0x2) != 0)
+			cpclcan.can.cd.us[1] = 1;
+		else
+			cpclcan.can.cd.us[1] = 0;
+			
+		/* pay[4:5] Bits for switch on/off (0 = CLOSED; 1 = OPEN) */
+		cpclcan.can.cd.us[2]  = 0xFF80; // Sw positions not reported default to OPEN
+
+		if (gevcufunction.psw[PSW_PR_SAFE]->db_on == 1)
+			cpclcan.can.cd.us[2] |= 0x1 << 0;
+
+		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_PB_PREP]->db_on  & 0x1) << 1;
+		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_PB_ARM]->db_on   & 0x1) << 2;
+		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_ZODOMTR]->db_on  & 0x1) << 3;
+		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_ZTENSION]->db_on & 0x1) << 4;
+		cpclcan.can.cd.us[2] |= (psw_cl_fs_no->db_on  & 0x1) << 5;
+		cpclcan.can.cd.us[2] |= (psw_cl_rst_n0->db_on & 0x1) << 6;
+
+		/* pay[6:7] CL position uint16_t 0-10000 */
+		cpclcan.can.cd.us[3] = (clfunc.curpos * 100);
+		xQueueSendToBack(CanTxQHandle,&cpclcan,4);
+	}
+}

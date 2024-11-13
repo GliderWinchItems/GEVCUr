@@ -42,8 +42,7 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 	p->cid_dmoc_cmd_speed  = 0x46400000;   // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
 	p->cid_dmoc_cmd_torq   = 0x46600000;   // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
 	p->cid_dmoc_cmd_regen  = 0x46800000;   // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
-
-
+	
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends
 	p->cid_cntctr_keepalive_r  = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
