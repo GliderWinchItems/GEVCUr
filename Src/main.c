@@ -1051,7 +1051,7 @@ void StartDefaultTask(void const * argument)
 //#define SENDCANTESTMSGSINABURST
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define TESTLCDPRINTF
-//#define DMOCTESTS
+#define DMOCTESTS
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
