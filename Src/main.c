@@ -443,7 +443,7 @@ DiscoveryF4 LEDs --
 	if (Thrdret == NULL) morse_trap(211); // Panic LED flashing
 
 	/* ADC summing, calibration, etc. */
-	xADCTaskCreate(osPriorityNormal+2); // (arg) = priority
+	xADCTaskCreate(osPriorityNormal+1); // (arg) = priority
 
 	/* Start SPI for switch/led shift register. */
 	if (spiserialparallel_init(&hspi2) != HAL_OK) morse_trap(49);
@@ -1038,14 +1038,14 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
 
-//osDelay(0); // Debugging HardFault
+osDelay(50); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-#define SHOWSERIALPARALLELSTUFF
+//#define SHOWSERIALPARALLELSTUFF
 //#define STARTUPCHASINGLEDS
 //#define TESTBEEPER
 //#define SENDCANTESTMSGSINABURST

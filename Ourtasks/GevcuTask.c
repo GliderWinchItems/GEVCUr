@@ -234,47 +234,47 @@ void StartGevcuTask(void const * argument)
 			noteuse |= GEVCUBIT06;
 		}
 		if ((noteval & GEVCUBIT07) != 0) 
-		{ // CAN: cid_cntctr_keepalive_r (contactor cmd response)
+		{ // CAN: cid_cntctr_keepalive_r 0xE3C (contactor cmd response)
 			GevcuEvents_07();
 			noteuse |= GEVCUBIT07;
 		}
 		if ((noteval & GEVCUBIT08) != 0) 
-		{ // CAN:  cid_dmoc_actualtorq
+		{ // CAN:  cid_dmoc_actualtorq 0x474
 			GevcuEvents_08();
 			noteuse |= GEVCUBIT08;
 		}
 		if ((noteval & GEVCUBIT09) != 0) 
-		{ // CAN:  cid_dmoc_speed
+		{ // CAN:  cid_dmoc_speed 0x476
 			GevcuEvents_09();
 			noteuse |= GEVCUBIT09;
 		}
 		if ((noteval & GEVCUBIT10) != 0) 
-		{ // CAN:  cid_dmoc_dqvoltamp (see * below)
+		{ // CAN:  cid_dmoc_dqvoltamp 0x47C (see * below)
 			GevcuEvents_10();
 			noteuse |= GEVCUBIT10;
 		}
 		if ((noteval & GEVCUBIT11) != 0) 
-		{ // CAN: cid_dmoc_torque (see * below)
+		{ // CAN: cid_dmoc_torque 0x05683004 (see * below)
 			GevcuEvents_11();
 			noteuse |= GEVCUBIT11;
 		}
 		if ((noteval & GEVCUBIT12) != 0) 
-		{ // CAN:  cid_dmoc_critical_f (see * below)
+		{ // CAN:  cid_dmoc_critical_f 0x056837fc (see * below)
 			GevcuEvents_12();
 			noteuse |= GEVCUBIT12;
 		}
 		if ((noteval & GEVCUBIT13) != 0) 
-		{ // CAN:  cid_dmoc_hv_status
+		{ // CAN:  cid_dmoc_hv_status 0xCA0
 			GevcuEvents_13();
 			noteuse |= GEVCUBIT13;
 		}
 		if ((noteval & GEVCUBIT14) != 0) 
-		{ // CAN:  cid_dmoc_hv_temps
+		{ // CAN:  cid_dmoc_hv_temps 0xCA2
 			GevcuEvents_14();
 			noteuse |= GEVCUBIT14;
 		}
 		if ((noteval & GEVCUBIT15) != 0) 
-		{ // CAN:  cid_gevcur_keepalive_i (see * below)
+		{ // CAN:  cid_gevcur_keepalive_i 0xE3E (see * below)
 			GevcuEvents_15();
 			noteuse |= GEVCUBIT15;
 		}

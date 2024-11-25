@@ -184,7 +184,7 @@ void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr)
  ************************************************************************************************************* */
 void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
-/* 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
+/* (0x474) 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
 	/* Extract reported torque and update latest reading. */
 //				torqueActual = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]) - 30000;
 	pdmocctl->torqueact = ((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->torqueoffset;
@@ -199,7 +199,7 @@ void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /* cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6); */
-/* 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
+/* (0x476) 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
 
 	pdmocctl->activityctr += 1;
 
@@ -274,7 +274,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /* cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6); */
-/* 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status */
+/* (0xCA0) 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status */
 
 /*        dcVoltage = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]);
         dcCurrent = ((frame->data.bytes[2] * 256) + frame->data.bytes[3]) - 5000; //offset is 500A, unit = .1A
@@ -294,7 +294,7 @@ void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /*cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8); */
-/* 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
+/* (0xCA2) 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
 
 /*       RotorTemp = frame->data.bytes[0];
         invTemp = frame->data.bytes[1];
