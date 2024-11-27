@@ -77,6 +77,7 @@ void contactor_control_CANrcv(struct CANRCVBUF* pcan)
 		cntctrctl.cmdsend  = CMDRESET;
 		cntctrctl.nextctr = ctr + CNCTR_KAQUICKTIC; // Time to send next KA msg
 		cntctrctl.state = CTL_CLEARFAULT; // Start connect sequence when CMDCONNECT given
+		contactor_control_msg(pcan); // LCD display update
 		return;	
 	}
 	/* Here, not RESET means CONNECT. */
