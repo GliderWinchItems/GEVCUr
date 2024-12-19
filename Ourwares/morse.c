@@ -180,10 +180,30 @@ void morse_number(uint32_t nx)
  *	@brief	: Disable interrupts, Send 'x' and endless loop
  * @param	: x = trap number to flash
  * *************************************************************************/
+#include "LcdTask.h"
+#include "lcdprintf.h"
+#include "LcdmsgsetTask.h"
+static struct LCDMSGSET lcdmsgcl1;
+static void lcdmsgfunc_1(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,0,0,"BLINK: %5d        ",u.u32);}
+
 void morse_trap(uint8_t x)
 {
+	/* Skip setting LCD for a hard-fault. */
+	if (x != 111)
+	{ // Here, other than a hard-fault trap
+		/* LCD post of morse_trap code. */
+		lcdmsgcl1.u.u32 = x; // Value that is passed to function 
+		lcdmsgcl1.ptr = lcdmsgfunc_1;   // Pointer to the function
+		if (LcdmsgsetTaskQHandle != NULL)
+			xQueueSendToBack(LcdmsgsetTaskQHandle, &lcdmsgcl1, 0);
+		lcdmsg_poll();
+
+		osDelay(1000); // Wait for LCD to be set
+	}
+
 	/* Disable global interrupts */
 __asm__ volatile ("CPSID I");
+	/* Flash LEDs. */
 	while(1==1)
 	{
 		morse_number(x);
