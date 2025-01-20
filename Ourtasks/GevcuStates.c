@@ -302,11 +302,13 @@ void GevcuStates_GEVCU_ACTIVE_TRANSITION(void)
 	}
 
 	if (deh_rig != 3)
-	/* Wait for CONNECTED. */
-	if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
-	{ // Put a stalled loop timeout here?
-		cntctrctl.req = CMDCONNECT;
-		return;
+	{
+		/* Wait for CONNECTED. */
+		if ((cntctrctl.cmdrcv & 0xf) != CONNECTED)
+		{ // Put a stalled loop timeout here?
+			cntctrctl.req = CMDCONNECT;
+			return;
+		}
 	}
 
 	/* Contactor connected. */
