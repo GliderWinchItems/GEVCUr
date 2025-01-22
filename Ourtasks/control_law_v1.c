@@ -16,6 +16,7 @@ Speed PI Loop
 #include "spiserialparallelSW.h"
 #include "LEDTask.h"
 #include "control_law_v1.h"
+#include "dmoc_control.h"
 
 struct CTLLAWPILOOP clv1;
 
