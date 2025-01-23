@@ -179,7 +179,7 @@ void StartGevcuTask(void const * argument)
 	contactor_control_init();
 
 	/* Some initialization for first DMOC unit control. */
-	dmoc_control_init(&dmocctl[0]);
+	dmoc_control_init(&dmocctl[0], DMOC_MODETORQUE);
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);

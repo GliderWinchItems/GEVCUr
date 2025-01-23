@@ -8,7 +8,7 @@
 #include "morse.h"
 #include "../../../GliderWinchCommons/embed/svn_common/trunk/db/gen_db.h"
 #include "dmoc_control.h"
-#include "control_law_v1.h"
+#include "dm1_idx_v_struct.h"
 
 /* *************************************************************************
  * void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t mode);

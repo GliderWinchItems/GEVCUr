@@ -24,18 +24,17 @@ torquereq = Simple scaling of Control Lever
  * *************************************************************************/
 void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 {
-	struct DM1_LC* p = &dmoctl.lc;
 
-	if (pdmocctl->speedact >= p->maxspeed_pos) 
+	if (pdmocctl->speedact >= pdmocctl->lc.maxspeed_pos) 
 	{ // Here at upper speed limit
-		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * p->maxtorque_neg;
+		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_neg;
 		led_retrieve.mode = LED_OFF;
 	}
 	else
 	{
-		if (pdmocctl->speedact <= p->maxspeed_neg) 
+		if (pdmocctl->speedact <= pdmocctl->lc.maxspeed_neg) 
 		{
-			pdmocctl->ftorquereq = 0.01f * clfunc.curpos * p->maxtorque_pos;
+			pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos;
 			led_retrieve.mode = LED_ON;
 		}
 	}

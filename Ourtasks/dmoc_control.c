@@ -12,9 +12,10 @@
 #include "DMOCchecksum.h"
 #include "paycnvt.h"
 #include "can_iface.h"
-#include "spiserialparallel.h"
+//#include "spiserialparallel.h"
 #include "shiftregbits.h"
 #include "calib_control_lever.h"
+#include "dm1_idx_v_struct.h"
 
 /* Name the indices to correspond to the GEVCU DMOC documentation. */
 #define CMD1 0 
@@ -34,32 +35,18 @@ extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 struct DMOCCTL dmocctl[NUMDMOC]; // Array allows for multiple DMOCs
 
 /* ***********************************************************************************************************
- * void dmoc_control_init(struct DMOCCTL* pdmocctl);
- * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @brief	: Prep for dmoc handling
+ * void dmoc_control_initTORQUE(void); 
+ * void dmoc_control_initSPEED(void);
+ *
+ * void dmoc_control_init(struct DMOCCTL* pdmocctl, uint8_t pwr_mode);
+ * @brief   : Common init
+ * @param   : pdmocctl = pointer with struct for DMOC instance
+ * @param   : pwr_mode = enum PowerMode (DMOC_MODETORQUE or DMOC_MODESPEED)
+ * @brief	: Prep dmoc(s)
  ************************************************************************************************************* */
-void dmoc_control_init(struct DMOCCTL* pdmocctl)
+void dmoc_control_init(struct DMOCCTL* pdmocctl, uint8_t pwr_mode)
 {
 	int i,j;
-
-	/* If values are semi-permanent in high-flash, then the following would be
-      accomplished by copying from the high-flash areas. */
-
-	/* NOTE--When there is more than one DMOC and the following parameters
-      are applicable to both, then something like the following would be
-      needed to be added, e.g.
-      if (pdmocctl == &dmocctl[0])
-      { // Initial DMOC #1
-        ...
-      }
-		else
-		{ // Here, initial "other" DMOC
-        ... 
-		}
-		NOTE: for dynamometer testing one DMOC will be in torque mode
-      and the other in speed mode. If the following initialization is used
-      for both, the difference in modes will need to be set by "someone".
-	*/
 
 	pdmocctl->state        = DMOCINIT1; // Initial state
 	pdmocctl->sendflag     = 0;
@@ -76,24 +63,14 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
 	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
-	pdmocctl->mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
+	pdmocctl->pwr_mode         = pwr_mode; // Speed or Torque mode selection
 
-	pdmocctl->maxregenwatts = 60000; // ?
-	pdmocctl->maxaccelwatts = 60000; // ?
-	pdmocctl->currentoffset =  5000; // Current offset (0.1 amps) (reported)
+	pdmocctl->speedreq     =  0; // Requested speed
+	pdmocctl->ftorquereq   =  0; // Requested torque (Nm)
+	pdmocctl->torqueact    =  0; // Torque actual (reported)
 
-	pdmocctl->speedreq      =     0; // Requested speed
-	pdmocctl->maxspeed      =  2500; // Max speed (signed)  ### SMALL FOR 03/11/20 TEST ###
-	pdmocctl->speedoffset   = 20000; // Speed command offset
-
-	pdmocctl->torqueact     =     0; // Torque actual (reported)
-	pdmocctl->ftorquereq    =   0.0; // Requested torque (Nm)
-	pdmocctl->fmaxtorque_pbopen   =  30.0; // Max torque (Nm) (Pushbutton open/released)
-	pdmocctl->fmaxtorque_pbclosed = -30.0; // Max torque (Nm) (Pushbutton closed/pressed)
-	pdmocctl->torqueoffset  = 30000; // Torque command offset 
-
-//	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4); // Computed in CMD3
-//	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);         // Computed in CMD3
+//	pdmocctl->regencalc = 65000 - (pdmocctl->lc.maxregenwatts / 4); // Computed in CMD3
+//	pdmocctl->accelcalc = (pdmocctl->lc.maxaccelwatts / 4);         // Computed in CMD3
 
 	/* Load fixed data into three DMOC command CAN msgs. */
 	for (i = 0; i < 3; i++)
@@ -131,6 +108,150 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl)
 
 	return;
 }
+/* ***********************************************************************************************************
+ * void dmoc_control_initTORQUE(void);
+ * void dmoc_control_initSPEED(void);
+ * @brief	: Prep dmoc(s)
+ ************************************************************************************************************* */
+#if 0
+void dmoc_control_initTORQUE(void)
+{
+	int i,j;
+
+	/* If values are semi-permanent in high-flash, then the following would be
+      accomplished by copying from the high-flash areas. */
+
+	struct DMOCCTL* pdmocctl = &dmocctl[DMOC_TORQUE];
+
+	pdmocctl->state        = DMOCINIT1; // Initial state
+	pdmocctl->sendflag     = 0;
+	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
+	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
+	pdmocctl->dmocstatefaulted = 0; // 1 = faulted
+	pdmocctl->dmocnotsending   = 0; // 1 = dmoc CAN msgs not being received
+
+	pdmocctl->activityctr_prev =   0; // Previous count (for computing difference)
+	pdmocctl->activityctr      = 128; // Count CAN msgs from dmoc
+	pdmocctl->activitytimctr   =  50; // Number of sw timer ticks between activity check
+	pdmocctl->activitylimit    =   4; // Number dmoc CAN msgs received during interval
+
+	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
+	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
+	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
+	pdmocctl->pwr_mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
+
+	pdmocctl->speedreq     =  0; // Requested speed
+	pdmocctl->ftorquereq   =  0; // Requested torque (Nm)
+	pdmocctl->torqueact    =  0; // Torque actual (reported)
+
+//	pdmocctl->regencalc = 65000 - (pdmocctl->lc.maxregenwatts / 4); // Computed in CMD3
+//	pdmocctl->accelcalc = (pdmocctl->lc.maxaccelwatts / 4);         // Computed in CMD3
+
+	/* Load fixed data into three DMOC command CAN msgs. */
+	for (i = 0; i < 3; i++)
+	{
+		pdmocctl->cmd[i].txqcan.pctl       = pctl0; // CAN1 control block ptr (from main.c)
+		pdmocctl->cmd[i].txqcan.maxretryct = 8;
+		pdmocctl->cmd[i].txqcan.bits       = CANMSGLOOPBACKBIT; // Route tx copy as if received
+		pdmocctl->cmd[i].txqcan.can.dlc    = 8; // All command msgs have 8 payload bytes
+
+		for (j = 0; j < 8; j++) // Clear out payload (later, some bytes are bytes are overwritten)
+		{
+			pdmocctl->cmd[i].txqcan.can.cd.uc[j] = 0;
+		}
+	}
+	
+/* Load CAN id into DMOC command CAN msgs. */
+
+	//Commanded RPM plus state of key and gear selector
+	// CANID_DMOC_CMD_SPEED', '46400000','DMOC','I16_X6',         'DMOC: cmd: speed, key state'
+	pdmocctl->cmd[CMD1].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_speed;
+
+	//Torque limits
+	// CANID_DMOC_CMD_TORQ',  '46600000','DMOC','I16_I16_I16_X6', 'DMOC: cmd: torq,copy,standby,status
+	pdmocctl->cmd[CMD2].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_torq;
+
+	//Power limits plus setting ambient temp and whether to cool power train or go into limp mode
+	//CANID_DMOC_CMD_REGEN', '46800000','DMOC','I16_I16_X_U8_U8','DMOC: cmd: watt,accel,degC,alive
+	pdmocctl->cmd[CMD3].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_regen;
+
+/* Preset some payload bytes that do not change. */
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; // msb standby torque. -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; // lsb
+
+	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[5] = 60;   // 20 degrees celsius ambient temp
+
+	return;
+}
+void dmoc_control_initSPEED(void)
+{
+	int i,j;
+	struct DMOCCTL* pdmocctl = &dmocctl[DMOC_SPEED];
+
+	pdmocctl->state        = DMOCINIT1; // Initial state
+	pdmocctl->sendflag     = 0;
+	pdmocctl->alive        = 0; // DMOC count increments by 2 & truncated
+	pdmocctl->activityctr  = 0; // Count DMOC 0x476 (0x23B) incoming msgs
+	pdmocctl->dmocstatefaulted = 0; // 1 = faulted
+	pdmocctl->dmocnotsending   = 0; // 1 = dmoc CAN msgs not being received
+
+	pdmocctl->activityctr_prev =   0; // Previous count (for computing difference)
+	pdmocctl->activityctr      = 128; // Count CAN msgs from dmoc
+	pdmocctl->activitytimctr   =  50; // Number of sw timer ticks between activity check
+	pdmocctl->activitylimit    =   4; // Number dmoc CAN msgs received during interval
+
+	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
+	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
+	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
+	pdmocctl->pwr_mode         = DMOC_MODETORQUE; // Speed or Torque mode selection
+
+	pdmocctl->speedreq     =  0; // Requested speed
+	pdmocctl->ftorquereq   =  0;  // Requested torque (Nm)
+	pdmocctl->torqueact    =  0;  // Torque actual (reported)
+
+//	pdmocctl->regencalc = 65000 - (pdmocctl->lc.maxregenwatts / 4); // Computed in CMD3
+//	pdmocctl->accelcalc = (pdmocctl->lc.maxaccelwatts / 4);         // Computed in CMD3
+
+	/* Load fixed data into three DMOC command CAN msgs. */
+	for (i = 0; i < 3; i++)
+	{
+// TODO: Second DMOC will be on a different CAN bus, hence pctl1?
+// But, only one CAN is setup and intialized in 'main.c'
+		pdmocctl->cmd[i].txqcan.pctl       = pctl0; // CAN1 control block ptr (from main.c)
+		pdmocctl->cmd[i].txqcan.maxretryct = 8;
+		pdmocctl->cmd[i].txqcan.bits       = CANMSGLOOPBACKBIT; // Route tx copy as if received
+		pdmocctl->cmd[i].txqcan.can.dlc    = 8; // All command msgs have 8 payload bytes
+
+		for (j = 0; j < 8; j++) // Clear out payload (later, some bytes are bytes are overwritten)
+		{
+			pdmocctl->cmd[i].txqcan.can.cd.uc[j] = 0;
+		}
+	}
+	
+/* Load CAN id into DMOC command CAN msgs. */
+
+	//Commanded RPM plus state of key and gear selector
+	// CANID_DMOC_CMD_SPEED', '46400000','DMOC','I16_X6',         'DMOC: cmd: speed, key state'
+	pdmocctl->cmd[CMD1].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_speed;
+
+	//Torque limits
+	// CANID_DMOC_CMD_TORQ',  '46600000','DMOC','I16_I16_I16_X6', 'DMOC: cmd: torq,copy,standby,status
+	pdmocctl->cmd[CMD2].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_torq;
+
+	//Power limits plus setting ambient temp and whether to cool power train or go into limp mode
+	//CANID_DMOC_CMD_REGEN', '46800000','DMOC','I16_I16_X_U8_U8','DMOC: cmd: watt,accel,degC,alive
+	pdmocctl->cmd[CMD3].txqcan.can.id = gevcufunction.lc.cid_dmoc_cmd_regen;
+
+/* Preset some payload bytes that do not change. */
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[4] = 0x75; // msb standby torque. -3000 offset, 0.1 scale. These bytes give a standby of 0Nm
+	pdmocctl->cmd[CMD2].txqcan.can.cd.uc[5] = 0x30; // lsb
+
+	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[5] = 60;   // 20 degrees celsius ambient temp
+
+	return;
+}
+#endif
+
 /* ***********************************************************************************************************
  * void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr);
  * @brief	: Timer input to state machine
@@ -184,27 +305,27 @@ void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr)
  ************************************************************************************************************* */
 void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
-/* (0x474) 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
+/* 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
 	/* Extract reported torque and update latest reading. */
 //				torqueActual = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]) - 30000;
-	pdmocctl->torqueact = ((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->torqueoffset;
+	pdmocctl->torqueact = ((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->lc.torqueoffset;
 	return;
 }
 /* ***********************************************************************************************************
  * void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan);
- * @brief	: CAN msg received: cid_dmoc_speed
+ * @brief	: CAN msg received: cid_dmoc_actualtorq
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
  * @param	: pcan = pointer to CAN msg struct
  ************************************************************************************************************* */
 void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /* cid_dmoc_speed,     NULL,GEVCUBIT09,0,I16_X6); */
-/* (0x476) 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
+/* 0x23B CANID_DMOC_SPEED:     I16_X6,DMOC: Actual Speed (rpm?) */
 
 	pdmocctl->activityctr += 1;
 
 	// Speed (signed)
-	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->speedoffset;
+	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->lc.speedoffset;
 
 	// DMOC status
 	pdmocctl->dmocstaterep = (pcan->cd.uc[6] >> 4);
@@ -274,14 +395,14 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /* cid_dmoc_hv_status, NULL,GEVCUBIT13,0,I16_I16_X6); */
-/* (0xCA0) 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status */
+/* 0x650 CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status */
 
 /*        dcVoltage = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]);
         dcCurrent = ((frame->data.bytes[2] * 256) + frame->data.bytes[3]) - 5000; //offset is 500A, unit = .1A
         activityCount++; */
 
 	pdmocctl->voltageact = (pcan->cd.uc[0] << 8 | pcan->cd.uc[1]);
-	pdmocctl->currentact = (pcan->cd.uc[2] << 8 | pcan->cd.uc[3]) - pdmocctl->currentoffset;
+	pdmocctl->currentact = (pcan->cd.uc[2] << 8 | pcan->cd.uc[3]) - pdmocctl->lc.currentoffset;
 	pdmocctl->activityctr += 1;
 	return;
 }
@@ -294,7 +415,7 @@ void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /*cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8); */
-/* (0xCA2) 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
+/* 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
 
 /*       RotorTemp = frame->data.bytes[0];
         invTemp = frame->data.bytes[1];
@@ -342,6 +463,10 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
 
+	/* Sanity check: requested torque is within limits. */
+	if ((pdmocctl->ftorquereq > pdmocctl->lc.fmaxtorque_pos) ||  
+		 (pdmocctl->ftorquereq < pdmocctl->lc.fmaxtorque_neg) )
+				pdmocctl->ftorquereq = 0;  // Since bogus request set to zero
 
 	// Convert float in Nm to Nm tenths as an integer.
 	pdmocctl->itorquereq = (pdmocctl->ftorquereq * 10.0f);
@@ -367,18 +492,18 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* Translate above DmocMotorController.cpp */
 	ntmp = pdmocctl->speedreq; // Requested speed (RPM?)
 
-	// (Bogus speed request check: -20000 < speedreq < 20000)
-	if ((ntmp > pdmocctl->speedoffset) || (ntmp < -pdmocctl->speedoffset))
+	//Check for speed request beyond max forward or reverse directions
+	if ((ntmp > pdmocctl->lc.maxspeed_pos) || (ntmp < pdmocctl->lc.maxspeed_neg))
 	         ntmp = 0;
 
 	// Send non-zero speed command only when everything is ready
 	if ((ntmp != 0) && 
 	    (pdmocctl->dmocopstate == DMOC_ENABLE ) && 
 	    (pdmocctl->dmocgear    != DMOC_NEUTRAL) && 
-       (pdmocctl->mode        == DMOC_MODESPEED) )
-            ntmp += pdmocctl->speedoffset; // Command requested speed
+       (pdmocctl->pwr_mode        == DMOC_MODESPEED) )
+            ntmp += pdmocctl->lc.speedoffset; // Command requested speed
     else
-            ntmp = pdmocctl->speedoffset; // Command zero speed
+            ntmp = pdmocctl->lc.speedoffset; // Command zero speed
 
 	// Update payload
 	pdmocctl->cmd[CMD1].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
@@ -491,21 +616,21 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
      	pdmocctl->itorquereq = 0;
 
 	/* Speed or Torque mode. */
-	if (pdmocctl->mode == DMOC_MODETORQUE)
+	if (pdmocctl->pwr_mode == DMOC_MODETORQUE)
 	{ // Torque
 	/* If max speed (positive) over max, and requested torque is positive, set
 		requested to torque to zero. Otherwise, allow requested torque, whether 
 		positive or negative, to remain as requested. */
-      if ((pdmocctl->speedact > pdmocctl->maxspeed) && (pdmocctl->itorquereq >= 0))
+      if ((pdmocctl->speedact > pdmocctl->lc.maxspeed_pos) && (pdmocctl->itorquereq >= 0))
       	pdmocctl->itorquereq = 0;				
 
 	/* Opposite of above. Max speed in reverse, with negative torque requested sets
       torque to zero. Otherwise, allow whatever torque is requested.*/
-      if ((pdmocctl->speedact < -pdmocctl->maxspeed) && (pdmocctl->itorquereq < 0))
+      if ((pdmocctl->speedact < pdmocctl->lc.maxspeed_neg) && (pdmocctl->itorquereq < 0))
       	pdmocctl->itorquereq = 0;				
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
-		ntmp = pdmocctl->itorquereq + pdmocctl->torqueoffset;
+		ntmp = pdmocctl->itorquereq + pdmocctl->lc.torqueoffset;
 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
@@ -516,12 +641,12 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	{ // Speed mode
 		ntmp1 = pdmocctl->itorquereq; // integer of Nm in tenths
 		// Speed mode Max positive torque
-		ntmp = pdmocctl->torqueoffset + ntmp1;
+		ntmp = pdmocctl->lc.torqueoffset + ntmp1;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[1] = (ntmp & 0x00FF);
 
 		// Speed mode Max negative torque
-		ntmp = pdmocctl->torqueoffset - ntmp1; 
+		ntmp = pdmocctl->lc.torqueoffset - ntmp1; 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[3] = (ntmp & 0x00FF);
 	}
@@ -540,8 +665,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 
 	/* CMD3: Power limits plus setting ambient temp *************** */
   	  // [Could these two be an OTO init, or are they updated as the battery sags?]
-	pdmocctl->regencalc = 65000 - (pdmocctl->maxregenwatts / 4);
-	pdmocctl->accelcalc = (pdmocctl->maxaccelwatts / 4);
+	pdmocctl->regencalc = 65000 - (pdmocctl->lc.maxregenwatts / 4);
+	pdmocctl->accelcalc = (pdmocctl->lc.maxaccelwatts / 4);
 
 	// Update payload
 	pdmocctl->cmd[CMD3].txqcan.can.cd.uc[0] = ((pdmocctl->regencalc & 0xFF00) >> 8); //msb of regen watt limit

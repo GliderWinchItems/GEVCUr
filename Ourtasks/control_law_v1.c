@@ -43,7 +43,7 @@ void control_law_v1_init(void)
 	clv1.intgrtr  = 0;
 	
 	/* Initialize DMOC that is in SPEED mode. */
-	dmoc_control_initSPEED();
+//$	dmoc_control_initSPEED();
 	return;
 }
 
@@ -54,7 +54,7 @@ void control_law_v1_init(void)
 void control_law_v1_reset(void)
 {
 	clv1.intgrtr   = 0;
-	dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
+//$	dmocctl[DMOC_SPEED].ftorquereq = 0.0f;
 	return;
 }
 

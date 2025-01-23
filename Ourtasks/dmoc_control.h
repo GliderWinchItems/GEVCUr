@@ -15,8 +15,11 @@
 #include "main.h"
 #include "morse.h"
 #include "common_can.h"
+#include "dm1_idx_v_struct.h"
 
-#define NUMDMOC 1	// Number of DMOCs
+#define NUMDMOC 2	     // Number of DMOCs
+#define DMOC_TORQUE 1  // DMOC unit index for torque DMOC
+#define DMOC_SPEED  0  // DMOC unit index for speed DMOC
 
 /* Number of sw1tim ticks to give 64/sec rate. */
 #define DMOC_KATICKS (2)	
@@ -58,33 +61,29 @@ struct DMOCCMDMSG
 	uint8_t sendflag;        // 1 = send CAN msg, 0 = skip
 };
 
-
 /* DMOC Control */
+/* NOTE: The convention would be to name this DMOCCTLFUNCTION, but
+there are so many references to the name without FUNCTION, that
+it remains DMOCCTL. */
 struct DMOCCTL
 {
+	struct DM1_LC lc; // Parameters, local copy
+
 	struct DMOCCMDMSG cmd[3]; // Three command msgs required
 	uint32_t nextctr;     // Next send time ct
 
 	int32_t speedreq;     // Requested speed (signed)
 	int32_t torquecmd;    // Command (do we need this?)
-	int32_t maxspeed;     // Max speed (signed)
+
 	int32_t speedact;     // Speed actual (reported)
 	int32_t torqueact;    // Torque actual (signed)
 	int32_t regencalc;    // Calculated from maxregenwatts
 	int32_t accelcalc;    // Calculated from maxaccelwatts
-	int32_t currentact;   // dcCurrent Actual (reported)
+	int32_t currentact;   // Current Actual (reported)
 	int32_t voltageact;   // dcVoltage Actual (reported)
 
-	float fmaxtorque_pbopen;  // Max torque (Nm) (pushbutton open/released)
-	float fmaxtorque_pbclosed;// Max torque (Nm) (pushbutton closed/pressed)
 	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
-	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);
-
-	uint32_t maxregenwatts;
-	uint32_t maxaccelwatts;
-	uint32_t torqueoffset; // Offset for zero torque,     (nominally 30000)
-	uint32_t speedoffset;  // Offset for zero speed       (nominally 20000)
-	uint32_t currentoffset;// Offset for reported current (nominally  5000)
+	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
 
 	uint32_t activityctr;   // Count CAN msgs from dmoc
 	uint32_t activityctr_prev;  // Previous count (for computing difference)
@@ -107,16 +106,21 @@ struct DMOCCTL
 	uint8_t dmocstatefaulted; // 1 = faulted
 	uint8_t dmocnotsending; // 1 = dmoc CAN msgs not being received
 	uint8_t alive;        // DMOC counter (see docs)
-	uint8_t mode;         // Speed or Torque selection
+	uint8_t pwr_mode;     // Speed or Torque selection
 	uint8_t sendflag;     // 1 = send CAN msg, 0 = skip
 
-	uint8_t law_mode;  // Control law mode selected
+	uint8_t lmode; // Working law_mode code
 };
 
 /* ***********************************************************************************************************/
-void dmoc_control_init(struct DMOCCTL* pdmocctl);
-/* @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
- * @brief	: Prep for dmoc handling
+void dmoc_control_initTORQUE(void); 
+void dmoc_control_initSPEED(void);
+
+void dmoc_control_init(struct DMOCCTL* pdmocctl, uint8_t pwr_mode);
+/* @brief   : Common init
+ * @param   : pdmocctl = pointer with struct for DMOC instance
+ * @param   : pwr_mode = enum PowerMode (DMOC_MODETORQUE or DMOC_MODETORQUE)
+ * @brief	: Prep dmoc(s)
  * ***********************************************************************************************************/
 void dmoc_control_time(struct DMOCCTL* pdmocctl, uint32_t ctr);
 /* @brief	: Timer input to state machine

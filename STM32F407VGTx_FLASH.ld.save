@@ -57,16 +57,15 @@ _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Address of application jump address */
-__appjump    = 0x08008004;
-__appbegin   = 0x08008000;
-__flashfast  = 0x10000000;
+__appjump    = 0x08010004;
+__appbegin   = 0x08010000;
 
 /* Specify the memory areas */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
 CCMRAM (xrw)      : ORIGIN = 0x10000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1024K
+FLASH (rx)     : ORIGIN = 0x08010000, LENGTH = 448K
 }
 
 /* Highest address of the user mode stack */
@@ -76,6 +75,12 @@ _estack = 0x20000000 + 128K;    /* end of RAM */
 /* Define output sections */
 SECTIONS
 {
+ /* This is used by the startup in order to find the end */
+  .beginof :
+  {
+   _begin_flash = .;   /* define a global symbol for begin of flash */
+  } >FLASH
+
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
@@ -199,6 +204,12 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >RAM
+
+  /* This is used by the startup in order to find the end */
+  .endof :
+ {
+   _end_prog = .;   /* define a global symbol at the end of flash */
+ } >FLASH
 
   /* This is used by the startup in order to find the end */
   .endof :

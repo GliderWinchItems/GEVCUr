@@ -24,6 +24,9 @@
 #include "lcdmsg.h"
 #include "dmoc_control.h"
 #include "control_law_v0.h"
+#include "control_law_v1.h"
+#include "control_law_v2.h"
+#include "control_law_v3.h"
 #include "LcdTask.h"
 #include "LcdmsgsetTask.h"
 
@@ -72,6 +75,9 @@ void payloadfloat(uint8_t *po, float f)
 static void lcdi2cmsg1(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK,0,"GEVCU_INT           ");}
 static void lcdi2cmsg2a(union LCDSETVAR u){lcdi2cputs(&punitd4x20,           GEVCUTSK, 0,"SWITCH TO SAFE      ");}// LCD i2c
 
+static uint8_t lmode_init; // Init switch
+static uint8_t lmode; // Control law mode in use
+
  /* LCDI2C 4x20 msg. */
 static struct LCDMSGSET lcdi2cfunc;
 
@@ -95,6 +101,10 @@ void GevcuStates_GEVCU_INIT(void)
 		/* Wait for calib_control_lever.c to complete calibrations. */
 		if (flag_clcalibed == 0) 
 			break;
+
+/* Control law mode. Selection hard coded. */
+dmocctl[0].lmode = 0;	
+lmode_init = 0;	
 
 		/* Queue LCD msg to be sent once. */
 		if (msgflag == 0)
@@ -452,8 +462,35 @@ xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 		Net-- a new torque request is only computed when it is needed.
  	*/
 	if (dmocctl[0].sendflag != 0)
-	{
-		control_law_v0_calc(&dmocctl[0]); // Version 0: simple scale of CL w pb swtiching
+	{ // Initialize params for this mode
+	   if (lmode_init == 0)
+	   { // Initialize parameters if a new selection was made.
+	      lmode_init = 1;
+	      dm1_idx_v_struct_hardcode_params(&dmocctl[0].lc, lmode);
+	   }
+	   switch(lmode)
+	   {
+	    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
+		control_law_v0_calc(&dmocctl[0]);
+	      break;
+
+	   case DMOCMODE_LAW1_CLOSEDLOOP: // 1 Original pi_loop2 PID speed control  
+		control_law_v1_calc(&dmocctl[0]);
+	      break;
+
+	   case DMOCMODE_LAW2_SPEEDLOCK: // 2 CL scales speed; pushbutton locks speed
+		control_law_v2_calc(&dmocctl[0]);
+	      break;
+
+	   case DMOCMODE_LAW3_AUTOINERTIA: // 3 Back & forth for inertia measurement
+		control_law_v3_calc(&dmocctl[0]);
+	      break;
+
+
+	   default: // Mode called for does not have initialization code
+	      morse_trap (874); // 
+	      break;
+	   }
 	}
 	return;
 }

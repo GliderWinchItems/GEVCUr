@@ -98,6 +98,8 @@ Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
 #Src/syscalls.c
 
 # /* USER CODE BEGIN */
+C_SOURCES += params/$(ADC_PARAM)
+C_SOURCES += params/$(DM1_PARAM)
 
 C_SOURCES += Ourwares/SerialTaskSend.c 
 C_SOURCES += Ourwares/cdc_txbuff.c
@@ -129,7 +131,7 @@ C_SOURCES += Ourtasks/adcfastsum16.c
 C_SOURCES += Ourtasks/adcextendsum.c
 C_SOURCES += Ourtasks/adcparams.c
 C_SOURCES += Ourtasks/adcparamsinit.c
-C_SOURCES += Ourtasks/adc_idx_v_struct.c
+#C_SOURCES += Ourtasks/adc_idx_v_struct.c
 C_SOURCES += Ourtasks/iir_f1.c
 C_SOURCES += Ourtasks/iir_f2.c
 C_SOURCES += Ourtasks/BeepTask.c
@@ -156,7 +158,7 @@ C_SOURCES += Ourtasks/control_law_v0.c
 C_SOURCES += Ourtasks/control_law_v1.c
 C_SOURCES += Ourtasks/control_law_v2.c
 C_SOURCES += Ourtasks/control_law_v3.c
-C_SOURCES += Ourtasks/control_law_params.c
+#C_SOURCES += Ourtasks/control_law_params.c
 C_SOURCES += Ourtasks/lcd_hd44780_i2c.c
 C_SOURCES += Ourtasks/LcdTask.c
 C_SOURCES += Ourtasks/LcdmsgsetTask.c
@@ -213,6 +215,7 @@ C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32F407xx
 
+C_DEFS += -DI_AM_CANID=$(I_AM_CANID) 
 
 # AS includes
 AS_INCLUDES =  \
