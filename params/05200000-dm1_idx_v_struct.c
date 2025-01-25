@@ -8,7 +8,6 @@
 #include "SerialTaskReceive.h"
 #include "morse.h"
 #include "../../../GliderWinchCommons/embed/svn_common/trunk/db/gen_db.h"
-#include "dm1_idx_v_struct.h"
 #include "control_law_v1.h"
 
 /* *************************************************************************

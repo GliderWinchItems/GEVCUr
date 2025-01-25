@@ -42,8 +42,8 @@ void control_law_v1_init(void)
 	clv1.dsrdspd  = 0;
 	clv1.intgrtr  = 0;
 	
-	/* Initialize DMOC that is in SPEED mode. */
-//$	dmoc_control_initSPEED();
+	/* SPEED mode. */
+	dmoc_control_init(&dmocctl[0], DMOC_MODESPEED);
 	return;
 }
 

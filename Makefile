@@ -162,6 +162,8 @@ C_SOURCES += Ourtasks/control_law_v3.c
 C_SOURCES += Ourtasks/lcd_hd44780_i2c.c
 C_SOURCES += Ourtasks/LcdTask.c
 C_SOURCES += Ourtasks/LcdmsgsetTask.c
+C_SOURCES += Ourtasks/CID004Task.c
+
 
 # /* USER CODE END */ 
 

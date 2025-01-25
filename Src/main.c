@@ -94,6 +94,7 @@
 #include "lcd_hd44780_i2c.h"
 #include "LcdmsgsTask.h"
 #include "LcdmsgsetTask.h"
+#include "CID004Task.h"
 
 
 /* USER CODE END Includes */
@@ -461,6 +462,10 @@ DiscoveryF4 LEDs --
   (task priority, number in queue of pointer|union) */
   retThrd= xLcdmsgsetTaskCreate(osPriorityNormal+0,32);
   if (retThrd == NULL) morse_trap(125);  
+
+  /* CAN ID004 sending task. */
+  retThrd = xCID004TaskCreate(osPriorityNormal+0);
+  if (retThrd == NULL) morse_trap(131);
 
   /* Set switches before tasks begin running. */
   calib_control_lever_init();
