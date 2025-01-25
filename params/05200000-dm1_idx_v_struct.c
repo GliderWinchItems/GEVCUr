@@ -21,37 +21,37 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    switch (lmode)
    {
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
-      p->maxspeed_pos   =  5000; // Max speed (signed) (e.g. 9000)
-      p->maxspeed_neg   = -5000; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =   300; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =  -300; // Max torque (Nm) reverse (e.g. -300)
+      p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
+      p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
+      p->fmaxtorque_pos =   30; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =  -30; // Max torque (Nm) reverse (e.g. -300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
       break;
 
    case DMOCMODE_LAW1_CLOSEDLOOP: // 3  
-      p->maxspeed_pos   =  4000; // Max speed (signed) (e.g. 9000)
-      p->maxspeed_neg   = -4000; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =    10; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =   -10; // Max torque (Nm) reverse (e.g. -300)
+      p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
+      p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
+      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000  
       control_law_v1_init();
       break;
 
    case DMOCMODE_LAW2_SPEEDLOCK:
-      p->maxspeed_pos   =  4000; // Max speed (signed) (e.g. 9000)
-      p->maxspeed_neg   = -4000; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =    10; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =   -10; // Max torque (Nm) reverse (e.g. -300)
+      p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
+      p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
+      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000      
       break;
 
    case DMOCMODE_LAW3_AUTOINERTIA: // 2 Back & forth for inertia measurement
-      p->maxspeed_pos   =  3000; // Max speed (signed)
-      p->maxspeed_neg   = -3000; // Max speed (signed)
-      p->fmaxtorque_pos =   100; // Max torque (Nm) forward
+      p->maxspeed_pos   =  1500; // Max speed (signed)
+      p->maxspeed_neg   = -1500; // Max speed (signed)
+      p->fmaxtorque_pos =   30; // Max torque (Nm) forward
       p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
