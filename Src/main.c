@@ -1022,8 +1022,8 @@ static void MX_GPIO_Init(void)
 
 static struct LCDMSGSET lcdi2cfunc1;
 // LCD splash screen                                                        "12345678901234567890"
-static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   250123:1617");}
-static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh250123:1617");}
+static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   250124:2012");}
+static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh250124:2012");}
 
 /* USER CODE END 4 */
 

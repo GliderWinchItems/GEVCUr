@@ -23,12 +23,14 @@
 #include "adcparamsinit.h"
 #include "lcdmsg.h"
 #include "dmoc_control.h"
+#include "dm1_idx_v_struct.h"
 #include "control_law_v0.h"
 #include "control_law_v1.h"
 #include "control_law_v2.h"
 #include "control_law_v3.h"
 #include "LcdTask.h"
 #include "LcdmsgsetTask.h"
+#include "dm1_idx_v_struct.h"
 
 #define GEVCULCDMSGDELAY 32 // Minimum number of time ticks between LCD msgs
 #define GEVCULCDMSGLONG (128*30) // Very long delay

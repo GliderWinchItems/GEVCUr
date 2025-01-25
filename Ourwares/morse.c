@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "DTW_counter.h"
 #include "stm32f4xx_hal.h"
+#include "lcdmsg.h"
 
 #define TICPERSEC (186000000)
 #define TIC_DIT (TICPERSEC/6)
@@ -183,6 +184,8 @@ void morse_number(uint32_t nx)
 #include "LcdTask.h"
 #include "lcdprintf.h"
 #include "LcdmsgsetTask.h"
+#include "lcdmsg.h"
+
 static struct LCDMSGSET lcdmsgcl1;
 static void lcdmsgfunc_1(union LCDSETVAR u){lcdi2cprintf(&punitd4x20,0,0,"BLINK: %5d        ",u.u32);}
 

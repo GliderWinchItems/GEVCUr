@@ -52,7 +52,13 @@ struct DM1_LC
    uint32_t torqueoffset; // Offset for zero torque,     (nominally 30000)
    uint32_t speedoffset;  // Offset for zero speed       (nominally 20000)
    uint32_t currentoffset;// Offset for reported current (nominally  5000)
-
-
 };
+
+/* *************************************************************************/
+ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t mode);
+/* @brief   : Init struct from hard-coded parameters (rather than database params in highflash)
+ * @param   : p = pointer to parameter struct
+ * @param   : lmode = parameters for law_mode
+ * *************************************************************************/
+
 #endif
