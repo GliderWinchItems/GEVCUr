@@ -155,7 +155,7 @@ static void absolute(struct ADCFUNCTION* p, uint8_t idx)
 
 uint32_t dbgadcfil;
 uint32_t dbgadcratio;
-
+#if 0
 static void ratiometric5v(struct ADCFUNCTION* p, int8_t idx)
 {
 /* NOTE: Ratiometric is based on the ratio of the reading of the 5v supply 
@@ -189,6 +189,7 @@ dbgadcratio=adcratio;
 
 	return;
 }
+#endif
 
 /* *************************************************************************
  * void adcparams_cal(void);
