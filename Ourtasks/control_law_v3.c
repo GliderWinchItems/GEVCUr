@@ -17,6 +17,8 @@ torquereq = Simple scaling of Control Lever
 #include "LEDTask.h"
 #include "control_law_v3.h"
 
+static uint8_t direction;
+
 /* *************************************************************************
  * void control_law_v3_calc(struct DMOCCTL* pdmocctl);
  * @param	: pdmocctl = pointer to struct with "everything" for this DMOC unit
@@ -24,19 +26,19 @@ torquereq = Simple scaling of Control Lever
  * *************************************************************************/
 void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 {
-
-	if (pdmocctl->speedact >= pdmocctl->lc.maxspeed_pos) 
-	{ // Here at upper speed limit
+	if (direction == 0)
+	{ 
+		/* Pct (0.01) * CL position (0-100.0) * max torque (likely) negative (Nm) */
 		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_neg;
-		led_retrieve.mode = LED_OFF;
+		led_retrieve.mode = LED_ON;
+		direction = 1;
 	}
 	else
 	{
-		if (pdmocctl->speedact <= pdmocctl->lc.maxspeed_neg) 
-		{
-			pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos;
-			led_retrieve.mode = LED_ON;
-		}
+		/* Pct (0.01) * CL position (0-100.0) * max torque positive (Nm) */
+		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos;
+		led_retrieve.mode = LED_OFF;
+		direction = 0;
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
 	return;

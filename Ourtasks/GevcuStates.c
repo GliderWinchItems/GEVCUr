@@ -105,7 +105,7 @@ void GevcuStates_GEVCU_INIT(void)
 			break;
 
 /* Control law mode. Selection hard coded. */
-dmocctl[0].lmode = 0;	
+dmocctl[0].lmode = 3;	
 lmode_init = 0;	
 
 		/* Queue LCD msg to be sent once. */

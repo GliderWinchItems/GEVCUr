@@ -1,0 +1,4 @@
+#!/bin/bash -e
+# Compile and flash if no error on compile
+./mm $1
+./script-flash build/GEVCUr
