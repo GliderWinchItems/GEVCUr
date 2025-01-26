@@ -32,12 +32,6 @@ void control_law_v1_init(void)
 
 	/* Load parameters and initialize variables. */
 	/* See: struct CTLLAWPILOOP in dmoc_control.h. */
-	clv1.kp = 0.10f;  		// Proportional constant
-	clv1.ki = 1.0E-3f; 		// Integral constant
-	clv1.fllspd = 2500.0f;	//	100% control lever desired speed magnitude
-	clv1.clpi = 10.0f;		//	Integrator clipping level
-	clv1.clpc = 100.0f;		//	Command clipping level
-
 	clv1.spderr   = 0;
 	clv1.dsrdspd  = 0;
 	clv1.intgrtr  = 0;
@@ -65,12 +59,14 @@ void control_law_v1_reset(void)
  * *************************************************************************/
 void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 {
+	struct DM1_LC* p = &pdmocctl->lc; // Pointer to fixed parameters (dm1_idx_v_struct.[ch])
+
 	/* Init parameters automatically on bootup. */
 	if (init_flag == 0) control_law_v1_init();
 
 	//	Compute desred speed based on control lever and PB conditons
 	/* Press pushbutton for direction reversal */
-	clv1.dsrdspd = 0.01f * clfunc.curpos * clv1.fllspd;	//	Desired speed magnitude
+	clv1.dsrdspd = 0.01f * clfunc.curpos * p->fllspd;	//	Desired speed magnitude
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{ 
 		clv1.dsrdspd = -clv1.dsrdspd;
@@ -85,25 +81,25 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 	clv1.spderr = clv1.dsrdspd - pdmocctl->speedact;
 
 	//	Update integrator and clp if needed
-	clv1.intgrtr += clv1.spderr * clv1.ki;
-	if (clv1.intgrtr > clv1.clpi) 
+	clv1.intgrtr += clv1.spderr * p->ki;
+	if (clv1.intgrtr > p->clpi) 
 	{
-		clv1.intgrtr = clv1.clpi;
+		clv1.intgrtr = p->clpi;
 	}
-	else if (clv1.intgrtr < -clv1.clpi)
+	else if (clv1.intgrtr < -p->clpi)
 	{
-		clv1.intgrtr = -clv1.clpi;
+		clv1.intgrtr = -p->clpi;
 	}
 
 	//	Compute and limit torque command
-	pdmocctl->ftorquereq = clv1.spderr * clv1.kp + clv1.intgrtr;
-	if (pdmocctl->ftorquereq > clv1.clpc) 
+	pdmocctl->ftorquereq = clv1.spderr * p->kp + clv1.intgrtr;
+	if (pdmocctl->ftorquereq > p->clpc) 
 	{
-		pdmocctl->ftorquereq = clv1.clpc;
+		pdmocctl->ftorquereq = p->clpc;
 	}
-	else if (pdmocctl->ftorquereq < -clv1.clpc)
+	else if (pdmocctl->ftorquereq < -p->clpc)
 	{
-		pdmocctl->ftorquereq = -clv1.clpc;
+		pdmocctl->ftorquereq = -p->clpc;
 	}
 
 	/* Update LED state. */

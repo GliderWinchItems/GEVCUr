@@ -15,13 +15,6 @@ struct CTLLAWPILOOP // Control Law PI Loop
 	float spderr;	//	speed error
 	float dsrdspd;	//	desired speed
 	float intgrtr;	//	PI integrator
-
-	//	Parameters
-	float kp;    	// Proportional constant
-	float ki;    	// Integral constant
-	float clpi;		//	integrator anti-windup clip level
-	float clpc;		//	command clip level
-	float fllspd;	//	100% control lever speed magnitude
 };
 
 /* *************************************************************************/

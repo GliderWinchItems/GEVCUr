@@ -1,8 +1,8 @@
 /******************************************************************************
-* File Name          : 05200000_dm1_idx_v_struct.c
-* Date First Issued  : 01/18/2025
+* File Name          : 05800000_dm1_idx_v_struct.c
+* Date First Issued  : 01/25/2025
 * Description        : DMOC function parameters
-* Usage              : Control Panel/GEVCUr demo winch
+* Usage              : Control Panel/GEVCUr proxy
 *******************************************************************************/
 #include "dm1_idx_v_struct.h"
 #include "SerialTaskReceive.h"

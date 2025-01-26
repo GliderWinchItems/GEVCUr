@@ -47,6 +47,12 @@ struct DM1_LC
    float   fmaxtorque_pos; // Max torque (Nm) forward (e.g. 300)
    float   fmaxtorque_neg; // Max torque (Nm) reverse (e.g. -300)
 
+   // The following are apply to control_law_v1 (pi_loop)
+   float kp;      // Proportional constant
+   float ki;      // Integral constant
+   float clpi;    // integrator anti-windup clip level
+   float clpc;    // command clip level
+   float fllspd;  // 100% control lever speed magnitude
 
    /* The following apply to all modes. */
    uint32_t torqueoffset; // Offset for zero torque,     (nominally 30000)

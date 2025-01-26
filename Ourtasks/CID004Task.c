@@ -46,22 +46,16 @@ void StartCID004Task(void* argument)
   /* Infinite loop */
   for(;;)
   {
-		/* Wait a few seconds to see of someone else sending CAN ID 004 msgs. */
-		xTaskNotifyWait(0,0xffffffff, &noteval, pdMS_TO_TICKS(3000));
+		/* Wait 1/64th sec, and also see of someone else sending CAN ID 004 msgs. */
+		xTaskNotifyWait(0,0xffffffff, &noteval, 8);
 		if (noteval == CID004BIT00)
 		{ // Here, 004 was discovered on bus!
 			while (1==1) osDelay(10000); // Loop forever
 		}
 		/* Here, no other 004 senders detected. */
-		while (1==1)
-		{
-			p->txqcan.can.cd.uc[0] += 1; // Tick within second count
-			// Queue CAN msg
-			xQueueSendToBack(CanTxQHandle, &p->txqcan,4);
-
-			osDelay(8); // Delay 512 Hz tick clock to yield 64/sec msg rate
-		}
-
+		p->txqcan.can.cd.uc[0] += 1; // Tick within second count
+		// Queue CAN msg
+		xQueueSendToBack(CanTxQHandle, &p->txqcan,4);
 	}
 }
 /* *************************************************************************

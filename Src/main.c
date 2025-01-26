@@ -1022,8 +1022,8 @@ static void MX_GPIO_Init(void)
 
 static struct LCDMSGSET lcdi2cfunc1;
 // LCD splash screen                                                        "12345678901234567890"
-static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   250124:2012");}
-static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh250124:2012");}
+static void lcdi2cmsgm1    (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUr   250125:2058");}
+static void lcdi2cmsgm1deh (union LCDSETVAR u){lcdi2cputs  (&punitd4x20,0,0,"GEVCUrDeh250125:2058");}
 
 /* USER CODE END 4 */
 
@@ -1221,6 +1221,7 @@ osDelay(5);
 
 #ifdef DMOCTESTS
 	yprintf(&pbuf1,"\n\rSTATE:dmoc:act: %X new: %X : rep: %X :op: %X",dmocctl[0].dmocstateact,dmocctl[0].dmocstatenew,dmocctl[0].dmocstaterep,dmocctl[0].dmocopstate);
+  yprintf(&pbuf2," speedact %6d",dmocctl[0].speedact);
 #endif
 	
 // ================== SLOW ==============================================
