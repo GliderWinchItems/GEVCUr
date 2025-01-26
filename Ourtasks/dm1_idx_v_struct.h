@@ -35,6 +35,9 @@
 /* Parameters for DMOC control.  C = Local Copy. */
 struct DM1_LC
 {
+   /* Have GEVCUr code skip features not present hardware. */
+   uint8_t demoproxy; // 0 = demo winch; 1 = proxy
+
    uint8_t law_mode; // Control mode
    // Pushbutton index for step?
    // PUshbutton index for select?

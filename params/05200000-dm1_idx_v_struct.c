@@ -18,6 +18,8 @@
  * *************************************************************************/
 void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
 {
+   p->demoproxy  = 0; // 0 = demo winch; 1 = proxy
+
    switch (lmode)
    {
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
