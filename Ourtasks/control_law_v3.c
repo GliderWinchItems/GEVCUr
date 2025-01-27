@@ -26,6 +26,7 @@ static uint8_t direction = 1;
  * *************************************************************************/
 void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 {
+#if 0
 	if (pdmocctl->speedact >= pdmocctl->lc.upper_speed_lmt) 
 	{ // Here at or above upper speed limit
 		direction = 0;
@@ -36,6 +37,7 @@ void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 		direction = 1;
 		led_retrieve.mode = LED_OFF;
 	}
+#endif
 
 	if (direction == 0)
 	{ 
