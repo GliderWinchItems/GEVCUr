@@ -475,7 +475,7 @@ xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 		else		      
 	      	dmoc_control_init(&dmocctl[0], DMOC_MODETORQUE);
 	   }
-	   switch(lmode)
+	   switch(dmocctl[0].lmode)
 	   {
 	    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
 		control_law_v0_calc(&dmocctl[0]);

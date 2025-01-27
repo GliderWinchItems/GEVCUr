@@ -63,7 +63,7 @@ void dmoc_control_init(struct DMOCCTL* pdmocctl, uint8_t pwr_mode)
 	pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;   // Assume initial state
 	pdmocctl->dmocopstate  = DMOC_DISABLED;   // Requested startup state
 	pdmocctl->dmocgear     = DMOC_NEUTRAL;    // Gear selection
-	pdmocctl->pwr_mode         = pwr_mode; // Speed or Torque mode selection
+	pdmocctl->pwr_mode     = pwr_mode; // Speed or Torque mode selection
 
 	pdmocctl->speedreq     =  0; // Requested speed
 	pdmocctl->ftorquereq   =  0; // Requested torque (Nm)

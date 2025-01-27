@@ -1,6 +1,6 @@
 /******************************************************************************
-* File Name          : control_law_v0.c
-* Date First Issued  : 03/19/2020
+* File Name          : control_law_v3.c
+* Date First Issued  : 01/27/2025
 * Board              : DiscoveryF4
 * Description        : Control for auto inertia testing
 *******************************************************************************/
@@ -17,7 +17,7 @@ torquereq = Simple scaling of Control Lever
 #include "LEDTask.h"
 #include "control_law_v3.h"
 
-static uint8_t direction;
+static uint8_t direction = 1;
 
 /* *************************************************************************
  * void control_law_v3_calc(struct DMOCCTL* pdmocctl);
@@ -26,13 +26,13 @@ static uint8_t direction;
  * *************************************************************************/
 void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 {
-	if (pdmocctl->speedact >= pdmocctl->lc.maxspeed_pos) 
+	if (pdmocctl->speedact >= pdmocctl->lc.upper_speed_lmt) 
 	{ // Here at or above upper speed limit
 		direction = 0;
 		led_retrieve.mode = LED_ON;
 	}
-	else if (pdmocctl->speedact <= pdmocctl->lc.maxspeed_neg) 
-	{  // Here at or below lower speed limit
+	else if (pdmocctl->speedact <= pdmocctl->lc.lower_speed_lmt) 
+        { // Here at or below lower speed limit
 		direction = 1;
 		led_retrieve.mode = LED_OFF;
 	}

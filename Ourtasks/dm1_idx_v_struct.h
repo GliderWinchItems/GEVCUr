@@ -43,12 +43,14 @@ struct DM1_LC
    // PUshbutton index for select?
 
    /* The following are initialized according to the mode set. */
-   uint32_t maxregenwatts; // E.g. 60000
-   uint32_t maxaccelwatts; // E.g. 60000
-   int32_t  maxspeed_pos;  // Max speed (signed) (e.g. 9000)
-   int32_t  maxspeed_neg;  // Max speed (signed) (e.g.-9000)
-   float   fmaxtorque_pos; // Max torque (Nm) forward (e.g. 300)
-   float   fmaxtorque_neg; // Max torque (Nm) reverse (e.g. -300)
+   uint32_t maxregenwatts;  // E.g. 60000
+   uint32_t maxaccelwatts;  // E.g. 60000
+   int32_t  maxspeed_pos;   // Max speed (signed) (e.g. 9000)
+   int32_t  maxspeed_neg;   // Max speed (signed) (e.g.-9000)
+   float   fmaxtorque_pos;  // Max torque (Nm) forward (e.g. 300)
+   float   fmaxtorque_neg;  // Max torque (Nm) reverse (e.g. -300)
+   int32_t upper_speed_lmt; // Upper speed limit for auto-inertia
+   int32_t lower_speed_lmt; // Lower speed limit for auto-inertia
 
    // The following are apply to control_law_v1 (pi_loop)
    float kp;      // Proportional constant

@@ -62,12 +62,29 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
       p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
-      break;
+      p->upper_speed_lmt = 1000; // Upper speed limit for auto-inertia
+      p->lower_speed_lmt =-1000; // Lower speed limit for auto-inertia
+      if((p->lower_speed_lmt >= p->upper_speed_lmt) ||
+         (p->lower_speed_lmt <  p->maxspeed_neg)    ||
+         (p->upper_speed_lmt <  p->maxspeed_pos))
+      {
+          morse_trap(731);
+      }
+      break; 
 
    default: // Mode called for does not have initialization code
       morse_trap (874); // 
       break;
    }
+
+   if((p->maxspeed_pos < 0)   ||
+      (p->maxspeed_neg > 0)   ||
+      (p->fmaxtorque_pos < 0) ||
+      (p->fmaxtorque_neg > 0) )
+      {
+          morse_trap(801);
+      }
+
 
    p->torqueoffset   = 30000; // Offset for zero torque      (nominally 30000)
    p->speedoffset    = 20000; // Offset for zero speed       (nominally 20000)
