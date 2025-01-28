@@ -66,7 +66,7 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
       p->lower_speed_lmt =-1000; // Lower speed limit for auto-inertia
       if((p->lower_speed_lmt >= p->upper_speed_lmt) ||
          (p->lower_speed_lmt <  p->maxspeed_neg)    ||
-         (p->upper_speed_lmt <  p->maxspeed_pos))
+         (p->upper_speed_lmt >  p->maxspeed_pos))
       {
           morse_trap(731);
       }

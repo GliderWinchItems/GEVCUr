@@ -17,7 +17,7 @@ torquereq = Simple scaling of Control Lever
 #include "LEDTask.h"
 #include "control_law_v3.h"
 
-static uint8_t direction = 1;
+static uint8_t direction;
 
 /* *************************************************************************
  * void control_law_v3_calc(struct DMOCCTL* pdmocctl);
@@ -26,8 +26,16 @@ static uint8_t direction = 1;
  * *************************************************************************/
 void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 {
-#if 0
-	if (pdmocctl->speedact >= pdmocctl->lc.upper_speed_lmt) 
+	
+        if (clfunc.curpos == 0.0)
+        {
+                 direction = 0;		//  initialize starting direction
+		 led_retrieve.mode = LED_OFF;
+                 pdmocctl->ftorquereq = 0.0;
+                 return;  
+        }
+         
+        if (pdmocctl->speedact >= pdmocctl->lc.upper_speed_lmt) 
 	{ // Here at or above upper speed limit
 		direction = 0;
 		led_retrieve.mode = LED_ON;
@@ -36,8 +44,16 @@ void control_law_v3_calc(struct DMOCCTL* pdmocctl)
         { // Here at or below lower speed limit
 		direction = 1;
 		led_retrieve.mode = LED_OFF;
-	}
-#endif
+        }
+        else if (direction == 0)
+        {
+                 led_retrieve.mode = LED_ON;
+        }
+        else 
+        {
+                 led_retrieve.mode = LED_OFF
+;
+        }
 
 	if (direction == 0)
 	{ 

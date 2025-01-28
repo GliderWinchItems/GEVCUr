@@ -468,7 +468,7 @@ xQueueSendToBack(LEDTaskQHandle,&led_arm,portMAX_DELAY);
 	   if (lmode_init == 0)
 	   { // Initialize parameters if a new selection was made.
 	      lmode_init = 1;
-	      dm1_idx_v_struct_hardcode_params(&dmocctl[0].lc, lmode);
+	      dm1_idx_v_struct_hardcode_params(&dmocctl[0].lc, dmocctl[0].lmode);
 
 	      if (lmode_init== DMOCMODE_LAW2_SPEEDLOCK)
 		      dmoc_control_init(&dmocctl[0], DMOC_MODESPEED);
