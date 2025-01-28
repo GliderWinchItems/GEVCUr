@@ -23,6 +23,7 @@ osThreadId CID004TaskHandle = NULL;
 
 struct CID004FUNCTION cid004function;
 
+
 /* *************************************************************************
  * void StartCID004Task(void const * argument);
  *	@brief	: Task startup
@@ -39,24 +40,34 @@ void StartCID004Task(void* argument)
 	p->txqcan.can.dlc = 1;        //
 	p->txqcan.pctl = pctl0;   // Control block for CAN module
 	p->txqcan.maxretryct = 8; //
-	p->txqcan.bits = 0;       //
+	p->txqcan.bits = 0;       // No retries
 
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
+	uint32_t delay = 256; // Initial wait for 004 msgs
 	
+
   /* Infinite loop */
   for(;;)
   {
 		/* Wait 1/64th sec, and also see of someone else sending CAN ID 004 msgs. */
-		xTaskNotifyWait(0,0xffffffff, &noteval, 8);
+		xTaskNotifyWait(0,0xffffffff, &noteval, delay);
 		if (noteval == CID004BIT00)
 		{ // Here, 004 was discovered on bus!
-			while (1==1) osDelay(10000); // Loop forever
+//			if (p->pmbx_cid_gps_sync->ncan.can.id == CANID_HB_TIMESYNC)
+			{ // Next incoming 004 should be sooner than 9 ticks from now.
+	//			delay = 10; // Wait slightly longer than 1/64th sec
+				while(1==1) osDelay(10000);
+			}
 		}
-		/* Here, no other 004 senders detected. */
-		p->txqcan.can.cd.uc[0] += 1; // Tick within second count
-		// Queue CAN msg
-		xQueueSendToBack(CanTxQHandle, &p->txqcan,4);
-	}
+		else
+		{ // Timeout and no 004 msg
+			delay = 8;
+			/* Here, no other 004 senders detected. */
+			p->txqcan.can.cd.uc[0] += 1; // Tick within second count
+			// Queue CAN msg
+			xQueueSendToBack(CanTxQHandle, &p->txqcan,4);
+		}
+  }
 }
 /* *************************************************************************
  * osThreadId xCID004TaskCreate(uint32_t taskpriority);
