@@ -28,13 +28,13 @@ void control_law_v0_calc(struct DMOCCTL* pdmocctl)
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{ 
 		/* Pct (0.01) * CL position (0-100.0) * max torque (likely) negative (Nm) */
-		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_neg_1;
+		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_neg;
 		led_retrieve.mode = LED_ON;
 	}
 	else
 	{
 		/* Pct (0.01) * CL position (0-100.0) * max torque positive (Nm) */
-		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos_1;
+		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos;
 		led_retrieve.mode = LED_OFF;
 	}
 	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
