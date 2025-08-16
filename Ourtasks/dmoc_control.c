@@ -25,7 +25,7 @@
 #define FALSE 1
 #define TRUE  0
 
-#define INVERT (-1)
+#define INVERT (1)
 
 /* Command request bits assignments. 
 Sourced location: ../dmoc/OurTasks/ContactorTask.h

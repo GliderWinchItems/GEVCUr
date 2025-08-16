@@ -29,7 +29,7 @@ void control_law_v3_calc(struct DMOCCTL* pdmocctl)
 	
    if (clfunc.curpos == 0.0)
    {
-      direction = 1;		//  initialize starting direction
+      direction = 0;		//  initialize starting direction
 		led_retrieve.mode = LED_OFF;
       pdmocctl->ftorquereq = 0.0;
       return;  
