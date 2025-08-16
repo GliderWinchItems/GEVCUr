@@ -25,13 +25,8 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-<<<<<<< HEAD
-      p->fmaxtorque_pos_1 = 175; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg_1 =  50; // Max torque (Nm) reverse (e.g. -300)
-=======
       p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
       p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
->>>>>>> parent of 414afe1... Commit before changes to add directional sense
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
       break;
@@ -54,38 +49,52 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    case DMOCMODE_LAW2_SPEEDLOCK: // 2
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
+      p->fmaxtorque_pos =  30; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg = -30; // Max torque (Nm) reverse (e.g.-300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000      
       break;
 
-   case DMOCMODE_LAW3_AUTOINERTIA: // 3 Back & forth for inertia measurement
-      p->maxspeed_pos   =  3000; // Max speed (signed)
-      p->maxspeed_neg   = -3000; // Max speed (signed)
-      p->fmaxtorque_pos =    150; // Max torque (Nm) forward
-      p->fmaxtorque_neg =   -100; // Max torque (Nm) reverse
-      p->maxregenwatts  = 60000; // E.g. 60000
-      p->maxaccelwatts  = 60000; // E.g. 60000
-      p->upper_speed_lmt = 2500; // Upper speed limit for auto-inertia
-      p->lower_speed_lmt =-2500; // Lower speed limit for auto-inertia
-      if((p->lower_speed_lmt >= p->upper_speed_lmt) ||
-         (p->lower_speed_lmt <  p->maxspeed_neg)    ||
-         (p->upper_speed_lmt >  p->maxspeed_pos))
+   case DMOCMODE_LAW3_AUTOINERTIA:  // 3 Back & forth for inertia measurement
+      p->maxspeed_pos       = 3500; // Max speed (signed)
+      p->maxspeed_neg       =-3500; // Max speed (signed)
+      p->fmaxtorque_pos_1 =    200; // Max torque (Nm) 1 forward
+      p->fmaxtorque_pos_2 =    100; // Max torque (Nm) 2 forward
+      p->fmaxtorque_pos   = p->fmaxtorque_pos_1 > p->fmaxtorque_pos_2 ? p->fmaxtorque_pos_1 :
+      p->fmaxtorque_pos_2;        // Max torque (Nm) forward
+      p->fmaxtorque_neg_1 =   -100; // Max torque (Nm) 1 reverse
+      p->fmaxtorque_neg_2 =   -200; // Max torque (Nm) 2 reverse
+      p->fmaxtorque_neg   = p->fmaxtorque_neg_1 < p->fmaxtorque_neg_2 ? p->fmaxtorque_neg_1 :
+      p->fmaxtorque_neg_2;        // Max torque (Nm) negative
+      p->maxregenwatts    =  60000; // 
+      p->maxaccelwatts    = 120000; // 
+      p->upper_speed_lmt  =   3000; // Upper speed limit for auto-inertia
+      p->fwd_kink_speed   =   1500; // Upper kink speed for auto-inertia
+      p->rev_kink_speed   =  -1500; // Lower kink speed for auto-inertia
+      p->lower_speed_lmt  =  -3000; // Lower speed limit for auto-inertia
+      if((p->lower_speed_lmt >= p->rev_kink_speed) ||
+         (p->rev_kink_speed >= p->fwd_kink_speed)  ||
+         (p->fwd_kink_speed >= p->upper_speed_lmt) ||
+         (p->lower_speed_lmt <  p->maxspeed_neg)   ||
+         (p->upper_speed_lmt >  p->maxspeed_pos)   ||
+         (p->fmaxtorque_pos_1 < 0)                 ||
+         (p->fmaxtorque_neg_1 > 0)                 ||
+         (p->fmaxtorque_pos_2 < 0)                 ||
+         (p->fmaxtorque_neg_2 > 0))
       {
           morse_trap(731);
       }
       break; 
 
    default: // Mode called for does not have initialization code
-      morse_trap (874); // 
+      morse_trap(874); // 
       break;
    }
 
-   if((p->maxspeed_pos < 0)   ||
-      (p->maxspeed_neg > 0)   ||
-      (p->fmaxtorque_pos < 0) ||
-      (p->fmaxtorque_neg > 0) )
+   if((p->maxspeed_pos < 0)      ||
+      (p->maxspeed_neg > 0)      ||
+      (p->fmaxtorque_pos < 0)    ||
+      (p->fmaxtorque_neg > 0))
       {
           morse_trap(801);
       }
