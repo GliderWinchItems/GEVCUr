@@ -43,16 +43,21 @@ struct DM1_LC
    // PUshbutton index for select?
 
    /* The following are initialized according to the mode set. */
-   uint32_t maxregenwatts;  // E.g. 60000
-   uint32_t maxaccelwatts;  // E.g. 60000
-   int32_t  maxspeed_pos;   // Max speed (signed) (e.g. 9000)
-   int32_t  maxspeed_neg;   // Max speed (signed) (e.g.-9000)
-   float   fmaxtorque_pos;  // Max torque (Nm) forward (e.g. 300)
-   float   fmaxtorque_neg;  // Max torque (Nm) reverse (e.g. -300)
-   int32_t upper_speed_lmt; // Upper speed limit for auto-inertia
-   int32_t lower_speed_lmt; // Lower speed limit for auto-inertia
+   uint32_t maxregenwatts;    // E.g. 60000
+   uint32_t maxaccelwatts;    // E.g. 60000
+   int32_t  maxspeed_pos;     // Max speed (signed) (e.g. 9000)
+   int32_t  maxspeed_neg;     // Max speed (signed) (e.g.-9000)
+   float   fmaxtorque_pos_1;  // Max torque (Nm) forward 1 (e.g. 300)
+   float   fmaxtorque_pos_2;  // Max torque (Nm) forward 2 (e.g. 250)
+   float   fmaxtorque_neg_1;  // Max torque (Nm) reverse 1 (e.g. -300)
+   float   fmaxtorque_neg_2;  // Max torque (Nm) reverse 2 (e.g. -250)
+   int32_t upper_speed_lmt;   // Upper speed limit for auto-inertia
+   int32_t lower_speed_lmt;   // Lower speed limit for auto-inertia
+   int32_t fwd_kink_speed;    // Upper kink speed for auto-inertia
+   int32_t rev_kink_speed;    // Lower kink speed for auto-inertia
+   
 
-   // The following are apply to control_law_v1 (pi_loop)
+   // The following  apply to control_law_v1 (pi_loop)
    float kp;      // Proportional constant
    float ki;      // Integral constant
    float clpi;    // integrator anti-windup clip level
