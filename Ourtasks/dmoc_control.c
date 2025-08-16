@@ -25,6 +25,10 @@
 #define FALSE 1
 #define TRUE  0
 
+/*	INVERT is used to invert (negate) the requested torque to the DMOC and the returned speed and torque values
+	from the DMOC so that positive torque requests result in winch pulling in the rope. This is temporary fix 
+	until ccShell parameters can be modified to reverse the motor's sense of positive rotation.
+*/
 #define INVERT (1)
 
 /* Command request bits assignments. 
@@ -310,7 +314,7 @@ void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 /* 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
 	/* Extract reported torque and update latest reading. */
 //				torqueActual = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]) - 30000;
-// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward
+// INVERT is TEMPORARY fix until DMOC ccShell parameters can be made to match the winch sense of forward
 	pdmocctl->torqueact = (((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->lc.torqueoffset) * INVERT ;
 	return;
 }
@@ -328,7 +332,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	pdmocctl->activityctr += 1;
 
 	// Speed (signed)
-// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward	
+// INVERT is TEMPORARY fix until DMOC ccShell parameters can be made to match the winch sense of forward	
 	pdmocctl->speedact = (((pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->lc.speedoffset) * INVERT ;
 
 	// DMOC status
@@ -342,7 +346,7 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	/* When DMOC sends '0' it is initializing. We send DISABLED until
 	   DMOC responds with DISABLED. If dmocopstate is STANDBY or ENABLE
 	   then the state sequence in 'dmoc_control_CANsend' will step up
-   the DMOC to the requested state, e.g. STANDBY or ENABLE. */
+   	the DMOC to the requested state, e.g. STANDBY or ENABLE. */
             pdmocctl->dmocstateact = DMOC_INIT; //DMOC_DISABLED;
             pdmocctl->dmocstatefaulted = FALSE;
             break;
@@ -419,7 +423,7 @@ void dmoc_control_GEVCUBIT13(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 void dmoc_control_GEVCUBIT14(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 {
 /*cid_dmoc_hv_temps,  NULL,GEVCUBIT14,0,U8_U8_U8); */
-/* 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator */
+/* 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,inverter,stator */
 
 /*       RotorTemp = frame->data.bytes[0];
         invTemp = frame->data.bytes[1];
@@ -467,7 +471,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->sendflag == 0) return; // Return when not flagged to send.
 	pdmocctl->sendflag = 0; // Reset flag
 
-	/* Sanity check: requested torque is within limits. */
+	/* Final sanity check: requested torque is within limits. */
 	if ((pdmocctl->ftorquereq > pdmocctl->lc.fmaxtorque_pos) ||  
 		 (pdmocctl->ftorquereq < pdmocctl->lc.fmaxtorque_neg) )
 				pdmocctl->ftorquereq = 0;  // Since bogus request set to zero
@@ -623,7 +627,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	if (pdmocctl->pwr_mode == DMOC_MODETORQUE)
 	{ // Torque
 	/* If max speed (positive) over max, and requested torque is positive, set
-		requested to torque to zero. Otherwise, allow requested torque, whether 
+		requested torque to zero. Otherwise, allow requested torque, whether 
 		positive or negative, to remain as requested. */
       if ((pdmocctl->speedact > pdmocctl->lc.maxspeed_pos) && (pdmocctl->itorquereq >= 0))
       	pdmocctl->itorquereq = 0;				
@@ -631,7 +635,7 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 	/* Opposite of above. Max speed in reverse, with negative torque requested sets
       torque to zero. Otherwise, allow whatever torque is requested.*/
       if ((pdmocctl->speedact < pdmocctl->lc.maxspeed_neg) && (pdmocctl->itorquereq < 0))
-      	pdmocctl->itorquereq = 0;				
+	     	pdmocctl->itorquereq = 0;
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
 // INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward

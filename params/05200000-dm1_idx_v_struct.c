@@ -25,8 +25,8 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
+      p->fmaxtorque_pos =    50; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =  -150; // Max torque (Nm) reverse (e.g. -300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
       break;
@@ -60,18 +60,20 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
       p->maxspeed_neg       =-3500; // Max speed (signed)
       p->fmaxtorque_pos_1 =    200; // Max torque (Nm) 1 forward
       p->fmaxtorque_pos_2 =    100; // Max torque (Nm) 2 forward
-      p->fmaxtorque_pos   = p->fmaxtorque_pos_1 > p->fmaxtorque_pos_2 ? p->fmaxtorque_pos_1 :
-      p->fmaxtorque_pos_2;        // Max torque (Nm) forward
+         p->fmaxtorque_pos   = p->fmaxtorque_pos_1 > p->fmaxtorque_pos_2 ? p->fmaxtorque_pos_1 :
+      p->fmaxtorque_pos_2;          // Max positive torque (Nm)  used for checking valid torque commands
       p->fmaxtorque_neg_1 =   -100; // Max torque (Nm) 1 reverse
-      p->fmaxtorque_neg_2 =   -200; // Max torque (Nm) 2 reverse
+      p->fmaxtorque_neg_2 =   -200; // Max negatorque (Nm) 2 reverse
       p->fmaxtorque_neg   = p->fmaxtorque_neg_1 < p->fmaxtorque_neg_2 ? p->fmaxtorque_neg_1 :
-      p->fmaxtorque_neg_2;        // Max torque (Nm) negative
-      p->maxregenwatts    =  60000; // 
-      p->maxaccelwatts    = 120000; // 
+         p->fmaxtorque_neg_2;          // Max torque negative used for checking valid torque commands
+      p->maxregenwatts    =  60000; // E.g. 60000
+      p->maxaccelwatts    = 120000; // E.g. 60000
       p->upper_speed_lmt  =   3000; // Upper speed limit for auto-inertia
       p->fwd_kink_speed   =   1500; // Upper kink speed for auto-inertia
       p->rev_kink_speed   =  -1500; // Lower kink speed for auto-inertia
       p->lower_speed_lmt  =  -3000; // Lower speed limit for auto-inertia
+      
+      // Validity tests on auto-inertial parameters
       if((p->lower_speed_lmt >= p->rev_kink_speed) ||
          (p->rev_kink_speed >= p->fwd_kink_speed)  ||
          (p->fwd_kink_speed >= p->upper_speed_lmt) ||
@@ -91,6 +93,7 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
       break;
    }
 
+   // Vlidity tests on common to all modes' parameters
    if((p->maxspeed_pos < 0)      ||
       (p->maxspeed_neg > 0)      ||
       (p->fmaxtorque_pos < 0)    ||

@@ -49,10 +49,10 @@ struct DM1_LC
    int32_t  maxspeed_neg;     // Max speed (signed) (e.g.-9000)
    float   fmaxtorque_pos;    // Max torque (Nm) forward (e.g. 300)
    float   fmaxtorque_neg;    // Max torque (Nm) reverse (e.g. -300)
-   float   fmaxtorque_pos_1;  // Max torque (Nm) forward (e.g. 300)
-   float   fmaxtorque_neg_1;  // Max torque (Nm) reverse (e.g. -300)
-   float   fmaxtorque_pos_2;  // Max torque (Nm) forward (e.g. 300)
-   float   fmaxtorque_neg_2;  // Max torque (Nm) reverse (e.g. -300)
+   float   fmaxtorque_pos_1;  // Max torque (Nm) forward 1 for auto-inertia (e.g. 300)
+   float   fmaxtorque_neg_1;  // Max torque (Nm) reverse 1 for auto-inertia (e.g. -300)
+   float   fmaxtorque_pos_2;  // Max torque (Nm) forward 2 for auto-inertia (e.g. 300)
+   float   fmaxtorque_neg_2;  // Max torque (Nm) reverse 2 for auto-inertia (e.g. -300)
    int32_t upper_speed_lmt;   // Upper speed limit for auto-inertia
    int32_t lower_speed_lmt;   // Lower speed limit for auto-inertia
    int32_t fwd_kink_speed;    // Upper kink speed for auto-inertia

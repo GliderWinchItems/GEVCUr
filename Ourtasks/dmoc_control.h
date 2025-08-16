@@ -83,7 +83,7 @@ struct DMOCCTL
 	int32_t voltageact;   // dcVoltage Actual (reported)
 
 	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
-	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);	float ftorquereq;     // float Torque Request = (0 or 0.01)*CL*fmaxtorque
+	int32_t itorquereq;   // int   Torque Request = (ftorquereq * 10.0f);	
 
 	uint32_t activityctr;   // Count CAN msgs from dmoc
 	uint32_t activityctr_prev;  // Previous count (for computing difference)
