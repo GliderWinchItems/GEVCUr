@@ -25,8 +25,8 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos_1 =  30; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg_1 =  30; // Max torque (Nm) reverse (e.g. -300)
+      p->fmaxtorque_pos_1 = 175; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg_1 =  50; // Max torque (Nm) reverse (e.g. -300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
       break;

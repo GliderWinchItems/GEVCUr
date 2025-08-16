@@ -25,6 +25,8 @@
 #define FALSE 1
 #define TRUE  0
 
+#define INVERT (-1)
+
 /* Command request bits assignments. 
 Sourced location: ../dmoc/OurTasks/ContactorTask.h
 */
@@ -308,7 +310,8 @@ void dmoc_control_GEVCUBIT08(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 /* 0x23A CANID_DMOC_ACTUALTORQ:I16,   DMOC: Actual Torque: payload-30000 */
 	/* Extract reported torque and update latest reading. */
 //				torqueActual = ((frame->data.bytes[0] * 256) + frame->data.bytes[1]) - 30000;
-	pdmocctl->torqueact = ((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->lc.torqueoffset;
+// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward
+	pdmocctl->torqueact = (((pcan->cd.uc[0] << 8) + (pcan->cd.uc[1])) - pdmocctl->lc.torqueoffset) * INVERT ;
 	return;
 }
 /* ***********************************************************************************************************
@@ -325,7 +328,8 @@ void dmoc_control_GEVCUBIT09(struct DMOCCTL* pdmocctl, struct CANRCVBUF* pcan)
 	pdmocctl->activityctr += 1;
 
 	// Speed (signed)
-	pdmocctl->speedact = ( (pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->lc.speedoffset;
+// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward	
+	pdmocctl->speedact = (((pcan->cd.uc[0] << 8) | pcan->cd.uc[1]) - pdmocctl->lc.speedoffset) * INVERT ;
 
 	// DMOC status
 	pdmocctl->dmocstaterep = (pcan->cd.uc[6] >> 4);
@@ -626,7 +630,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
       	pdmocctl->itorquereq = 0;				
 
 		/* Convert Nm to Nm tenths, and thence to signed integer with offset applied. */
-		ntmp = pdmocctl->itorquereq + pdmocctl->lc.torqueoffset;
+// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward
+		ntmp = pdmocctl->itorquereq * INVERT + pdmocctl->lc.torqueoffset;
 
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[0] = (ntmp & 0xFF00) >> 8;
 		pdmocctl->cmd[CMD2].txqcan.can.cd.uc[2] = (ntmp & 0xFF00) >> 8;
