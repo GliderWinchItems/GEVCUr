@@ -25,7 +25,7 @@ torquereq = Simple scaling of Control Lever
 void control_law_v0_calc(struct DMOCCTL* pdmocctl)
 {
 	/* Press pushbutton for alternate defined torque. */
-	if (gevcufunction.psw[PSW_ZODOMTR]->db_on != SW_CLOSED)	// Temporary cahnge to != to make negative torque the default
+	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)	// change to != to make negative torque the default
 	{ 
 		/* Pct (0.01) * CL position (0-100.0) * max torque (likely) negative (Nm) */
 		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_neg;

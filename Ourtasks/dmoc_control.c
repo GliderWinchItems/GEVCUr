@@ -29,7 +29,7 @@
 	from the DMOC so that positive torque requests result in winch pulling in the rope. This is temporary fix 
 	until ccShell parameters can be modified to reverse the motor's sense of positive rotation.
 */
-#define INVERT (1)
+#define INVERT (-1)
 
 /* Command request bits assignments. 
 Sourced location: ../dmoc/OurTasks/ContactorTask.h
@@ -591,7 +591,8 @@ void dmoc_control_CANsend(struct DMOCCTL* pdmocctl)
 		if (pdmocctl->dmocopstate == DMOC_ENABLE)
 		{
 			pdmocctl->dmocstatenew = DMOC_ENABLE;
-			if (pdmocctl->itorquereq >= 0)
+// INVERT is TEMPORARY until DMOC ccShell parameters can be made to match the winch sense of forward
+			if (pdmocctl->itorquereq * INVERT >= 0)
 				pdmocctl->dmocgear = DMOC_DRIVE;
 			else
 				pdmocctl->dmocgear = DMOC_REVERSE;
