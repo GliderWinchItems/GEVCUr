@@ -59,6 +59,16 @@ void control_law_v1_reset(void)
  * *************************************************************************/
 void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 {
+/*
+	This speed control law was being used to develop an emergency braking control law 
+	but the drum would not spin even though torqe commands were being issues. Comments
+	would let this be reverted to its orignal functionality, which apparently had been 
+	running the motor without any load before it was commendered. It the emergency brake
+	law can be used to see when the speed control law would go unstable do to DMOC bandwidth
+	limiations which could be very useful in setting gains for tension servo loop. 
+*/
+
+
 	struct DM1_LC* p = &pdmocctl->lc; // Pointer to fixed parameters (dm1_idx_v_struct.[ch])
 
 	/* Init parameters automatically on bootup. */
@@ -66,7 +76,13 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 
 	//	Compute desred speed based on control lever and PB conditons
 	/* Press pushbutton for direction reversal */
-	clv1.dsrdspd = 0.01f * clfunc.curpos * p->fllspd;	//	Desired speed magnitude
+
+//	Temporiaily replaced for braking function development
+//	clv1.dsrdspd = 0.01f * clfunc.curpos * p->fllspd;	//	Desired speed magnitude in RPM
+
+	clv1.dsrdspd = 50;	//	Desired speed magnitude TEMPORARY
+
+
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)
 	{ 
 		clv1.dsrdspd = -clv1.dsrdspd;
@@ -92,7 +108,8 @@ void control_law_v1_calc(struct DMOCCTL* pdmocctl)
 	}
 
 	//	Compute and limit torque command
-	pdmocctl->ftorquereq = clv1.spderr * p->kp + clv1.intgrtr;
+	//	Temporary scaling of proportional gain by CL below
+	pdmocctl->ftorquereq = clv1.spderr * 0.01f * clfunc.curpos * p->kp + clv1.intgrtr;
 	if (pdmocctl->ftorquereq > p->clpc) 
 	{
 		pdmocctl->ftorquereq = p->clpc;

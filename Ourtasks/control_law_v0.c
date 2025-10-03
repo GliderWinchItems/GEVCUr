@@ -24,7 +24,26 @@ torquereq = Simple scaling of Control Lever
  * *************************************************************************/
 void control_law_v0_calc(struct DMOCCTL* pdmocctl)
 {
-	/* Press pushbutton for alternate defined torque. */
+	if (gevcufunction.psw[PSW_ZTENSION]->db_on == SW_CLOSED)
+	{ 	// Emergency Braking Contol Law
+		
+
+	//	Compute and limit torque command
+		pdmocctl->ftorquereq =  -pdmocctl->speedact * pdmocctl->lc.kp;
+		
+		if (pdmocctl->ftorquereq > pdmocctl->lc.clpc) 
+		{
+			pdmocctl->ftorquereq = pdmocctl->lc.clpc;
+		}
+		else if (pdmocctl->ftorquereq < -pdmocctl->lc.clpc)
+		{
+			pdmocctl->ftorquereq = -pdmocctl->lc.clpc;
+		}
+	}
+
+	else	// 	Nomral manual torque control
+	{
+			/* Press pushbutton for alternate defined torque. */
 	if (gevcufunction.psw[PSW_ZODOMTR]->db_on == SW_CLOSED)	// change to != to make negative torque the default
 	{ 
 		/* Pct (0.01) * CL position (0-100.0) * max torque (likely) negative (Nm) */
@@ -37,6 +56,9 @@ void control_law_v0_calc(struct DMOCCTL* pdmocctl)
 		pdmocctl->ftorquereq = 0.01f * clfunc.curpos * pdmocctl->lc.fmaxtorque_pos;
 		led_retrieve.mode = LED_OFF;
 	}
-	xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
-	return;
+
 }
+xQueueSendToBack(LEDTaskQHandle,&led_retrieve,portMAX_DELAY);
+return;
+}
+

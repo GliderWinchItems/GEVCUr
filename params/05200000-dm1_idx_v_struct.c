@@ -23,55 +23,68 @@ void dm1_idx_v_struct_hardcode_params(struct DM1_LC* p, uint8_t lmode)
    switch (lmode)
    {
    case DMOCMODE_LAW0_MANUAL: // 0 Default: Manual. CL controls torque.
-      p->maxspeed_pos   =   200; // Max speed (signed) (e.g. 9000)
-      p->maxspeed_neg   =  -200; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =     5; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =    -5; // Max torque (Nm) reverse (e.g. -300)
+      p->maxspeed_pos   =  3000; // Max speed (signed) (e.g. 9000)
+      p->maxspeed_neg   =  -300; // Max speed (signed) (e.g.-9000)
+      p->fmaxtorque_pos =   200; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =  -150; // Max torque (Nm) reverse (e.g.-300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000
+
+      // Braking Control Law Parameters
+      p->kp =     1.0f; // Proportional constant
+      p->clpc =   150;  // Braking clipping torque limit
+                        // Important:. Magnitude must be less that positive 
+                        // or negative limits above
+
       break;
 
-   case DMOCMODE_LAW1_CLOSEDLOOP: // 1  
+   case DMOCMODE_LAW1_CLOSEDLOOP:// 1  PI Speed Loop
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g. -300)
+      p->fmaxtorque_pos =   150; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =  -150; // Max torque (Nm) reverse (e.g.-300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000  
-
-      p->kp =       0.10f; // Proportional constant
+/*    These were gains for motor only I think
+      p->kp =       1.6f;  // Proportional constant
       p->ki =     1.0E-3f; // Integral constant
+*/
+      // Constants for braking development
+      p->kp =        1.6f; // Proportional gain
+      p->ki =        0.0f; // Integral gain
       p->fllspd = 2500.0f; // 100% control lever desired speed magnitude
       p->clpi =     10.0f; // Integrator clipping level
-      p->clpc =    100.0f; // Command clipping level    
+      p->clpc =    100.0f; // Command clipping level  
+                           // Important: Magnitude must be less that positive 
+                           // or negative limits above  
       break;
 
    case DMOCMODE_LAW2_SPEEDLOCK: // 2
       p->maxspeed_pos   =  2500; // Max speed (signed) (e.g. 9000)
       p->maxspeed_neg   = -2500; // Max speed (signed) (e.g.-9000)
-      p->fmaxtorque_pos =  30; // Max torque (Nm) forward (e.g. 300)
-      p->fmaxtorque_neg = -30; // Max torque (Nm) reverse (e.g.-300)
+      p->fmaxtorque_pos =    30; // Max torque (Nm) forward (e.g. 300)
+      p->fmaxtorque_neg =   -30; // Max torque (Nm) reverse (e.g.-300)
       p->maxregenwatts  = 60000; // E.g. 60000
       p->maxaccelwatts  = 60000; // E.g. 60000      
       break;
 
    case DMOCMODE_LAW3_AUTOINERTIA:  // 3 Back & forth for inertia measurement
-      p->maxspeed_pos       = 3500; // Max speed (signed)
-      p->maxspeed_neg       =-3500; // Max speed (signed)
+      p->maxspeed_pos       =  300; // Max speed (signed)
+      p->maxspeed_neg       = -300; // Max speed (signed)
       p->fmaxtorque_pos_1 =    200; // Max torque (Nm) 1 forward
       p->fmaxtorque_pos_2 =    100; // Max torque (Nm) 2 forward
-         p->fmaxtorque_pos   = p->fmaxtorque_pos_1 > p->fmaxtorque_pos_2 ? p->fmaxtorque_pos_1 :
+      p->fmaxtorque_pos   = p->fmaxtorque_pos_1 > p->fmaxtorque_pos_2 ? p->fmaxtorque_pos_1 : 
       p->fmaxtorque_pos_2;          // Max positive torque (Nm)  used for checking valid torque commands
       p->fmaxtorque_neg_1 =   -100; // Max torque (Nm) 1 reverse
       p->fmaxtorque_neg_2 =   -200; // Max negatorque (Nm) 2 reverse
       p->fmaxtorque_neg   = p->fmaxtorque_neg_1 < p->fmaxtorque_neg_2 ? p->fmaxtorque_neg_1 :
-         p->fmaxtorque_neg_2;          // Max torque negative used for checking valid torque commands
+      p->fmaxtorque_neg_2;          // Max torque negative used for checking valid torque commands
       p->maxregenwatts    =  60000; // E.g. 60000
       p->maxaccelwatts    = 120000; // E.g. 60000
-      p->upper_speed_lmt  =   3000; // Upper speed limit for auto-inertia
-      p->fwd_kink_speed   =   1500; // Upper kink speed for auto-inertia
-      p->rev_kink_speed   =  -1500; // Lower kink speed for auto-inertia
-      p->lower_speed_lmt  =  -3000; // Lower speed limit for auto-inertia
+      p->upper_speed_lmt  =    300; // Upper speed limit for auto-inertia
+      p->fwd_kink_speed   =    150; // Upper kink speed for auto-inertia
+      p->rev_kink_speed   =   -150; // Lower kink speed for auto-inertia
+      p->lower_speed_lmt  =   -300; // Lower speed limit for auto-inertia
       
       // Validity tests on auto-inertial parameters
       if((p->lower_speed_lmt >= p->rev_kink_speed) ||
