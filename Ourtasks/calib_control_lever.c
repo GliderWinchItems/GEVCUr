@@ -66,9 +66,15 @@ uint8_t flag_clcalibed_started;
 uint8_t flag_cllcdrdy;  // 0 = LCD not initialized; 1 = LCD OK to use
 
 /* CP status with CL setting. */
-#define CPCANMSGRATE_SAFE 5000
-#define CPCANMSGRATE_ACTIVE 250
-uint16_t ratectr; // Throttle CAN msg rate
+#define CPCANMSGRATEADC 8 // Throttle ADC polling
+#define CPCANMSGRATE_HB (1500/CPCANMSGRATEADC) // CP msg heartbeat rate
+#define CPCANMSGCLDIFF (2 * 100) // Percent * 100
+static uint16_t adcctr;  // Throttle ADC polling
+static uint16_t ratectr; // Throttle CAN msg rate
+static uint16_t cl_prev;
+static uint16_t cl_now;
+static uint16_t sws_prev;
+static uint16_t sws_now;
 static struct CANTXQMSG cpclcan; // CP & CL status CAN msg
 
 
@@ -138,7 +144,8 @@ void calib_control_lever_init(void)
 		cpclcan.can.id     = 0x32000000;
 		cpclcan.can.dlc    = 8;
 		cpclcan.can.cd.ull = 0; // Clear payload
-		ratectr = CPCANMSGRATE_SAFE/2; // Initial status msg 
+		ratectr = 0;
+		adcctr = 0;
 
 	return;
 }
@@ -471,63 +478,51 @@ Switch position mapping--
 */
 void send_can_clcp(void)
 {
-	/* Throttle rate according state. */
-	ratectr += 1;
-	switch(gevcufunction.state)
-	{
-	case	GEVCU_INIT: // Slow rate
-	case	GEVCU_SAFE_TRANSITION:
-	case 	GEVCU_SAFE:
-		if (ratectr >= CPCANMSGRATE_SAFE)
-		{
-			ratectr = 0;
+	int diff;
+
+	/* Throttle ADC polling. */
+	adcctr += 1;
+	if (adcctr < CPCANMSGRATEADC)
+		return;
+	adcctr = 0;
+
+	// Arrive here about every 8 ms
+
+	/* Output CAN msg when any switch  changes state, or CL moves enough */
+	  sws_now = 0xFF80; // Reserved bits set to 1 for OPEN (default)
+		sws_now |= (gevcufunction.psw[PSW_PR_SAFE]->db_on  & 0x1) << 0;
+		sws_now |= (gevcufunction.psw[PSW_PB_PREP]->db_on  & 0x1) << 1;
+		sws_now |= (gevcufunction.psw[PSW_PB_ARM]->db_on   & 0x1) << 2;
+		sws_now |= (gevcufunction.psw[PSW_ZODOMTR]->db_on  & 0x1) << 3;
+		sws_now |= (gevcufunction.psw[PSW_ZTENSION]->db_on & 0x1) << 4;
+		sws_now |= (psw_cl_fs_no->db_on  & 0x1) << 5;
+		sws_now |= (psw_cl_rst_n0->db_on & 0x1) << 6;
+
+		cl_now = (clfunc.curpos * 100);
+
+		if (sws_now == sws_prev)
+		{ // No change in switches. Check if CL change warrants sending msg
+
+			/* Output whenever CL changes enough. */
+			diff = ((int16_t)cl_now - (int16_t)cl_prev);
+			if (diff < 0) // Make difference absolute
+				diff = -diff;
+
+			if (diff < CPCANMSGCLDIFF)
+			{ // No significant CL change. Use timeout rate
+				ratectr += 1;
+				if (ratectr < CPCANMSGRATE_HB)
+				{
+					return;
+				}
+			}
 		}
-		break;
+		cl_prev  = cl_now;
+		cpclcan.can.cd.us[3] = cl_now;
+		sws_prev = sws_now;
+		cpclcan.can.cd.us[2] = sws_now;
+		ratectr = 0;
+		xQueueSendToBack(CanTxQHandle,&cpclcan,4);			
 
-	default: // Fast rate
-		if (ratectr >= CPCANMSGRATE_ACTIVE)
-		{
-			ratectr = 0;
-		}
-		break;
-	}
-	if (ratectr == 0)
-	{ // Output status msg
-
-		/* pay[0] Status byte. */
-		cpclcan.can.cd.uc[0]  = flag_clcalibed; // 0 = not calibrated, 1 = calibrated
-		/* SAFE/ACTIVE sw is presently the only switch that can logically be
-		   indeterminate so we only have to check it for status. The others are
-		   naturally either on or off. */
-		// SAFE/ACTIVE is dpdt: 0 err; 1 safe; 2 active; 3 err  
-		if ((gevcufunction.psw[PSW_PR_SAFE]->on == 3) || (gevcufunction.psw[PSW_PR_SAFE]->on == 0))
-			cpclcan.can.cd.uc[0] |= 0x2; // Error
-
-		/* pay[1] = spare. */
-		cpclcan.can.cd.uc[1]  = 0; // Spare
-
-		/* pay[2:3] Switch err status. Bit position shows which sw has error. */
-		// SAFE/ACTIVE is dpdt: 0 err; 1 safe; 2 active; 3 err  
-		if ((gevcufunction.psw[PSW_PR_SAFE]->db_on & 0x2) != 0)
-			cpclcan.can.cd.us[1] = 1;
-		else
-			cpclcan.can.cd.us[1] = 0;
-			
-		/* pay[4:5] Bits for switch on/off (0 = CLOSED; 1 = OPEN) */
-		cpclcan.can.cd.us[2]  = 0xFF80; // Sw positions not reported default to OPEN
-
-		if (gevcufunction.psw[PSW_PR_SAFE]->db_on == 1)
-			cpclcan.can.cd.us[2] |= 0x1 << 0;
-
-		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_PB_PREP]->db_on  & 0x1) << 1;
-		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_PB_ARM]->db_on   & 0x1) << 2;
-		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_ZODOMTR]->db_on  & 0x1) << 3;
-		cpclcan.can.cd.us[2] |= (gevcufunction.psw[PSW_ZTENSION]->db_on & 0x1) << 4;
-		cpclcan.can.cd.us[2] |= (psw_cl_fs_no->db_on  & 0x1) << 5;
-		cpclcan.can.cd.us[2] |= (psw_cl_rst_n0->db_on & 0x1) << 6;
-
-		/* pay[6:7] CL position uint16_t 0-10000 */
-		cpclcan.can.cd.us[3] = (clfunc.curpos * 100);
-		xQueueSendToBack(CanTxQHandle,&cpclcan,4);
-	}
+		return;
 }
