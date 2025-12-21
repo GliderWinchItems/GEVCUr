@@ -3,7 +3,8 @@
 echo "SCRIPT-FLASH FILE NAME: $1"
 echo
 
-openocd  \
+
+openocd -s /usr/share/openocd/scripts \
 		       -f interface/stlink.cfg \
 		       -f target/stm32f4x.cfg \
 		       -c "init" -c "reset halt" \
