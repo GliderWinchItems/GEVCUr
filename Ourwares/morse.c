@@ -202,6 +202,10 @@ void morse_trap(uint8_t x)
 		lcdmsg_poll();
 
 		osDelay(1000); // Wait for LCD to be set
+
+		// Continue running if CAN output buffer overflow.
+		if (x == 91)
+			return;
 	}
 
 	/* Disable global interrupts */
